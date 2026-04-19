@@ -1,0 +1,159 @@
+openapi: 3.0.3
+info:
+  title: F1 Race Intelligence API
+  version: 0.1.0
+  description: Contracts for race calendar and championship standings.
+servers:
+  - url: https://api.example.com
+paths:
+  /api/v1/calendar:
+    get:
+      summary: Get season race calendar and next-race countdown metadata
+      parameters:
+        - in: query
+          name: year
+          required: true
+          schema:
+            type: integer
+            example: 2026
+      responses:
+        '200':
+          description: Calendar payload
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [year, data_as_of_utc, next_round, countdown_target_utc, rounds]
+                properties:
+                  year:
+                    type: integer
+                  data_as_of_utc:
+                    type: string
+                    format: date-time
+                  next_round:
+                    type: integer
+                  countdown_target_utc:
+                    type: string
+                    format: date-time
+                  rounds:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RaceMeeting'
+  /api/v1/standings/drivers:
+    get:
+      summary: Get drivers standings
+      parameters:
+        - in: query
+          name: year
+          required: true
+          schema:
+            type: integer
+            example: 2026
+      responses:
+        '200':
+          description: Drivers standings payload
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [year, data_as_of_utc, rows]
+                properties:
+                  year:
+                    type: integer
+                  data_as_of_utc:
+                    type: string
+                    format: date-time
+                  rows:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DriverStandingRow'
+  /api/v1/standings/constructors:
+    get:
+      summary: Get constructors standings
+      parameters:
+        - in: query
+          name: year
+          required: true
+          schema:
+            type: integer
+            example: 2026
+      responses:
+        '200':
+          description: Constructors standings payload
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [year, data_as_of_utc, rows]
+                properties:
+                  year:
+                    type: integer
+                  data_as_of_utc:
+                    type: string
+                    format: date-time
+                  rows:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ConstructorStandingRow'
+
+components:
+  schemas:
+    RaceMeeting:
+      type: object
+      required:
+        - round
+        - race_name
+        - circuit_name
+        - country_name
+        - start_datetime_utc
+        - end_datetime_utc
+        - status
+        - is_cancelled
+      properties:
+        round:
+          type: integer
+        race_name:
+          type: string
+        circuit_name:
+          type: string
+        country_name:
+          type: string
+        start_datetime_utc:
+          type: string
+          format: date-time
+        end_datetime_utc:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [scheduled, cancelled, completed, unknown]
+        is_cancelled:
+          type: boolean
+        cancelled_label:
+          type: string
+        cancelled_reason:
+          type: string
+    DriverStandingRow:
+      type: object
+      required: [position, driver_name, team_name, points, wins]
+      properties:
+        position:
+          type: integer
+        driver_name:
+          type: string
+        team_name:
+          type: string
+        points:
+          type: number
+        wins:
+          type: integer
+    ConstructorStandingRow:
+      type: object
+      required: [position, team_name, points]
+      properties:
+        position:
+          type: integer
+        team_name:
+          type: string
+        points:
+          type: number

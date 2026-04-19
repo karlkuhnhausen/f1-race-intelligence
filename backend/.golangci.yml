@@ -1,0 +1,28 @@
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters-settings:
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: github.com/karlkuhnhausen/f1-race-intelligence/backend
+  misspell:
+    locale: US
+
+linters:
+  enable:
+    - gofmt
+    - goimports
+    - vet
+    - errcheck
+    - staticcheck
+    - misspell
+    - ineffassign
+    - unused
+    - varcheck
+
+issues:
+  exclude-use-default: true
+  max-issues-per-linter: 0
+  max-same-issues: 0
