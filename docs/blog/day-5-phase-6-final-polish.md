@@ -8,6 +8,10 @@ Phase 6 was never going to be dramatic. No new features, no deployment failures,
 
 It's the phase that proves the system works not because you *saw* it work, but because you *measured* it working.
 
+![F1 Race Intelligence Dashboard — Calendar view showing all 26 rounds, cancelled races, and countdown to Miami GP](images/F1%20Race%20Intelligence%20Calendar.png)
+
+*The finished product: 26 rounds from OpenF1, Bahrain and Saudi Arabian GPs marked cancelled, countdown targeting the next scheduled race (Miami), and the Standings tab ready. All served from AKS via nginx ingress at `f1.20.171.233.61.nip.io`.*
+
 ---
 
 ## T042: The Monitoring Dashboard
