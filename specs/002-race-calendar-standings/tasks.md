@@ -30,8 +30,8 @@
 
 - [x] T005 Implement backend HTTP server bootstrap and Chi routing in `backend/cmd/api/main.go` and `backend/internal/api/router.go`
 - [x] T006 [P] Implement Cosmos DB client, containers, and repository interfaces in `backend/internal/storage/cosmos/client.go` and `backend/internal/storage/repository.go`
-- [ ] T007 [P] Implement OpenF1 polling scheduler (5-minute cadence) and ingest pipeline in `backend/internal/ingest/openf1_poller.go`
-- [ ] T008 [P] Implement Hyprace polling client and standings ingest in `backend/internal/standings/hyprace_client.go`
+- [x] T007 [P] Implement OpenF1 polling scheduler (5-minute cadence) and ingest pipeline in `backend/internal/ingest/openf1_poller.go`
+- [x] T008 [P] Implement Hyprace polling client and standings ingest in `backend/internal/standings/hyprace_client.go`
 - [ ] T009 Enforce frontend-to-backend-only data access via API base client in `frontend/src/services/apiClient.ts`
 - [ ] T010 Configure Key Vault + Managed Identity secret loading in `backend/internal/config/secrets.go`
 - [ ] T011 Configure structured JSON logging and metrics emitters in `backend/internal/observability/logger.go` and `backend/internal/observability/metrics.go`
