@@ -14,8 +14,8 @@ func TestCancellationOverridesBahrainSaudi(t *testing.T) {
 	}
 
 	expectedNames := map[string]bool{
-		"Bahrain Grand Prix":        false,
-		"Saudi Arabian Grand Prix":  false,
+		"Bahrain Grand Prix":       false,
+		"Saudi Arabian Grand Prix": false,
 	}
 
 	for _, o := range overrides {
