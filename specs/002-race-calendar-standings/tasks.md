@@ -100,19 +100,19 @@
 
 ### Tests for User Story 3
 
-- [ ] T032 [P] [US3] Add contract tests for standings endpoints in `backend/tests/contract/standings_contract_test.go`
-- [ ] T033 [P] [US3] Add integration tests for cancellation override behavior in `backend/tests/integration/cancelled_rounds_test.go`
-- [ ] T034 [P] [US3] Add frontend tests for cancellation badges and standings tables in `frontend/tests/standings/StandingsPage.test.tsx`
+- [x] T032 [P] [US3] Add contract tests for standings endpoints in `backend/tests/contract/standings_contract_test.go`
+- [x] T033 [P] [US3] Add integration tests for cancellation override behavior in `backend/tests/integration/cancelled_rounds_test.go`
+- [x] T034 [P] [US3] Add frontend tests for cancellation badges and standings tables in `frontend/tests/standings/StandingsPage.test.tsx`
 
 ### Implementation for User Story 3
 
-- [ ] T035 [US3] Implement cancellation override policy for R4 Bahrain and R5 Saudi Arabia in `backend/internal/domain/cancellation_overrides.go`
-- [ ] T036 [US3] Add cancellation metadata fields in calendar DTOs in `backend/internal/api/calendar/dto.go`
-- [ ] T037 [US3] Implement drivers standings aggregation service in `backend/internal/standings/drivers_service.go`
-- [ ] T038 [US3] Implement constructors standings aggregation service in `backend/internal/standings/constructors_service.go`
-- [ ] T039 [US3] Implement standings handlers in `backend/internal/api/standings/handler.go`
-- [ ] T040 [US3] Implement standings UI page and tables in `frontend/src/features/standings/StandingsPage.tsx`
-- [ ] T041 [US3] Render cancelled indicators in calendar rows in `frontend/src/features/calendar/CancelledRaceBadge.tsx`
+- [x] T035 [US3] Implement cancellation override policy for R4 Bahrain and R5 Saudi Arabia in `backend/internal/domain/cancellation_overrides.go`
+- [x] T036 [US3] Add cancellation metadata fields in calendar DTOs in `backend/internal/api/calendar/dto.go`
+- [x] T037 [US3] Implement drivers standings aggregation service in `backend/internal/standings/drivers_service.go`
+- [x] T038 [US3] Implement constructors standings aggregation service in `backend/internal/standings/constructors_service.go`
+- [x] T039 [US3] Implement standings handlers in `backend/internal/api/standings/handler.go`
+- [x] T040 [US3] Implement standings UI page and tables in `frontend/src/features/standings/StandingsPage.tsx`
+- [x] T041 [US3] Render cancelled indicators in calendar rows in `frontend/src/features/calendar/CancelledRaceBadge.tsx`
 
 **Checkpoint**: US3 independently functional.
 

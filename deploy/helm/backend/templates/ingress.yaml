@@ -4,13 +4,15 @@ kind: Ingress
 metadata:
   name: f1-backend
   annotations:
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
 spec:
   ingressClassName: {{ .Values.ingress.className }}
+  {{- if .Values.ingress.tls }}
   tls:
     - hosts:
         - {{ .Values.ingress.host }}
       secretName: {{ .Values.ingress.tlsSecretName }}
+  {{- end }}
   rules:
     - host: {{ .Values.ingress.host }}
       http:

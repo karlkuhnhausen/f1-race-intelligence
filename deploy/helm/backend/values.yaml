@@ -19,8 +19,8 @@ resources:
 ingress:
   enabled: true
   className: nginx
-  host: api.f1.example.com
-  tlsSecretName: f1-api-tls
+  host: api-f1.20.171.233.61.nip.io
+  tls: false
 
 workloadIdentity:
   clientId: ""

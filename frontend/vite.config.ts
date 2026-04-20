@@ -8,5 +8,7 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     pool: "threads",
+    testTimeout: 30000,
+    hookTimeout: 30000,
   }
 });

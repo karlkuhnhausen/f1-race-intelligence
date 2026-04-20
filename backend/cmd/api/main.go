@@ -20,15 +20,17 @@ func main() {
 	logger := observability.NewLogger(slog.LevelInfo)
 
 	var calendarRepo storage.CalendarRepository
+	var standingsRepo storage.StandingsRepository
 	if cosmosEndpoint != "" {
 		client, err := cosmos.NewClient(cosmosEndpoint)
 		if err != nil {
 			log.Fatalf("cosmos client: %v", err)
 		}
 		calendarRepo = client
+		standingsRepo = client
 	}
 
-	router := api.NewRouter(calendarRepo, logger)
+	router := api.NewRouter(calendarRepo, standingsRepo, logger)
 	server := &http.Server{
 		Addr:              addr,
 		Handler:           router,
