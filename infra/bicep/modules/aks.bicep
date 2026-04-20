@@ -6,6 +6,9 @@ param nodeCount int
 param nodeVmSize string
 param logAnalyticsWorkspaceId string
 
+@description('Subnet ID for AKS nodes.')
+param vnetSubnetId string
+
 resource aks 'Microsoft.ContainerService/managedClusters@2024-02-01' = {
   name: 'aks-${baseName}'
   location: location
@@ -24,6 +27,7 @@ resource aks 'Microsoft.ContainerService/managedClusters@2024-02-01' = {
         mode: 'System'
         osType: 'Linux'
         osSKU: 'AzureLinux'
+        vnetSubnetID: vnetSubnetId
       }
     ]
     networkProfile: {

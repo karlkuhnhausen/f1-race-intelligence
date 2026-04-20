@@ -30,6 +30,16 @@ resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
   tags: tags
 }
 
+module vnet 'modules/vnet.bicep' = {
+  scope: rg
+  name: 'vnet'
+  params: {
+    baseName: baseName
+    location: location
+    tags: tags
+  }
+}
+
 module logAnalytics 'modules/log-analytics.bicep' = {
   scope: rg
   name: 'logAnalytics'
@@ -80,6 +90,7 @@ module aks 'modules/aks.bicep' = {
     nodeCount: aksNodeCount
     nodeVmSize: aksNodeVmSize
     logAnalyticsWorkspaceId: logAnalytics.outputs.workspaceId
+    vnetSubnetId: vnet.outputs.aksSubnetId
   }
 }
 
@@ -107,6 +118,29 @@ module ciIdentity 'modules/ci-identity.bicep' = {
     githubRepo: githubRepo
     acrId: acr.outputs.acrId
     aksId: aks.outputs.aksId
+  }
+}
+
+module privateDns 'modules/private-dns.bicep' = {
+  scope: rg
+  name: 'privateDns'
+  params: {
+    baseName: baseName
+    tags: tags
+    vnetId: vnet.outputs.vnetId
+  }
+}
+
+module privateEndpoints 'modules/private-endpoints.bicep' = {
+  scope: rg
+  name: 'privateEndpoints'
+  params: {
+    baseName: baseName
+    location: location
+    tags: tags
+    subnetId: vnet.outputs.servicesSubnetId
+    cosmosAccountId: cosmosDb.outputs.accountId
+    cosmosPrivateDnsZoneId: privateDns.outputs.cosmosPrivateDnsZoneId
   }
 }
 

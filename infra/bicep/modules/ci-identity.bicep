@@ -24,6 +24,17 @@ resource ciMainFedCred 'Microsoft.ManagedIdentity/userAssignedIdentities/federat
   }
 }
 
+// Federated credential for GitHub Actions OIDC on 'infrastructure' environment
+resource ciInfraFedCred 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2023-01-31' = {
+  parent: ciIdentity
+  name: 'github-infra-env'
+  properties: {
+    issuer: 'https://token.actions.githubusercontent.com'
+    subject: 'repo:${githubRepo}:environment:infrastructure'
+    audiences: ['api://AzureADTokenExchange']
+  }
+}
+
 // Grant CI identity AcrPush on ACR
 resource ciAcrPush 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(acrId, ciIdentity.id, 'acrpush')
