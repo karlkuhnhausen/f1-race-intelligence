@@ -10,6 +10,8 @@ GitHub Copilot — powered by Claude Opus 4.6 — wrote every line. The project 
 
 The human provided direction. The machine provided implementation. The constitution provided guardrails.
 
+And on a personal note — I can't wait for the **Italian Grand Prix at Monza on September 4, 2026** (R17). Forza **Lewis Hamilton** in the Ferrari. 🏎️🇮🇹
+
 ## What This Repo Contains
 
 - Specification-driven feature planning under `specs/`
