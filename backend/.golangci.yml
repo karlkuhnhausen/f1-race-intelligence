@@ -20,7 +20,6 @@ linters:
     - misspell
     - ineffassign
     - unused
-    - varcheck
 
 issues:
   exclude-use-default: true

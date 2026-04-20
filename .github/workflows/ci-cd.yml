@@ -24,15 +24,16 @@ jobs:
       
       - name: Set up Go
         if: matrix.service == 'backend'
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: "1.25"
+          cache-dependency-path: backend/go.sum
       
       - name: Set up Node
         if: matrix.service == 'frontend'
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       
@@ -62,15 +63,16 @@ jobs:
       
       - name: Set up Go
         if: matrix.service == 'backend'
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: "1.25"
+          cache-dependency-path: backend/go.sum
       
       - name: Set up Node
         if: matrix.service == 'frontend'
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       
@@ -99,15 +101,16 @@ jobs:
       
       - name: Set up Go
         if: matrix.service == 'backend'
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: "1.25"
+          cache-dependency-path: backend/go.sum
       
       - name: Set up Node
         if: matrix.service == 'frontend'
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       
