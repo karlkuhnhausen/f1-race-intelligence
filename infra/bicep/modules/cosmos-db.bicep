@@ -67,5 +67,19 @@ resource standingsContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/
   }
 }
 
+resource sessionsContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2024-02-15-preview' = {
+  parent: database
+  name: 'sessions'
+  properties: {
+    resource: {
+      id: 'sessions'
+      partitionKey: {
+        paths: ['/season']
+        kind: 'Hash'
+      }
+    }
+  }
+}
+
 output accountName string = cosmosAccount.name
 output endpoint string = cosmosAccount.properties.documentEndpoint

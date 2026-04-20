@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/api/calendar"
+	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/api/rounds"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/api/standings"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/storage"
 )
@@ -20,7 +21,7 @@ type healthResponse struct {
 	Timestamp string `json:"timestamp"`
 }
 
-func NewRouter(calendarRepo storage.CalendarRepository, standingsRepo storage.StandingsRepository, logger *slog.Logger) http.Handler {
+func NewRouter(calendarRepo storage.CalendarRepository, standingsRepo storage.StandingsRepository, sessionRepo storage.SessionRepository, logger *slog.Logger) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
@@ -49,10 +50,15 @@ func NewRouter(calendarRepo storage.CalendarRepository, standingsRepo storage.St
 	standingsSvc := standings.NewService(standingsRepo)
 	standingsHandler := standings.NewHandler(standingsSvc, logger)
 
+	// Rounds API
+	roundsSvc := rounds.NewService(sessionRepo, calendarRepo)
+	roundsHandler := rounds.NewHandler(roundsSvc, logger)
+
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/calendar", calendarHandler.GetCalendar)
 		r.Get("/standings/drivers", standingsHandler.GetDrivers)
 		r.Get("/standings/constructors", standingsHandler.GetConstructors)
+		r.Get("/rounds/{round}", roundsHandler.GetRoundDetail)
 	})
 
 	return r

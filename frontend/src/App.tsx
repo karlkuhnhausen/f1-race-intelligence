@@ -1,30 +1,32 @@
-import { useState } from 'react';
+import { NavLink, Routes, Route, Navigate } from 'react-router-dom';
 import CalendarPage from './features/calendar/CalendarPage';
 import StandingsPage from './features/standings/StandingsPage';
-
-type Page = 'calendar' | 'standings';
+import RoundDetailPage from './features/rounds/RoundDetailPage';
 
 export default function App() {
-  const [page, setPage] = useState<Page>('calendar');
-
   return (
     <main>
       <h1>F1 Race Intelligence Dashboard</h1>
       <nav style={{ marginBottom: '1rem' }}>
-        <button
-          onClick={() => setPage('calendar')}
-          style={{ fontWeight: page === 'calendar' ? 'bold' : 'normal', marginRight: '0.5rem' }}
+        <NavLink
+          to="/calendar"
+          style={({ isActive }) => ({ fontWeight: isActive ? 'bold' : 'normal', marginRight: '0.5rem' })}
         >
           Calendar
-        </button>
-        <button
-          onClick={() => setPage('standings')}
-          style={{ fontWeight: page === 'standings' ? 'bold' : 'normal' }}
+        </NavLink>
+        <NavLink
+          to="/standings"
+          style={({ isActive }) => ({ fontWeight: isActive ? 'bold' : 'normal' })}
         >
           Standings
-        </button>
+        </NavLink>
       </nav>
-      {page === 'calendar' ? <CalendarPage /> : <StandingsPage />}
+      <Routes>
+        <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/standings" element={<StandingsPage />} />
+        <Route path="/rounds/:round" element={<RoundDetailPage />} />
+        <Route path="*" element={<Navigate to="/calendar" replace />} />
+      </Routes>
     </main>
   );
 }

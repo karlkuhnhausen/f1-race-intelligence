@@ -24,6 +24,7 @@ func main() {
 
 	var calendarRepo storage.CalendarRepository
 	var standingsRepo storage.StandingsRepository
+	var sessionRepo storage.SessionRepository
 	if cosmosEndpoint != "" {
 		client, err := cosmos.NewClient(cosmosEndpoint)
 		if err != nil {
@@ -31,9 +32,10 @@ func main() {
 		}
 		calendarRepo = client
 		standingsRepo = client
+		sessionRepo = client
 	}
 
-	router := api.NewRouter(calendarRepo, standingsRepo, logger)
+	router := api.NewRouter(calendarRepo, standingsRepo, sessionRepo, logger)
 
 	// Start data pollers if Cosmos is configured.
 	if calendarRepo != nil {
@@ -45,6 +47,9 @@ func main() {
 
 		standingsPoller := standings.NewHypraceClient(standingsRepo, logger)
 		go standingsPoller.Start(ctx, season)
+
+		sessionPoller := ingest.NewSessionPoller(sessionRepo, logger)
+		go sessionPoller.Start(ctx, season)
 	}
 
 	server := &http.Server{

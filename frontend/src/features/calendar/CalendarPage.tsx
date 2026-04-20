@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { fetchCalendar, type CalendarResponse, type RaceMeetingDTO } from './calendarApi';
 import NextRaceCard from './NextRaceCard';
 
@@ -64,7 +65,13 @@ function RaceRow({ round, isNext }: { round: RaceMeetingDTO; isNext: boolean }) 
   return (
     <tr className={rowClass}>
       <td>{round.round}</td>
-      <td>{round.race_name}</td>
+      <td>
+        {round.is_cancelled ? (
+          round.race_name
+        ) : (
+          <Link to={`/rounds/${round.round}?year=2026`}>{round.race_name}</Link>
+        )}
+      </td>
       <td>{round.circuit_name}</td>
       <td>{round.country_name}</td>
       <td>{new Date(round.start_datetime_utc).toLocaleDateString()}</td>

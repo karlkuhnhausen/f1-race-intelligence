@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import CalendarPage from '../../src/features/calendar/CalendarPage';
 import type { CalendarResponse } from '../../src/features/calendar/calendarApi';
 
@@ -54,7 +55,7 @@ describe('CalendarPage', () => {
   });
 
   it('renders the calendar table with all rounds', async () => {
-    render(<CalendarPage />);
+    render(<MemoryRouter><CalendarPage /></MemoryRouter>);
 
     expect(await screen.findByText('Australian Grand Prix')).toBeDefined();
     expect(screen.getByText('Bahrain Grand Prix')).toBeDefined();
@@ -62,7 +63,7 @@ describe('CalendarPage', () => {
   });
 
   it('shows cancelled badge for cancelled rounds', async () => {
-    render(<CalendarPage />);
+    render(<MemoryRouter><CalendarPage /></MemoryRouter>);
 
     const badge = await screen.findByText('Cancelled');
     expect(badge).toBeDefined();
@@ -70,7 +71,7 @@ describe('CalendarPage', () => {
   });
 
   it('renders the next race card', async () => {
-    render(<CalendarPage />);
+    render(<MemoryRouter><CalendarPage /></MemoryRouter>);
 
     expect(await screen.findByText('Next Race')).toBeDefined();
     // Miami GP appears in both the card and the table row.
@@ -78,7 +79,7 @@ describe('CalendarPage', () => {
   });
 
   it('displays data freshness timestamp', async () => {
-    render(<CalendarPage />);
+    render(<MemoryRouter><CalendarPage /></MemoryRouter>);
 
     const freshness = await screen.findByText(/Data as of:/);
     expect(freshness).toBeDefined();

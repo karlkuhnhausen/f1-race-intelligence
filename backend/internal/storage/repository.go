@@ -63,3 +63,62 @@ type StandingsRepository interface {
 	UpsertConstructorStandings(ctx context.Context, rows []ConstructorStandingRow) error
 	GetConstructorStandings(ctx context.Context, season int) ([]ConstructorStandingRow, error)
 }
+
+// Session represents one session within a race weekend stored in Cosmos DB.
+type Session struct {
+	ID            string    `json:"id"`
+	Type          string    `json:"type"` // document type discriminator: "session"
+	Season        int       `json:"season"`
+	Round         int       `json:"round"`
+	MeetingKey    int       `json:"meeting_key"`
+	SessionKey    int       `json:"session_key"`
+	SessionName   string    `json:"session_name"`
+	SessionType   string    `json:"session_type"`
+	Status        string    `json:"status"`
+	DateStartUTC  time.Time `json:"date_start_utc"`
+	DateEndUTC    time.Time `json:"date_end_utc"`
+	DataAsOfUTC   time.Time `json:"data_as_of_utc"`
+	Source        string    `json:"source"`
+}
+
+// SessionResult represents one driver's result within a session stored in Cosmos DB.
+type SessionResult struct {
+	ID              string    `json:"id"`
+	Type            string    `json:"type"` // document type discriminator: "session_result"
+	Season          int       `json:"season"`
+	Round           int       `json:"round"`
+	SessionKey      int       `json:"session_key"`
+	SessionType     string    `json:"session_type"`
+	Position        int       `json:"position"`
+	DriverNumber    int       `json:"driver_number"`
+	DriverName      string    `json:"driver_name"`
+	DriverAcronym   string    `json:"driver_acronym"`
+	TeamName        string    `json:"team_name"`
+	NumberOfLaps    int       `json:"number_of_laps"`
+	DataAsOfUTC     time.Time `json:"data_as_of_utc"`
+	Source          string    `json:"source"`
+
+	// Race-specific fields
+	FinishingStatus *string  `json:"finishing_status,omitempty"`
+	RaceTime        *float64 `json:"race_time,omitempty"`
+	GapToLeader     *string  `json:"gap_to_leader,omitempty"`
+	Points          *float64 `json:"points,omitempty"`
+	FastestLap      *bool    `json:"fastest_lap,omitempty"`
+
+	// Qualifying-specific fields
+	Q1Time *float64 `json:"q1_time,omitempty"`
+	Q2Time *float64 `json:"q2_time,omitempty"`
+	Q3Time *float64 `json:"q3_time,omitempty"`
+
+	// Practice-specific fields
+	BestLapTime  *float64 `json:"best_lap_time,omitempty"`
+	GapToFastest *float64 `json:"gap_to_fastest,omitempty"`
+}
+
+// SessionRepository defines read/write operations for sessions and session results.
+type SessionRepository interface {
+	UpsertSession(ctx context.Context, s Session) error
+	UpsertSessionResult(ctx context.Context, r SessionResult) error
+	GetSessionsByRound(ctx context.Context, season, round int) ([]Session, error)
+	GetSessionResultsByRound(ctx context.Context, season, round int) ([]SessionResult, error)
+}

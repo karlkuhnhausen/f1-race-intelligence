@@ -19,6 +19,7 @@ const (
 	databaseName       = "f1raceintelligence"
 	meetingsContainer  = "meetings"
 	standingsContainer = "standings"
+	sessionsContainer  = "sessions"
 )
 
 // Client wraps the azcosmos client and provides repository implementations.
@@ -26,6 +27,7 @@ type Client struct {
 	db        *azcosmos.DatabaseClient
 	meetings  *azcosmos.ContainerClient
 	standings *azcosmos.ContainerClient
+	sessions  *azcosmos.ContainerClient
 }
 
 // NewClient creates a Cosmos DB client using DefaultAzureCredential (supports Managed Identity + local dev).
@@ -55,10 +57,16 @@ func NewClient(endpoint string) (*Client, error) {
 		return nil, fmt.Errorf("cosmos: standings container: %w", err)
 	}
 
+	sessions, err := db.NewContainer(sessionsContainer)
+	if err != nil {
+		return nil, fmt.Errorf("cosmos: sessions container: %w", err)
+	}
+
 	return &Client{
 		db:        db,
 		meetings:  meetings,
 		standings: standings,
+		sessions:  sessions,
 	}, nil
 }
 
