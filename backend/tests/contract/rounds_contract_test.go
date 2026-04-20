@@ -59,10 +59,10 @@ func seedSessions() (*mockSessionRepo, *mockCalendarRepo) {
 			{
 				ID: "2026-01", Season: 2026, Round: 1,
 				RaceName: "Australian Grand Prix", CircuitName: "Albert Park",
-				CountryName: "Australia",
+				CountryName:      "Australia",
 				StartDatetimeUTC: time.Date(2026, 3, 15, 5, 0, 0, 0, time.UTC),
 				EndDatetimeUTC:   time.Date(2026, 3, 18, 5, 0, 0, 0, time.UTC),
-				Status: "scheduled", Source: "openf1", DataAsOfUTC: now,
+				Status:           "scheduled", Source: "openf1", DataAsOfUTC: now,
 			},
 		},
 	}

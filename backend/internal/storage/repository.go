@@ -66,37 +66,37 @@ type StandingsRepository interface {
 
 // Session represents one session within a race weekend stored in Cosmos DB.
 type Session struct {
-	ID            string    `json:"id"`
-	Type          string    `json:"type"` // document type discriminator: "session"
-	Season        int       `json:"season"`
-	Round         int       `json:"round"`
-	MeetingKey    int       `json:"meeting_key"`
-	SessionKey    int       `json:"session_key"`
-	SessionName   string    `json:"session_name"`
-	SessionType   string    `json:"session_type"`
-	Status        string    `json:"status"`
-	DateStartUTC  time.Time `json:"date_start_utc"`
-	DateEndUTC    time.Time `json:"date_end_utc"`
-	DataAsOfUTC   time.Time `json:"data_as_of_utc"`
-	Source        string    `json:"source"`
+	ID           string    `json:"id"`
+	Type         string    `json:"type"` // document type discriminator: "session"
+	Season       int       `json:"season"`
+	Round        int       `json:"round"`
+	MeetingKey   int       `json:"meeting_key"`
+	SessionKey   int       `json:"session_key"`
+	SessionName  string    `json:"session_name"`
+	SessionType  string    `json:"session_type"`
+	Status       string    `json:"status"`
+	DateStartUTC time.Time `json:"date_start_utc"`
+	DateEndUTC   time.Time `json:"date_end_utc"`
+	DataAsOfUTC  time.Time `json:"data_as_of_utc"`
+	Source       string    `json:"source"`
 }
 
 // SessionResult represents one driver's result within a session stored in Cosmos DB.
 type SessionResult struct {
-	ID              string    `json:"id"`
-	Type            string    `json:"type"` // document type discriminator: "session_result"
-	Season          int       `json:"season"`
-	Round           int       `json:"round"`
-	SessionKey      int       `json:"session_key"`
-	SessionType     string    `json:"session_type"`
-	Position        int       `json:"position"`
-	DriverNumber    int       `json:"driver_number"`
-	DriverName      string    `json:"driver_name"`
-	DriverAcronym   string    `json:"driver_acronym"`
-	TeamName        string    `json:"team_name"`
-	NumberOfLaps    int       `json:"number_of_laps"`
-	DataAsOfUTC     time.Time `json:"data_as_of_utc"`
-	Source          string    `json:"source"`
+	ID            string    `json:"id"`
+	Type          string    `json:"type"` // document type discriminator: "session_result"
+	Season        int       `json:"season"`
+	Round         int       `json:"round"`
+	SessionKey    int       `json:"session_key"`
+	SessionType   string    `json:"session_type"`
+	Position      int       `json:"position"`
+	DriverNumber  int       `json:"driver_number"`
+	DriverName    string    `json:"driver_name"`
+	DriverAcronym string    `json:"driver_acronym"`
+	TeamName      string    `json:"team_name"`
+	NumberOfLaps  int       `json:"number_of_laps"`
+	DataAsOfUTC   time.Time `json:"data_as_of_utc"`
+	Source        string    `json:"source"`
 
 	// Race-specific fields
 	FinishingStatus *string  `json:"finishing_status,omitempty"`

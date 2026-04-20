@@ -36,14 +36,6 @@ type openF1Driver struct {
 	SessionKey   int    `json:"session_key"`
 }
 
-// openF1Lap is the raw upstream lap shape from OpenF1.
-type openF1Lap struct {
-	DriverNumber int     `json:"driver_number"`
-	LapDuration  float64 `json:"lap_duration"`
-	LapNumber    int     `json:"lap_number"`
-	SessionKey   int     `json:"session_key"`
-}
-
 // TransformSession converts an OpenF1 session to our storage Session type.
 func TransformSession(raw openF1Session, season, round int) storage.Session {
 	sessionType := domain.MapOpenF1SessionType(raw.SessionName)
@@ -88,20 +80,20 @@ func TransformSessionResult(
 	}
 
 	r := storage.SessionResult{
-		ID:           fmt.Sprintf("%d-%02d-%s-%d", season, round, slug, pos.DriverNumber),
-		Type:         "session_result",
-		Season:       season,
-		Round:        round,
-		SessionKey:   pos.SessionKey,
-		SessionType:  string(sessionType),
-		Position:     pos.Position,
-		DriverNumber: pos.DriverNumber,
-		DriverName:   driverName,
+		ID:            fmt.Sprintf("%d-%02d-%s-%d", season, round, slug, pos.DriverNumber),
+		Type:          "session_result",
+		Season:        season,
+		Round:         round,
+		SessionKey:    pos.SessionKey,
+		SessionType:   string(sessionType),
+		Position:      pos.Position,
+		DriverNumber:  pos.DriverNumber,
+		DriverName:    driverName,
 		DriverAcronym: driverAcronym,
-		TeamName:     teamName,
-		NumberOfLaps: totalLaps,
-		DataAsOfUTC:  time.Now().UTC(),
-		Source:       "openf1",
+		TeamName:      teamName,
+		NumberOfLaps:  totalLaps,
+		DataAsOfUTC:   time.Now().UTC(),
+		Source:        "openf1",
 	}
 
 	// For race/sprint types, set finishing status
