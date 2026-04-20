@@ -19,6 +19,7 @@ This project is being built in public, with architecture decisions and progress 
 - [Day 2: The First Thing Anyone Sees — Phase 3 and the Race Calendar MVP](docs/blog/day-2-phase-3-calendar-mvp.md)
 - [Day 3: From Localhost to the Cloud — Phase 4 and the First Real Deployment](docs/blog/day-3-phase-4-deployment.md)
 - [Day 4: Live Data, Broken Queries, and the Dangers of Round Numbers](docs/blog/day-4-phase-5-live-data.md)
+- [Day 5: Forty-Seven Tasks, Zero Lines — The Final Phase](docs/blog/day-5-phase-6-final-polish.md)
 
 ## Architecture Direction
 

@@ -272,6 +272,8 @@ Phase 6 is the final phase: **Polish and Cross-Cutting Concerns**. Monitoring da
 
 After Phase 6, every task in the 47-task plan will be complete. The project will have gone from a Vitruvian constitution to a running, deployed, monitored application — with zero lines of human-typed code.
 
+*Continue reading: [Day 5: Forty-Seven Tasks, Zero Lines — The Final Phase](day-5-phase-6-final-polish.md)*
+
 ---
 
 *Previous: [Day 3: From Localhost to the Cloud — Phase 4 and the First Real Deployment](day-3-phase-4-deployment.md)*
