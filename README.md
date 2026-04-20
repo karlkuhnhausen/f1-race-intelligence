@@ -36,6 +36,7 @@ This project is being built in public, with architecture decisions and progress 
 ### Feature 2: Race Session Results
 
 - [Day 6: Clicking Into the Race — Session Results & Round Detail](docs/blog/day-6-race-session-results.md)
+- [Day 7: Race Results, Rate Limits, and the Branch You Forgot You Were On](docs/blog/day-7-phase-4-and-branch-confusion.md)
 
 ## Architecture Direction
 
@@ -51,13 +52,13 @@ This project is being built in public, with architecture decisions and progress 
 
 **Feature 1 — Calendar & Standings:** Complete. All 47 tasks across 6 phases done.
 
-**Feature 2 — Race Session Results:** In progress. Phases 1–3 complete (18/31 tasks). Backend data pipeline, Cosmos storage, rounds API, frontend routing, and round detail page deployed. Phases 4–7 (dedicated result components and polish) remaining.
+**Feature 2 — Race Session Results:** In progress. Phases 1–4 complete (21/31 tasks). Backend data pipeline, Cosmos storage, rounds API, frontend routing, round detail page, and dedicated race results component deployed. Rate limiting added to session poller. Phases 5–7 (qualifying/practice components and polish) remaining.
 
 - **Frontend**: http://f1.20.171.233.61.nip.io/
 - **API**: http://api-f1.20.171.233.61.nip.io/api/v1/calendar?year=2026
 - **Round Detail**: http://api-f1.20.171.233.61.nip.io/api/v1/rounds/3?year=2026
 - **Pipeline**: Fully green — lint → test → build → push → deploy
-- **Tests**: 42 passing (22 backend + 20 frontend)
+- **Tests**: 51 passing (22 backend + 29 frontend)
 
 ## Why Spec-Driven Development
 
