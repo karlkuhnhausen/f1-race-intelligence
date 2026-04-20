@@ -347,6 +347,8 @@ Phase 4 added 7 tasks to the completed total (T025–T031), bringing the project
 
 Phase 5 is **Championship Standings and Cancellation Overrides** — the third and final user story. Drivers and constructors standings, standings API endpoints, a new UI page, and the cancelled-race badge component.
 
+*Continue reading: [Day 4: Live Data, Broken Queries, and the Dangers of Round Numbers](day-4-phase-5-live-data.md)*
+
 Phase 6 is polish — monitoring dashboards, log schema validation, network boundary tests, and end-to-end quickstart verification.
 
 But today was the day the project became real. Not a spec. Not a plan. Not a test suite. A running application on Azure, deployed by a pipeline, serving HTTP, with zero human-typed code.

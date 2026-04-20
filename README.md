@@ -18,6 +18,7 @@ This project is being built in public, with architecture decisions and progress 
 - [Day 1: Laying the Foundation — Phase 2 and the Architecture That Carries Everything](docs/blog/day-1-phase-2-foundation.md)
 - [Day 2: The First Thing Anyone Sees — Phase 3 and the Race Calendar MVP](docs/blog/day-2-phase-3-calendar-mvp.md)
 - [Day 3: From Localhost to the Cloud — Phase 4 and the First Real Deployment](docs/blog/day-3-phase-4-deployment.md)
+- [Day 4: Live Data, Broken Queries, and the Dangers of Round Numbers](docs/blog/day-4-phase-5-live-data.md)
 
 ## Architecture Direction
 
