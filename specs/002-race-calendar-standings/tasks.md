@@ -122,12 +122,12 @@
 
 **Purpose**: Final hardening, compliance checks, and validation against success criteria.
 
-- [ ] T042 [P] Add API latency and poll success dashboards/alerts configuration in `deploy/monitoring/azure-monitor-dashboard.json`
-- [ ] T043 Validate structured JSON log schema consistency in `backend/tests/integration/log_schema_test.go`
-- [ ] T044 [P] Validate no direct frontend calls to OpenF1/Hyprace in `frontend/tests/integration/network_boundary.test.ts`
-- [ ] T045 Verify Helm values and environment overlays for AKS in `deploy/helm/backend/values.yaml` and `deploy/helm/frontend/values.yaml`
-- [ ] T046 Verify GitHub Actions deployment guards and image promotion logic in `.github/workflows/ci-cd.yml`
-- [ ] T047 Run quickstart end-to-end validation and update notes in `specs/002-race-calendar-standings/quickstart.md`
+- [x] T042 [P] Add API latency and poll success dashboards/alerts configuration in `deploy/monitoring/azure-monitor-dashboard.json`
+- [x] T043 Validate structured JSON log schema consistency in `backend/tests/integration/log_schema_test.go`
+- [x] T044 [P] Validate no direct frontend calls to OpenF1/Hyprace in `frontend/tests/integration/network_boundary.test.ts`
+- [x] T045 Verify Helm values and environment overlays for AKS in `deploy/helm/backend/values.yaml` and `deploy/helm/frontend/values.yaml`
+- [x] T046 Verify GitHub Actions deployment guards and image promotion logic in `.github/workflows/ci-cd.yml`
+- [x] T047 Run quickstart end-to-end validation and update notes in `specs/002-race-calendar-standings/quickstart.md`
 
 ---
 

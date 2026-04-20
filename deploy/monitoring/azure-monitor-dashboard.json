@@ -1,0 +1,254 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "dashboardName": {
+      "type": "string",
+      "defaultValue": "F1 Race Intelligence"
+    },
+    "logAnalyticsWorkspaceId": {
+      "type": "string",
+      "metadata": {
+        "description": "Full resource ID of the Log Analytics workspace"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Portal/dashboards",
+      "apiVersion": "2020-09-01-preview",
+      "name": "[guid(parameters('dashboardName'))]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "project": "f1-race-intelligence",
+        "hidden-title": "[parameters('dashboardName')]"
+      },
+      "properties": {
+        "lenses": [
+          {
+            "order": 0,
+            "parts": [
+              {
+                "position": { "x": 0, "y": 0, "colSpan": 6, "rowSpan": 4 },
+                "metadata": {
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+                  "inputs": [
+                    {
+                      "name": "resourceTypeMode",
+                      "value": "workspace"
+                    },
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('logAnalyticsWorkspaceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// API Latency Percentiles (p50, p95, p99)\nContainerLog\n| where LogEntry has \"\\\"level\\\":\\\"INFO\\\"\" and LogEntry has \"\\\"msg\\\":\\\"request\"\n| extend parsed = parse_json(LogEntry)\n| extend duration_ms = todouble(parsed.duration_ms)\n| where isnotnull(duration_ms)\n| summarize\n    p50 = percentile(duration_ms, 50),\n    p95 = percentile(duration_ms, 95),\n    p99 = percentile(duration_ms, 99)\n    by bin(TimeGenerated, 5m)\n| render timechart"
+                    },
+                    {
+                      "name": "TimeRange",
+                      "value": "PT1H"
+                    }
+                  ],
+                  "settings": {
+                    "title": "API Latency (p50 / p95 / p99)"
+                  }
+                }
+              },
+              {
+                "position": { "x": 6, "y": 0, "colSpan": 6, "rowSpan": 4 },
+                "metadata": {
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+                  "inputs": [
+                    {
+                      "name": "resourceTypeMode",
+                      "value": "workspace"
+                    },
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('logAnalyticsWorkspaceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Poll Success Rate\nContainerLog\n| where LogEntry has \"poll_complete\" or LogEntry has \"poll_error\"\n| extend parsed = parse_json(LogEntry)\n| extend status = tostring(parsed.msg)\n| summarize\n    success = countif(status == \"poll_complete\"),\n    failure = countif(status == \"poll_error\"),\n    total = count()\n    by bin(TimeGenerated, 5m)\n| extend success_rate = round(100.0 * success / total, 2)\n| project TimeGenerated, success_rate\n| render timechart"
+                    },
+                    {
+                      "name": "TimeRange",
+                      "value": "PT4H"
+                    }
+                  ],
+                  "settings": {
+                    "title": "Data Poll Success Rate (%)"
+                  }
+                }
+              },
+              {
+                "position": { "x": 0, "y": 4, "colSpan": 6, "rowSpan": 4 },
+                "metadata": {
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+                  "inputs": [
+                    {
+                      "name": "resourceTypeMode",
+                      "value": "workspace"
+                    },
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('logAnalyticsWorkspaceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// HTTP Error Rate (4xx / 5xx)\nContainerLog\n| where LogEntry has \"\\\"level\\\":\\\"\" and LogEntry has \"\\\"status\\\"\"\n| extend parsed = parse_json(LogEntry)\n| extend status_code = toint(parsed.status)\n| where status_code >= 400\n| summarize\n    client_errors = countif(status_code >= 400 and status_code < 500),\n    server_errors = countif(status_code >= 500)\n    by bin(TimeGenerated, 5m)\n| render barchart"
+                    },
+                    {
+                      "name": "TimeRange",
+                      "value": "PT1H"
+                    }
+                  ],
+                  "settings": {
+                    "title": "HTTP Error Rate (4xx / 5xx)"
+                  }
+                }
+              },
+              {
+                "position": { "x": 6, "y": 4, "colSpan": 6, "rowSpan": 4 },
+                "metadata": {
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+                  "inputs": [
+                    {
+                      "name": "resourceTypeMode",
+                      "value": "workspace"
+                    },
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('logAnalyticsWorkspaceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Pod Restarts and Health\nKubePodInventory\n| where Namespace == \"f1-race-intelligence\"\n| summarize\n    restarts = sum(PodRestartCount),\n    running = countif(PodStatus == \"Running\"),\n    pending = countif(PodStatus == \"Pending\"),\n    failed  = countif(PodStatus == \"Failed\")\n    by bin(TimeGenerated, 5m), Name\n| render table"
+                    },
+                    {
+                      "name": "TimeRange",
+                      "value": "PT4H"
+                    }
+                  ],
+                  "settings": {
+                    "title": "Pod Health & Restarts"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "apiVersion": "2023-03-15-preview",
+      "name": "f1-api-p95-latency-alert",
+      "location": "[parameters('location')]",
+      "tags": {
+        "project": "f1-race-intelligence"
+      },
+      "properties": {
+        "displayName": "F1 API p95 Latency > 500ms",
+        "description": "Fires when the p95 API latency exceeds 500 ms over a 5-minute window.",
+        "severity": 2,
+        "enabled": true,
+        "evaluationFrequency": "PT5M",
+        "windowSize": "PT5M",
+        "scopes": [
+          "[parameters('logAnalyticsWorkspaceId')]"
+        ],
+        "criteria": {
+          "allOf": [
+            {
+              "query": "ContainerLog\n| where LogEntry has '\"level\":\"INFO\"' and LogEntry has '\"msg\":\"request'\n| extend parsed = parse_json(LogEntry)\n| extend duration_ms = todouble(parsed.duration_ms)\n| where isnotnull(duration_ms)\n| summarize p95 = percentile(duration_ms, 95) by bin(TimeGenerated, 5m)\n",
+              "timeAggregation": "Maximum",
+              "metricMeasureColumn": "p95",
+              "operator": "GreaterThan",
+              "threshold": 500,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 1,
+                "minFailingPeriodsToAlert": 1
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "apiVersion": "2023-03-15-preview",
+      "name": "f1-poll-failure-alert",
+      "location": "[parameters('location')]",
+      "tags": {
+        "project": "f1-race-intelligence"
+      },
+      "properties": {
+        "displayName": "F1 Data Poll Failure",
+        "description": "Fires when a data poller reports errors.",
+        "severity": 1,
+        "enabled": true,
+        "evaluationFrequency": "PT5M",
+        "windowSize": "PT10M",
+        "scopes": [
+          "[parameters('logAnalyticsWorkspaceId')]"
+        ],
+        "criteria": {
+          "allOf": [
+            {
+              "query": "ContainerLog\n| where LogEntry has 'poll_error'\n| extend parsed = parse_json(LogEntry)\n| where parsed.msg == 'poll_error'\n| summarize error_count = count() by bin(TimeGenerated, 10m)\n",
+              "timeAggregation": "Total",
+              "metricMeasureColumn": "error_count",
+              "operator": "GreaterThan",
+              "threshold": 0,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 1,
+                "minFailingPeriodsToAlert": 1
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "apiVersion": "2023-03-15-preview",
+      "name": "f1-pod-restart-alert",
+      "location": "[parameters('location')]",
+      "tags": {
+        "project": "f1-race-intelligence"
+      },
+      "properties": {
+        "displayName": "F1 Pod Restart Alert",
+        "description": "Fires when any pod in the f1-race-intelligence namespace restarts.",
+        "severity": 2,
+        "enabled": true,
+        "evaluationFrequency": "PT5M",
+        "windowSize": "PT15M",
+        "scopes": [
+          "[parameters('logAnalyticsWorkspaceId')]"
+        ],
+        "criteria": {
+          "allOf": [
+            {
+              "query": "KubePodInventory\n| where Namespace == 'f1-race-intelligence'\n| summarize restarts = sum(PodRestartCount) by bin(TimeGenerated, 15m)\n",
+              "timeAggregation": "Maximum",
+              "metricMeasureColumn": "restarts",
+              "operator": "GreaterThan",
+              "threshold": 2,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 1,
+                "minFailingPeriodsToAlert": 1
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
