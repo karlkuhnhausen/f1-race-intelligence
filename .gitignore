@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Build outputs
+backend/api
+frontend/dist/
+*.exe
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+
+# Deployment outputs
+/tmp/f1-deploy-output.json

@@ -2,11 +2,15 @@ package api
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+
+	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/api/calendar"
+	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/storage"
 )
 
 type healthResponse struct {
@@ -15,7 +19,7 @@ type healthResponse struct {
 	Timestamp string `json:"timestamp"`
 }
 
-func NewRouter() http.Handler {
+func NewRouter(calendarRepo storage.CalendarRepository, logger *slog.Logger) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
@@ -34,6 +38,13 @@ func NewRouter() http.Handler {
 
 	r.Get("/readyz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
+	})
+
+	// Calendar API
+	calendarSvc := calendar.NewService(calendarRepo)
+	calendarHandler := calendar.NewHandler(calendarSvc, logger)
+	r.Route("/api/v1", func(r chi.Router) {
+		r.Get("/calendar", calendarHandler.GetCalendar)
 	})
 
 	return r

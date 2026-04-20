@@ -51,19 +51,19 @@
 
 ### Tests for User Story 1
 
-- [ ] T015 [P] [US1] Add contract tests for `GET /api/v1/calendar` in `backend/tests/contract/calendar_contract_test.go`
-- [ ] T016 [P] [US1] Add integration tests for poll-to-cache-to-API flow in `backend/tests/integration/calendar_cache_flow_test.go`
-- [ ] T017 [P] [US1] Add frontend component tests for calendar table rendering in `frontend/tests/calendar/CalendarTable.test.tsx`
+- [x] T015 [P] [US1] Add contract tests for `GET /api/v1/calendar` in `backend/tests/contract/calendar_contract_test.go`
+- [x] T016 [P] [US1] Add integration tests for poll-to-cache-to-API flow in `backend/tests/integration/calendar_cache_flow_test.go`
+- [x] T017 [P] [US1] Add frontend component tests for calendar table rendering in `frontend/tests/calendar/CalendarTable.test.tsx`
 
 ### Implementation for User Story 1
 
-- [ ] T018 [P] [US1] Implement `RaceMeeting` domain model and status enum in `backend/internal/domain/race_meeting.go`
-- [ ] T019 [US1] Implement OpenF1 meetings normalization for 2026 in `backend/internal/ingest/meeting_transform.go`
-- [ ] T020 [US1] Implement calendar repository persistence/query logic in `backend/internal/storage/cosmos/calendar_repository.go`
-- [ ] T021 [US1] Implement calendar service and response shaping in `backend/internal/api/calendar/service.go`
-- [ ] T022 [US1] Implement `GET /api/v1/calendar` handler in `backend/internal/api/calendar/handler.go`
-- [ ] T023 [US1] Implement calendar page and race rows in `frontend/src/features/calendar/CalendarPage.tsx`
-- [ ] T024 [US1] Wire frontend calendar API service in `frontend/src/features/calendar/calendarApi.ts`
+- [x] T018 [P] [US1] Implement `RaceMeeting` domain model and status enum in `backend/internal/domain/race_meeting.go`
+- [x] T019 [US1] Implement OpenF1 meetings normalization for 2026 in `backend/internal/ingest/meeting_transform.go`
+- [x] T020 [US1] Implement calendar repository persistence/query logic in `backend/internal/storage/cosmos/calendar_repository.go`
+- [x] T021 [US1] Implement calendar service and response shaping in `backend/internal/api/calendar/service.go`
+- [x] T022 [US1] Implement `GET /api/v1/calendar` handler in `backend/internal/api/calendar/handler.go`
+- [x] T023 [US1] Implement calendar page and race rows in `frontend/src/features/calendar/CalendarPage.tsx`
+- [x] T024 [US1] Wire frontend calendar API service in `frontend/src/features/calendar/calendarApi.ts`
 
 **Checkpoint**: US1 independently functional.
 
