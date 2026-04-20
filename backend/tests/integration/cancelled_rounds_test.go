@@ -6,58 +6,68 @@ import (
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/domain"
 )
 
-func TestCancellationOverridesR4R5(t *testing.T) {
+func TestCancellationOverridesBahrainSaudi(t *testing.T) {
 	overrides := domain.CancellationOverrides()
 
 	if len(overrides) != 2 {
 		t.Fatalf("expected 2 overrides, got %d", len(overrides))
 	}
 
-	expectedRounds := map[int]bool{4: false, 5: false}
+	expectedNames := map[string]bool{
+		"Bahrain Grand Prix":        false,
+		"Saudi Arabian Grand Prix":  false,
+	}
 
 	for _, o := range overrides {
 		if o.Season != 2026 {
 			t.Errorf("expected season 2026, got %d", o.Season)
 		}
-		if _, ok := expectedRounds[o.Round]; !ok {
-			t.Errorf("unexpected round %d", o.Round)
+		if _, ok := expectedNames[o.RaceName]; !ok {
+			t.Errorf("unexpected race name %q", o.RaceName)
 		}
-		expectedRounds[o.Round] = true
+		expectedNames[o.RaceName] = true
 		if o.Label == "" {
-			t.Errorf("round %d: label should not be empty", o.Round)
+			t.Errorf("%s: label should not be empty", o.RaceName)
 		}
 		if o.Reason == "" {
-			t.Errorf("round %d: reason should not be empty", o.Round)
+			t.Errorf("%s: reason should not be empty", o.RaceName)
 		}
 	}
 
-	for round, found := range expectedRounds {
+	for name, found := range expectedNames {
 		if !found {
-			t.Errorf("missing override for round %d", round)
+			t.Errorf("missing override for %s", name)
 		}
 	}
 }
 
-func TestIsCancelledReturnsMatchForR4(t *testing.T) {
-	override, ok := domain.IsCancelled(2026, 4)
+func TestIsCancelledReturnsMatchForBahrain(t *testing.T) {
+	override, ok := domain.IsCancelled(2026, "Bahrain Grand Prix")
 	if !ok {
-		t.Fatal("expected R4 to be cancelled")
+		t.Fatal("expected Bahrain Grand Prix to be cancelled")
 	}
-	if override.Round != 4 {
-		t.Errorf("expected round 4, got %d", override.Round)
+	if override.RaceName != "Bahrain Grand Prix" {
+		t.Errorf("expected Bahrain Grand Prix, got %s", override.RaceName)
 	}
 }
 
-func TestIsCancelledReturnsFalseForR1(t *testing.T) {
-	_, ok := domain.IsCancelled(2026, 1)
+func TestIsCancelledReturnsFalseForAustralian(t *testing.T) {
+	_, ok := domain.IsCancelled(2026, "Australian Grand Prix")
 	if ok {
-		t.Error("R1 should not be cancelled")
+		t.Error("Australian Grand Prix should not be cancelled")
 	}
 }
 
 func TestIsCancelledReturnsFalseForWrongSeason(t *testing.T) {
-	_, ok := domain.IsCancelled(2025, 4)
+	_, ok := domain.IsCancelled(2025, "Bahrain Grand Prix")
 	if ok {
-		t.Error("2025 R4 should not be cancelled")
+		t.Error("2025 Bahrain Grand Prix should not be cancelled")
+	}
+}
+
+func TestIsCancelledIsCaseInsensitive(t *testing.T) {
+	_, ok := domain.IsCancelled(2026, "bahrain grand prix")
+	if !ok {
+		t.Error("expected case-insensitive match")
 	}
 }

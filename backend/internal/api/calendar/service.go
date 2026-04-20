@@ -39,7 +39,7 @@ func (s *Service) GetCalendar(ctx context.Context, season int) (*CalendarRespons
 	domainMeetings := make([]domain.RaceMeeting, 0, len(meetings))
 	for _, m := range meetings {
 		// Apply cancellation overrides.
-		if override, ok := domain.IsCancelled(m.Season, m.Round); ok {
+		if override, ok := domain.IsCancelled(m.Season, m.RaceName); ok {
 			m.IsCancelled = true
 			m.Status = string(domain.StatusCancelled)
 			m.CancelledLabel = override.Label

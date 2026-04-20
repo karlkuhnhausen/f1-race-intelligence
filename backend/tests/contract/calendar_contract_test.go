@@ -51,11 +51,18 @@ func seedMeetings() []storage.RaceMeeting {
 
 	for i := 1; i <= 24; i++ {
 		raceDate := baseDate.Add(time.Duration(i*14) * 24 * time.Hour)
+		raceName := fmt.Sprintf("Round %d Grand Prix", i)
+		// Use real names for the races that have cancellation overrides.
+		if i == 6 {
+			raceName = "Bahrain Grand Prix"
+		} else if i == 7 {
+			raceName = "Saudi Arabian Grand Prix"
+		}
 		m := storage.RaceMeeting{
 			ID:               fmt.Sprintf("2026-%02d", i),
 			Season:           2026,
 			Round:            i,
-			RaceName:         fmt.Sprintf("Round %d Grand Prix", i),
+			RaceName:         raceName,
 			CircuitName:      fmt.Sprintf("Circuit %d", i),
 			CountryName:      fmt.Sprintf("Country %d", i),
 			StartDatetimeUTC: raceDate,
@@ -65,12 +72,6 @@ func seedMeetings() []storage.RaceMeeting {
 			Source:           "openf1",
 			DataAsOfUTC:      now,
 			SourceHash:       fmt.Sprintf("hash-%d", i),
-		}
-		// Mark R4 and R5 as cancelled per spec.
-		if i == 4 || i == 5 {
-			m.Status = "cancelled"
-			m.IsCancelled = true
-			m.CancelledLabel = "Cancelled"
 		}
 		meetings = append(meetings, m)
 	}
