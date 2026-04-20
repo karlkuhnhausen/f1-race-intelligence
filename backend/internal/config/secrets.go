@@ -13,10 +13,10 @@ import (
 
 // Config holds application configuration resolved from env + Key Vault.
 type Config struct {
-	Port                 string
+	Port                  string
 	CosmosAccountEndpoint string
-	KeyVaultURI          string
-	Season               int
+	KeyVaultURI           string
+	Season                int
 }
 
 // Load reads configuration from environment variables.
@@ -29,10 +29,10 @@ func Load() Config {
 	season := 2026
 
 	return Config{
-		Port:                 port,
+		Port:                  port,
 		CosmosAccountEndpoint: os.Getenv("COSMOS_ACCOUNT_ENDPOINT"),
-		KeyVaultURI:          os.Getenv("KEYVAULT_URI"),
-		Season:               season,
+		KeyVaultURI:           os.Getenv("KEYVAULT_URI"),
+		Season:                season,
 	}
 }
 

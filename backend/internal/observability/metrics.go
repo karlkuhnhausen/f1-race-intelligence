@@ -8,8 +8,8 @@ import (
 
 // Metrics tracks basic application health counters.
 type Metrics struct {
-	requestCount    atomic.Int64
-	requestErrors   atomic.Int64
+	requestCount     atomic.Int64
+	requestErrors    atomic.Int64
 	pollSuccessCount atomic.Int64
 	pollErrorCount   atomic.Int64
 }

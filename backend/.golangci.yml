@@ -9,6 +9,8 @@ linters-settings:
     local-prefixes: github.com/karlkuhnhausen/f1-race-intelligence/backend
   misspell:
     locale: US
+    ignore-words:
+      - cancelled
 
 linters:
   enable:

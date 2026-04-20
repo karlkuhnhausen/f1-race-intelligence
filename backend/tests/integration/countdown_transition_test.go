@@ -57,11 +57,11 @@ func seedThreeRounds() *inMemoryCalendarRepo {
 	now := time.Now().UTC()
 	repo := &inMemoryCalendarRepo{}
 	rounds := []struct {
-		round       int
-		name        string
-		start       time.Time
-		cancelled   bool
-		status      string
+		round     int
+		name      string
+		start     time.Time
+		cancelled bool
+		status    string
 	}{
 		{1, "Australian GP", time.Date(2026, 3, 15, 5, 0, 0, 0, time.UTC), false, "completed"},
 		{2, "Miami GP", time.Date(2026, 5, 4, 19, 0, 0, 0, time.UTC), false, "scheduled"},

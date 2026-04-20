@@ -148,7 +148,7 @@ func (h *HypraceClient) pollDrivers(ctx context.Context, season int) error {
 			Points:      r.Points,
 			Wins:        r.Wins,
 			DataAsOfUTC: now,
-			Source:       "hyprace",
+			Source:      "hyprace",
 		})
 	}
 
@@ -190,7 +190,7 @@ func (h *HypraceClient) pollConstructors(ctx context.Context, season int) error 
 			TeamName:    r.TeamName,
 			Points:      r.Points,
 			DataAsOfUTC: now,
-			Source:       "hyprace",
+			Source:      "hyprace",
 		})
 	}
 

@@ -23,13 +23,13 @@ const (
 
 // openF1Meeting is the raw upstream meeting shape from OpenF1.
 type openF1Meeting struct {
-	MeetingKey    int    `json:"meeting_key"`
-	MeetingName   string `json:"meeting_name"`
-	CircuitKey    int    `json:"circuit_key"`
-	CircuitName   string `json:"circuit_short_name"`
-	CountryName   string `json:"country_name"`
-	DateStart     string `json:"date_start"`
-	Year          int    `json:"year"`
+	MeetingKey  int    `json:"meeting_key"`
+	MeetingName string `json:"meeting_name"`
+	CircuitKey  int    `json:"circuit_key"`
+	CircuitName string `json:"circuit_short_name"`
+	CountryName string `json:"country_name"`
+	DateStart   string `json:"date_start"`
+	Year        int    `json:"year"`
 }
 
 // OpenF1Poller polls the OpenF1 meetings endpoint on a fixed cadence

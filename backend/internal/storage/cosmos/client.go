@@ -24,9 +24,9 @@ const (
 
 // Client wraps the azcosmos client and provides repository implementations.
 type Client struct {
-	db         *azcosmos.DatabaseClient
-	meetings   *azcosmos.ContainerClient
-	standings  *azcosmos.ContainerClient
+	db        *azcosmos.DatabaseClient
+	meetings  *azcosmos.ContainerClient
+	standings *azcosmos.ContainerClient
 }
 
 // NewClient creates a Cosmos DB client using DefaultAzureCredential (supports Managed Identity + local dev).
