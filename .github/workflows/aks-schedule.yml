@@ -43,8 +43,18 @@ jobs:
             echo "action=start" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Check cluster power state
+        id: state
+        run: |
+          POWER_STATE=$(az aks show \
+            --resource-group ${{ secrets.AKS_RESOURCE_GROUP }} \
+            --name ${{ secrets.AKS_CLUSTER_NAME }} \
+            --query "powerState.code" -o tsv)
+          echo "power_state=$POWER_STATE" >> "$GITHUB_OUTPUT"
+          echo "Cluster is currently: $POWER_STATE"
+
       - name: Stop AKS cluster
-        if: steps.action.outputs.action == 'stop'
+        if: steps.action.outputs.action == 'stop' && steps.state.outputs.power_state == 'Running'
         run: |
           echo "Stopping AKS cluster ${{ secrets.AKS_CLUSTER_NAME }}..."
           az aks stop \
@@ -53,11 +63,19 @@ jobs:
             --no-wait
           echo "Stop command issued (no-wait). Cluster will deallocate nodes."
 
+      - name: Skip stop (already stopped)
+        if: steps.action.outputs.action == 'stop' && steps.state.outputs.power_state != 'Running'
+        run: echo "Cluster is already ${{ steps.state.outputs.power_state }} — skipping stop."
+
       - name: Start AKS cluster
-        if: steps.action.outputs.action == 'start'
+        if: steps.action.outputs.action == 'start' && steps.state.outputs.power_state == 'Stopped'
         run: |
           echo "Starting AKS cluster ${{ secrets.AKS_CLUSTER_NAME }}..."
           az aks start \
             --resource-group ${{ secrets.AKS_RESOURCE_GROUP }} \
             --name ${{ secrets.AKS_CLUSTER_NAME }}
           echo "Cluster started and nodes ready."
+
+      - name: Skip start (already running)
+        if: steps.action.outputs.action == 'start' && steps.state.outputs.power_state != 'Stopped'
+        run: echo "Cluster is already ${{ steps.state.outputs.power_state }} — skipping start."
