@@ -4,12 +4,6 @@
 
 ---
 
-![Vitruvius' Basilica at Fano — floor plan and interior reconstruction from De Architectura](images/Vitruvius_the_Ten_Books_on_Architecture_Basilica_at_Fano.png)
-
-*Vitruvius' Basilica at Fano — the only building Vitruvius claims to have designed himself, described in Book V of De Architectura. Floor plan and interior reconstruction. Image: [Wikipedia](https://en.wikipedia.org/wiki/Basilica_of_Fano), public domain.*
-
----
-
 I have been writing code since the early 1980s.
 
 COBOL. Pascal. BASIC. PL/I. C#. Visual Basic. VB.NET. JavaScript. Python. Scripting languages I have half-forgotten the names of. For over four decades, building software meant sitting down and typing — and I was good at it.
@@ -21,6 +15,10 @@ This blog is the story of what happened when I decided the answer was no.
 ---
 
 ## It Started With a Dead Roman
+
+![Vitruvius' Basilica at Fano — floor plan and interior reconstruction from De Architectura](images/Vitruvius_the_Ten_Books_on_Architecture_Basilica_at_Fano.png)
+
+*Vitruvius' Basilica at Fano — the only building Vitruvius claims to have designed himself, described in Book V of De Architectura. Floor plan and interior reconstruction. Image: [Wikipedia](https://en.wikipedia.org/wiki/Basilica_of_Fano), public domain.*
 
 Before I touched a terminal, before I created a single file, I started with a conversation about an architect who died around 20 BCE.
 
