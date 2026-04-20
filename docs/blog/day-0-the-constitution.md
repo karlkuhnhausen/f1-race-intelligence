@@ -181,6 +181,8 @@ Everything here is being built the way this post was written — with voice, wit
 
 Vitruvius would recognize the method. He invented it.
 
+*Next: [Day 1: Laying the Foundation — Phase 2 and the Architecture That Carries Everything](day-1-phase-2-foundation.md)*
+
 ---
 
 *Karl Kuhnhausen is a software architect and developer with over four decades of experience across COBOL, Pascal, C#, JavaScript, Python, and beyond. He is currently exploring spec-driven, AI-assisted development on Microsoft Azure — entirely hands-free.*

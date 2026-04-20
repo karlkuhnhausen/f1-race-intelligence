@@ -186,5 +186,7 @@ The foundation is in place. The architecture carries. Now we build what people s
 
 ---
 
+*Previous: [Day 0: From a Roman Architect to a GitHub Repo — Without Writing a Line of Code](day-0-the-constitution.md)*
+
 *The repo is public and every commit tells the story:*
 [github.com/karlkuhnhausen/f1-race-intelligence](https://github.com/karlkuhnhausen/f1-race-intelligence)

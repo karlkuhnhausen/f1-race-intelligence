@@ -358,3 +358,5 @@ The constitution said *Firmitas, Utilitas, Venustas* — structural integrity, p
 Now we fill it with data.
 
 ---
+
+*Previous: [Day 2: The First Thing Anyone Sees — Phase 3 and the Race Calendar MVP](day-2-phase-3-calendar-mvp.md)*

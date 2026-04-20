@@ -248,7 +248,11 @@ Vitruvius would look at this and nod. Not because it's beautiful — it's a tabl
 
 The calendar is up. Now we make it count down.
 
+*Next: [Day 3: From Localhost to the Cloud — Phase 4 and the First Real Deployment](day-3-phase-4-deployment.md)*
+
 ---
+
+*Previous: [Day 1: Laying the Foundation — Phase 2 and the Architecture That Carries Everything](day-1-phase-2-foundation.md)*
 
 *The repo is public and every commit tells the story:*
 [github.com/karlkuhnhausen/f1-race-intelligence](https://github.com/karlkuhnhausen/f1-race-intelligence)
