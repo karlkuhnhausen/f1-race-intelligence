@@ -24,12 +24,18 @@ And on a personal note — I can't wait for the **Italian Grand Prix at Monza on
 
 This project is being built in public, with architecture decisions and progress captured in the blog.
 
+### Feature 1: Calendar, Standings & Deployment
+
 - [Day 0: From a Roman Architect to a GitHub Repo — Without Writing a Line of Code](docs/blog/day-0-the-constitution.md)
 - [Day 1: Laying the Foundation — Phase 2 and the Architecture That Carries Everything](docs/blog/day-1-phase-2-foundation.md)
 - [Day 2: The First Thing Anyone Sees — Phase 3 and the Race Calendar MVP](docs/blog/day-2-phase-3-calendar-mvp.md)
 - [Day 3: From Localhost to the Cloud — Phase 4 and the First Real Deployment](docs/blog/day-3-phase-4-deployment.md)
 - [Day 4: Live Data, Broken Queries, and the Dangers of Round Numbers](docs/blog/day-4-phase-5-live-data.md)
 - [Day 5: Forty-Seven Tasks, Zero Lines — The Final Phase](docs/blog/day-5-phase-6-final-polish.md)
+
+### Feature 2: Race Session Results
+
+- [Day 6: Clicking Into the Race — Session Results & Round Detail](docs/blog/day-6-race-session-results.md)
 
 ## Architecture Direction
 
@@ -43,12 +49,15 @@ This project is being built in public, with architecture decisions and progress 
 
 ## Current Status
 
-**Complete.** All 47 tasks across 6 phases are done. The application is deployed and running on Azure:
+**Feature 1 — Calendar & Standings:** Complete. All 47 tasks across 6 phases done.
+
+**Feature 2 — Race Session Results:** In progress. Phases 1–3 complete (18/31 tasks). Backend data pipeline, Cosmos storage, rounds API, frontend routing, and round detail page deployed. Phases 4–7 (dedicated result components and polish) remaining.
 
 - **Frontend**: http://f1.20.171.233.61.nip.io/
 - **API**: http://api-f1.20.171.233.61.nip.io/api/v1/calendar?year=2026
+- **Round Detail**: http://api-f1.20.171.233.61.nip.io/api/v1/rounds/3?year=2026
 - **Pipeline**: Fully green — lint → test → build → push → deploy
-- **Tests**: 35 passing (19 backend + 16 frontend)
+- **Tests**: 42 passing (22 backend + 20 frontend)
 
 ## Why Spec-Driven Development
 

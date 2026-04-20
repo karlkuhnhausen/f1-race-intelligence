@@ -215,3 +215,5 @@ Zero lines typed by a human.
 ---
 
 *Previous: [Day 4: Live Data, Broken Queries, and the Dangers of Round Numbers](day-4-phase-5-live-data.md)*
+
+*Next: [Day 6: Clicking Into the Race — Session Results & Round Detail](day-6-race-session-results.md)*
