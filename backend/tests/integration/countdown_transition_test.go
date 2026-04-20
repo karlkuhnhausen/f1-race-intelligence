@@ -68,7 +68,7 @@ func seedThreeRounds() *inMemoryCalendarRepo {
 		{3, "Spanish GP", time.Date(2026, 5, 25, 13, 0, 0, 0, time.UTC), false, "scheduled"},
 	}
 	for _, r := range rounds {
-		repo.UpsertMeeting(context.Background(), storage.RaceMeeting{
+		err := repo.UpsertMeeting(context.Background(), storage.RaceMeeting{
 			ID:               fmt.Sprintf("2026-%02d", r.round),
 			Season:           2026,
 			Round:            r.round,
@@ -83,6 +83,9 @@ func seedThreeRounds() *inMemoryCalendarRepo {
 			DataAsOfUTC:      now,
 			SourceHash:       fmt.Sprintf("hash-%d", r.round),
 		})
+		if err != nil {
+			panic(fmt.Sprintf("UpsertMeeting failed: %v", err))
+		}
 	}
 	return repo
 }
