@@ -77,16 +77,16 @@
 
 ### Tests for User Story 2
 
-- [ ] T025 [P] [US2] Add unit tests for next-race selection and tie-break rules in `backend/tests/unit/next_race_selector_test.go`
-- [ ] T026 [P] [US2] Add integration tests for countdown target transitions in `backend/tests/integration/countdown_transition_test.go`
-- [ ] T027 [P] [US2] Add frontend timer tests for live countdown behavior in `frontend/tests/calendar/CountdownCard.test.tsx`
+- [x] T025 [P] [US2] Add unit tests for next-race selection and tie-break rules in `backend/tests/unit/next_race_selector_test.go`
+- [x] T026 [P] [US2] Add integration tests for countdown target transitions in `backend/tests/integration/countdown_transition_test.go`
+- [x] T027 [P] [US2] Add frontend timer tests for live countdown behavior in `frontend/tests/calendar/CountdownCard.test.tsx`
 
 ### Implementation for User Story 2
 
-- [ ] T028 [US2] Implement next-race selection service excluding past/cancelled rounds in `backend/internal/domain/next_race_selector.go`
-- [ ] T029 [US2] Extend calendar API contract fields (`next_round`, `countdown_target_utc`) in `backend/internal/api/calendar/service.go`
-- [ ] T030 [US2] Implement countdown card and highlighted race UI in `frontend/src/features/calendar/NextRaceCard.tsx`
-- [ ] T031 [US2] Implement client-side countdown refresh hook in `frontend/src/features/calendar/useCountdown.ts`
+- [x] T028 [US2] Implement next-race selection service excluding past/cancelled rounds in `backend/internal/domain/next_race_selector.go`
+- [x] T029 [US2] Extend calendar API contract fields (`next_round`, `countdown_target_utc`) in `backend/internal/api/calendar/service.go`
+- [x] T030 [US2] Implement countdown card and highlighted race UI in `frontend/src/features/calendar/NextRaceCard.tsx`
+- [x] T031 [US2] Implement client-side countdown refresh hook in `frontend/src/features/calendar/useCountdown.ts`
 
 **Checkpoint**: US2 independently functional.
 
