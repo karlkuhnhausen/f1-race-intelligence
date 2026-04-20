@@ -238,7 +238,9 @@ Nineteen files changed. Fourteen tests passing. One commit. One push.
 
 ## What's Next
 
-Phase 4 is **User Story 2 — Countdown Widget and Race Details**. Phase 5 is **User Story 3 — Cancelled Round Handling and Championship Standings**. Phase 6 is polish.
+Phase 4 is **User Story 2 — Countdown Widget and Race Details**, and the first real deployment to Azure. Read about it in [Day 3: From Localhost to the Cloud — Phase 4 and the First Real Deployment](day-3-phase-4-deployment.md).
+
+Phase 5 is **User Story 3 — Cancelled Round Handling and Championship Standings**. Phase 6 is polish.
 
 But the important thing about Phase 3 isn't what it built. It's what it proved. Data flows from Cosmos DB through Go through JSON through TypeScript into a React component, and every step is tested, typed, and traceable. The architecture carries.
 
