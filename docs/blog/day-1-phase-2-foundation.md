@@ -182,6 +182,8 @@ Phase 2 unlocks Phase 3: **User Story 1 — View Full 2026 Race Calendar**. This
 
 The foundation is in place. The architecture carries. Now we build what people see.
 
+**Next: [Day 2: The First Thing Anyone Sees — Phase 3 and the Race Calendar MVP](day-2-phase-3-calendar-mvp.md)**
+
 ---
 
 *The repo is public and every commit tells the story:*
