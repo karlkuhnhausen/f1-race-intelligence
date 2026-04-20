@@ -1,6 +1,14 @@
 # F1 Race Intelligence Dashboard
 
-F1 Race Intelligence Dashboard is a spec-driven project for building a Formula 1 analytics application on Azure Kubernetes Service with a Go backend, React frontend, and Cosmos DB.
+**Rome wasn't built in a day. This was built in half of one.**
+
+The blog posts say Day 0 through Day 5, but every line of code, every Helm chart, every Bicep module, every CI/CD pipeline, every test, and every blog post was produced on a single Sunday afternoon — after thinking about it on a Saturday. Forty-seven tasks across six phases. Thirty-five tests. A Go backend, a React frontend, Cosmos DB, AKS, Key Vault, nginx ingress, OIDC federation, and a fully green CI/CD pipeline. Deployed and running on Azure.
+
+**Zero lines of code typed by a human.**
+
+GitHub Copilot — powered by Claude Opus 4.6 — wrote every line. The project was driven entirely by [GitHub Spec Kit](https://github.com/Spec-Kit/spec-kit) and a well-defined constitution based on the architectural principles of [Vitruvius](https://en.wikipedia.org/wiki/Vitruvius), the ancient Roman architect who defined the triad of *Firmitas* (structural integrity), *Utilitas* (practical utility), and *Venustas* (appropriate beauty). Those principles governed every decision — from the data model to the deployment topology.
+
+The human provided direction. The machine provided implementation. The constitution provided guardrails.
 
 ## What This Repo Contains
 
@@ -33,7 +41,12 @@ This project is being built in public, with architecture decisions and progress 
 
 ## Current Status
 
-The repository currently contains the initial constitution, feature specification, implementation plan, task breakdown, and Phase 1 project scaffolding for the Race Calendar and Championship Standings feature.
+**Complete.** All 47 tasks across 6 phases are done. The application is deployed and running on Azure:
+
+- **Frontend**: http://f1.20.171.233.61.nip.io/
+- **API**: http://api-f1.20.171.233.61.nip.io/api/v1/calendar?year=2026
+- **Pipeline**: Fully green — lint → test → build → push → deploy
+- **Tests**: 35 passing (19 backend + 16 frontend)
 
 ## Why Spec-Driven Development
 
