@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
@@ -84,7 +83,7 @@ func (c *Client) GetMeetingsBySeason(ctx context.Context, season int) ([]storage
 	query := "SELECT * FROM c WHERE c.season = @season ORDER BY c.round"
 	queryOpts := &azcosmos.QueryOptions{
 		QueryParameters: []azcosmos.QueryParameter{
-			{Name: "@season", Value: strconv.Itoa(season)},
+			{Name: "@season", Value: season},
 		},
 	}
 
@@ -145,7 +144,7 @@ func (c *Client) GetDriverStandings(ctx context.Context, season int) ([]storage.
 	query := "SELECT * FROM c WHERE c.season = @season AND c.source = 'hyprace' AND IS_DEFINED(c.driver_name) ORDER BY c.position"
 	queryOpts := &azcosmos.QueryOptions{
 		QueryParameters: []azcosmos.QueryParameter{
-			{Name: "@season", Value: strconv.Itoa(season)},
+			{Name: "@season", Value: season},
 		},
 	}
 
@@ -187,7 +186,7 @@ func (c *Client) GetConstructorStandings(ctx context.Context, season int) ([]sto
 	query := "SELECT * FROM c WHERE c.season = @season AND c.source = 'hyprace' AND IS_DEFINED(c.team_name) AND NOT IS_DEFINED(c.driver_name) ORDER BY c.position"
 	queryOpts := &azcosmos.QueryOptions{
 		QueryParameters: []azcosmos.QueryParameter{
-			{Name: "@season", Value: strconv.Itoa(season)},
+			{Name: "@season", Value: season},
 		},
 	}
 
