@@ -1,0 +1,362 @@
+openapi: 3.0.3
+info:
+  title: F1 Race Intelligence API
+  version: 0.2.0
+  description: |
+    Contracts for race calendar, championship standings, and round detail session results.
+    Extends v0.1.0 with the round detail endpoint for feature 003-race-session-results.
+servers:
+  - url: https://f1.20.171.233.61.nip.io
+    description: Production (AKS)
+
+paths:
+  /api/v1/calendar:
+    get:
+      summary: Get season race calendar and next-race countdown metadata
+      parameters:
+        - in: query
+          name: year
+          required: true
+          schema:
+            type: integer
+            example: 2026
+      responses:
+        '200':
+          description: Calendar payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarResponse'
+
+  /api/v1/standings/drivers:
+    get:
+      summary: Get drivers standings
+      parameters:
+        - in: query
+          name: year
+          required: true
+          schema:
+            type: integer
+            example: 2026
+      responses:
+        '200':
+          description: Drivers standings payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriversStandingsResponse'
+
+  /api/v1/standings/constructors:
+    get:
+      summary: Get constructors standings
+      parameters:
+        - in: query
+          name: year
+          required: true
+          schema:
+            type: integer
+            example: 2026
+      responses:
+        '200':
+          description: Constructors standings payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstructorsStandingsResponse'
+
+  /api/v1/rounds/{round}:
+    get:
+      summary: Get round detail with all session results
+      description: |
+        Returns meeting metadata and results for all sessions (practice, qualifying, sprint, race)
+        in a given round. Each session includes its availability status and per-driver results when available.
+        Traces to FR-003, FR-004, FR-005, FR-007, FR-008, FR-010, FR-015, FR-016.
+      parameters:
+        - in: path
+          name: round
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 24
+          description: Round number within the season
+        - in: query
+          name: year
+          required: true
+          schema:
+            type: integer
+            example: 2026
+      responses:
+        '200':
+          description: Round detail with session results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoundDetailResponse'
+        '400':
+          description: Invalid year or round parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Round not found for the given season
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: "round not found"
+
+    CalendarResponse:
+      type: object
+      required: [year, data_as_of_utc, next_round, countdown_target_utc, rounds]
+      properties:
+        year:
+          type: integer
+        data_as_of_utc:
+          type: string
+          format: date-time
+        next_round:
+          type: integer
+        countdown_target_utc:
+          type: string
+          format: date-time
+          nullable: true
+        rounds:
+          type: array
+          items:
+            $ref: '#/components/schemas/RaceMeeting'
+
+    RaceMeeting:
+      type: object
+      required: [round, race_name, circuit_name, country_name, start_datetime_utc, end_datetime_utc, status, is_cancelled]
+      properties:
+        round:
+          type: integer
+        race_name:
+          type: string
+        circuit_name:
+          type: string
+        country_name:
+          type: string
+        start_datetime_utc:
+          type: string
+          format: date-time
+        end_datetime_utc:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [scheduled, cancelled, completed, unknown]
+        is_cancelled:
+          type: boolean
+        cancelled_label:
+          type: string
+        cancelled_reason:
+          type: string
+
+    DriversStandingsResponse:
+      type: object
+      required: [year, data_as_of_utc, rows]
+      properties:
+        year:
+          type: integer
+        data_as_of_utc:
+          type: string
+          format: date-time
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/DriverStandingRow'
+
+    DriverStandingRow:
+      type: object
+      required: [position, driver_name, team_name, points, wins]
+      properties:
+        position:
+          type: integer
+        driver_name:
+          type: string
+        team_name:
+          type: string
+        points:
+          type: number
+        wins:
+          type: integer
+
+    ConstructorsStandingsResponse:
+      type: object
+      required: [year, data_as_of_utc, rows]
+      properties:
+        year:
+          type: integer
+        data_as_of_utc:
+          type: string
+          format: date-time
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConstructorStandingRow'
+
+    ConstructorStandingRow:
+      type: object
+      required: [position, team_name, points]
+      properties:
+        position:
+          type: integer
+        team_name:
+          type: string
+        points:
+          type: number
+
+    RoundDetailResponse:
+      type: object
+      required: [year, round, race_name, circuit_name, country_name, start_datetime_utc, end_datetime_utc, status, sessions]
+      properties:
+        year:
+          type: integer
+          example: 2026
+        round:
+          type: integer
+          example: 3
+        race_name:
+          type: string
+          example: "Australian Grand Prix"
+        circuit_name:
+          type: string
+          example: "Albert Park"
+        country_name:
+          type: string
+          example: "Australia"
+        start_datetime_utc:
+          type: string
+          format: date-time
+        end_datetime_utc:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [scheduled, cancelled, completed, unknown]
+          description: Overall meeting status
+        is_cancelled:
+          type: boolean
+        sessions:
+          type: array
+          description: All sessions for this round, ordered chronologically
+          items:
+            $ref: '#/components/schemas/SessionDetail'
+
+    SessionDetail:
+      type: object
+      required: [session_type, session_name, status, date_start_utc, date_end_utc, data_as_of_utc]
+      properties:
+        session_type:
+          type: string
+          enum: [practice1, practice2, practice3, sprint_qualifying, sprint, qualifying, race]
+        session_name:
+          type: string
+          example: "Race"
+          description: Human-readable session name
+        status:
+          type: string
+          enum: [completed, in_progress, upcoming, not_available]
+          description: Session data availability status (FR-008)
+        date_start_utc:
+          type: string
+          format: date-time
+        date_end_utc:
+          type: string
+          format: date-time
+        data_as_of_utc:
+          type: string
+          format: date-time
+          description: Freshness timestamp for this session's data (FR-007)
+        results:
+          type: array
+          description: Per-driver results, ordered by position. Null/empty if status is not 'completed' or 'in_progress'.
+          items:
+            $ref: '#/components/schemas/SessionResultEntry'
+
+    SessionResultEntry:
+      type: object
+      required: [position, driver_number, driver_name, driver_acronym, team_name, number_of_laps]
+      description: |
+        A single driver's result in a session. Fields are polymorphic based on session_type.
+        Race/sprint sessions include finishing_status, gap_to_leader, points, fastest_lap.
+        Qualifying sessions include q1_time, q2_time, q3_time.
+        Practice sessions include best_lap_time, gap_to_fastest.
+      properties:
+        position:
+          type: integer
+          minimum: 1
+        driver_number:
+          type: integer
+          example: 44
+        driver_name:
+          type: string
+          example: "Lewis HAMILTON"
+        driver_acronym:
+          type: string
+          example: "HAM"
+          maxLength: 3
+        team_name:
+          type: string
+          example: "Ferrari"
+        number_of_laps:
+          type: integer
+          minimum: 0
+
+        # Race/sprint fields (FR-003, FR-016)
+        finishing_status:
+          type: string
+          enum: [Finished, DNF, DNS, DSQ]
+          description: Present for race and sprint sessions only
+        race_time:
+          type: number
+          nullable: true
+          description: Total race time in seconds (P1 only); null for other positions
+        gap_to_leader:
+          type: string
+          nullable: true
+          description: "Time gap string, e.g. '+5.123s' or '+1 LAP'. Null for race winner."
+        points:
+          type: number
+          nullable: true
+          description: Points scored in this session
+        fastest_lap:
+          type: boolean
+          nullable: true
+          description: True if this driver set the fastest race lap
+
+        # Qualifying fields (FR-004)
+        q1_time:
+          type: number
+          nullable: true
+          description: Best Q1 lap time in seconds. Null if did not participate.
+        q2_time:
+          type: number
+          nullable: true
+          description: Best Q2 lap time in seconds. Null if eliminated in Q1.
+        q3_time:
+          type: number
+          nullable: true
+          description: Best Q3 lap time in seconds. Null if eliminated in Q2 or earlier.
+
+        # Practice fields (FR-005)
+        best_lap_time:
+          type: number
+          nullable: true
+          description: Best lap time in seconds for practice sessions
+        gap_to_fastest:
+          type: number
+          nullable: true
+          description: Gap to session fastest in seconds. 0 for the fastest driver.
