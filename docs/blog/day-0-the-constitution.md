@@ -170,10 +170,9 @@ The foundation is in place. The repo is public. The constitution governs. The fi
 
 Coming posts:
 
-- **Day 1** — Reviewing what Copilot built. Does it honor the constitution? What needed correction?
-- **Day 2** — Azure infrastructure with Bicep. Provisioning AKS, Cosmos DB, and Key Vault, spec-driven.
-- **Day 3** — Connecting to OpenF1 and getting live 2026 season data flowing into Cosmos DB.
-- **Day 4** — First working UI. The race calendar. The Miami countdown.
+- [**Day 1: Laying the Foundation — Phase 2 and the Architecture That Carries Everything**](day-1-phase-2-foundation.md) — The entire foundational layer: Cosmos DB, polling engines, Key Vault, Azure IaC, Helm charts, CI/CD with OIDC, and the dependency ledger.
+- [**Day 2: The First Thing Anyone Sees — Phase 3 and the Race Calendar MVP**](day-2-phase-3-calendar-mvp.md) — The first vertical slice from database to browser. Twenty-four rounds, cancelled race badges, next-race countdown, and fourteen tests.
+- **Day 3** — Championship standings, countdown widget, and the polish that makes it production-ready.
 
 The repo is public and every commit tells the story:
 [github.com/karlkuhnhausen/f1-race-intelligence](https://github.com/karlkuhnhausen/f1-race-intelligence)
