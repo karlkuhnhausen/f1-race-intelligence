@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos"
 
@@ -42,7 +43,7 @@ func (c *Client) UpsertSessionResult(ctx context.Context, r storage.SessionResul
 
 func (c *Client) GetSessionsByRound(ctx context.Context, season, round int) ([]storage.Session, error) {
 	pk := azcosmos.NewPartitionKeyNumber(float64(season))
-	query := "SELECT * FROM c WHERE c.season = @season AND c.round = @round AND c.type = 'session' ORDER BY c.date_start_utc"
+	query := "SELECT * FROM c WHERE c.season = @season AND c.round = @round AND c.type = 'session'"
 	queryOpts := &azcosmos.QueryOptions{
 		QueryParameters: []azcosmos.QueryParameter{
 			{Name: "@season", Value: season},
@@ -66,12 +67,15 @@ func (c *Client) GetSessionsByRound(ctx context.Context, season, round int) ([]s
 			sessions = append(sessions, s)
 		}
 	}
+	sort.Slice(sessions, func(i, j int) bool {
+		return sessions[i].DateStartUTC.Before(sessions[j].DateStartUTC)
+	})
 	return sessions, nil
 }
 
 func (c *Client) GetSessionResultsByRound(ctx context.Context, season, round int) ([]storage.SessionResult, error) {
 	pk := azcosmos.NewPartitionKeyNumber(float64(season))
-	query := "SELECT * FROM c WHERE c.season = @season AND c.round = @round AND c.type = 'session_result' ORDER BY c.session_type, c.position"
+	query := "SELECT * FROM c WHERE c.season = @season AND c.round = @round AND c.type = 'session_result'"
 	queryOpts := &azcosmos.QueryOptions{
 		QueryParameters: []azcosmos.QueryParameter{
 			{Name: "@season", Value: season},
@@ -95,5 +99,11 @@ func (c *Client) GetSessionResultsByRound(ctx context.Context, season, round int
 			results = append(results, r)
 		}
 	}
+	sort.Slice(results, func(i, j int) bool {
+		if results[i].SessionType != results[j].SessionType {
+			return results[i].SessionType < results[j].SessionType
+		}
+		return results[i].Position < results[j].Position
+	})
 	return results, nil
 }

@@ -77,6 +77,22 @@ resource sessionsContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/c
         paths: ['/season']
         kind: 'Hash'
       }
+      indexingPolicy: {
+        indexingMode: 'consistent'
+        automatic: true
+        includedPaths: [
+          { path: '/*' }
+        ]
+        excludedPaths: [
+          { path: '/"_etag"/?' }
+        ]
+        compositeIndexes: [
+          [
+            { path: '/session_type', order: 'ascending' }
+            { path: '/position', order: 'ascending' }
+          ]
+        ]
+      }
     }
   }
 }
