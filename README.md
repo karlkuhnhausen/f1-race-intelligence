@@ -15,6 +15,7 @@ F1 Race Intelligence Dashboard is a spec-driven project for building a Formula 1
 This project is being built in public, with architecture decisions and progress captured in the blog.
 
 - [Day 0: From a Roman Architect to a GitHub Repo — Without Writing a Line of Code](docs/blog/day-0-the-constitution.md)
+- [Day 1: Laying the Foundation — Phase 2 and the Architecture That Carries Everything](docs/blog/day-1-phase-2-foundation.md)
 
 ## Architecture Direction
 
