@@ -69,10 +69,19 @@ func (p *SessionPoller) poll(ctx context.Context, season int) {
 	// Build meeting_key -> round mapping from sessions
 	meetingRounds := p.buildMeetingRoundMap(sessions)
 
-	for _, raw := range sessions {
+	for i, raw := range sessions {
 		round, ok := meetingRounds[raw.MeetingKey]
 		if !ok {
 			continue
+		}
+
+		// Rate-limit: pause between sessions to avoid OpenF1 429s
+		if i > 0 {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(500 * time.Millisecond):
+			}
 		}
 
 		sess := TransformSession(raw, season, round)
@@ -134,6 +143,13 @@ func (p *SessionPoller) fetchAndUpsertResults(ctx context.Context, raw openF1Ses
 		return fmt.Errorf("fetch positions: %w", err)
 	}
 
+	// Rate-limit before driver fetch
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(300 * time.Millisecond):
+	}
+
 	// Fetch drivers for enrichment
 	drivers, err := p.fetchDrivers(ctx, raw.SessionKey)
 	if err != nil {
@@ -150,7 +166,15 @@ func (p *SessionPoller) fetchAndUpsertResults(ctx context.Context, raw openF1Ses
 	finalPositions := p.getFinalPositions(positions)
 
 	for _, pos := range finalPositions {
-		result := TransformSessionResult(pos, driverMap[pos.DriverNumber], sessionType, season, round, 0)
+		driver := driverMap[pos.DriverNumber]
+		result := TransformSessionResult(pos, driver, sessionType, season, round, 0)
+
+		// Skip upsert if driver data is missing — don't overwrite good data with empty fields
+		if driver == nil || driver.FullName == "" {
+			p.logger.Debug("skipping result upsert: no driver data", "driver_number", pos.DriverNumber, "session_key", raw.SessionKey)
+			continue
+		}
+
 		if err := p.repo.UpsertSessionResult(ctx, result); err != nil {
 			p.logger.Error("session result upsert failed", "result_id", result.ID, "error", err)
 		}
