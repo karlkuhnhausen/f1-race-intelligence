@@ -92,8 +92,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T022 [US2] Implement qualifying results table component rendering grid position, driver name/acronym, team, Q1 time, Q2 time (null for Q1-eliminated), Q3 time (null for Q2-eliminated), and "Not yet available" state when session status is `upcoming` in `frontend/src/features/rounds/QualifyingResults.tsx`
-- [ ] T023 [US2] Integrate QualifyingResults component into RoundDetailPage session sections for `qualifying` and `sprint_qualifying` session types in `frontend/src/features/rounds/RoundDetailPage.tsx`
+- [x] T022 [US2] Implement qualifying results table component rendering grid position, driver name/acronym, team, Q1 time, Q2 time (null for Q1-eliminated), Q3 time (null for Q2-eliminated), and "Not yet available" state when session status is `upcoming` in `frontend/src/features/rounds/QualifyingResults.tsx`
+- [x] T023 [US2] Integrate QualifyingResults component into RoundDetailPage session sections for `qualifying` and `sprint_qualifying` session types in `frontend/src/features/rounds/RoundDetailPage.tsx`
 
 **Checkpoint**: US2 independently functional — qualifying results visible alongside race results.
 
@@ -107,8 +107,8 @@
 
 ### Implementation for User Story 3
 
-- [ ] T024 [US3] Implement practice results table component rendering position, driver name/acronym, team, best lap time, gap to fastest, and laps completed in `frontend/src/features/rounds/PracticeResults.tsx`
-- [ ] T025 [US3] Integrate PracticeResults component into RoundDetailPage session sections for `practice1`, `practice2`, `practice3` session types in `frontend/src/features/rounds/RoundDetailPage.tsx`
+- [x] T024 [US3] Implement practice results table component rendering position, driver name/acronym, team, best lap time, gap to fastest, and laps completed in `frontend/src/features/rounds/PracticeResults.tsx`
+- [x] T025 [US3] Integrate PracticeResults component into RoundDetailPage session sections for `practice1`, `practice2`, `practice3` session types in `frontend/src/features/rounds/RoundDetailPage.tsx`
 
 **Checkpoint**: US3 independently functional — all session types now render on round detail page.
 
@@ -118,12 +118,12 @@
 
 **Purpose**: Testing, observability validation, deployment checks, and success criteria verification.
 
-- [ ] T026 [P] Add unit tests for session transform logic covering session type slug mapping, qualifying Q1/Q2/Q3 extraction, fastest lap derivation, and DNF/DNS/DSQ status mapping in `backend/tests/unit/session_transform_test.go`
-- [ ] T027 [P] Add integration test for session ingestion flow verifying poll → transform → upsert → query round-trip in `backend/tests/integration/session_ingestion_test.go`
-- [ ] T028 [P] Extend network boundary test to validate no direct frontend calls to OpenF1 on the round detail page in `frontend/tests/integration/network_boundary.test.ts`
-- [ ] T029 Validate structured JSON logging for session ingestion and round detail API operations in `backend/tests/integration/log_schema_test.go`
-- [ ] T030 Verify Helm chart values and environment configuration support session data workloads in `deploy/helm/backend/values.yaml` and `deploy/helm/frontend/values.yaml`
-- [ ] T031 Run quickstart end-to-end validation and update notes in `specs/003-race-session-results/quickstart.md`
+- [x] T026 [P] Add unit tests for session transform logic covering session type slug mapping, qualifying Q1/Q2/Q3 extraction, fastest lap derivation, and DNF/DNS/DSQ status mapping in `backend/tests/unit/session_transform_test.go`
+- [x] T027 [P] Add integration test for session ingestion flow verifying poll → transform → upsert → query round-trip in `backend/tests/integration/session_ingestion_test.go`
+- [x] T028 [P] Extend network boundary test to validate no direct frontend calls to OpenF1 on the round detail page in `frontend/tests/integration/network_boundary.test.ts`
+- [x] T029 Validate structured JSON logging for session ingestion and round detail API operations in `backend/tests/integration/log_schema_test.go`
+- [x] T030 Verify Helm chart values and environment configuration support session data workloads in `deploy/helm/backend/values.yaml` and `deploy/helm/frontend/values.yaml`
+- [x] T031 Run quickstart end-to-end validation and update notes in `specs/003-race-session-results/quickstart.md`
 
 ---
 

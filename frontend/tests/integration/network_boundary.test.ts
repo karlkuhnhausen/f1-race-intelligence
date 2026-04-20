@@ -69,4 +69,30 @@ describe("Network boundary: no direct external API calls", () => {
       expect(content).toContain("apiClient");
     }
   });
+
+  it("should not reference external APIs in round detail feature files", () => {
+    const roundsDir = path.resolve(srcDir, "features/rounds");
+    if (!fs.existsSync(roundsDir)) {
+      return; // skip if rounds feature not yet created
+    }
+
+    const roundFiles = collectSourceFiles(roundsDir);
+    const violations: string[] = [];
+
+    for (const filePath of roundFiles) {
+      const content = fs.readFileSync(filePath, "utf-8");
+      const lines = content.split("\n");
+
+      for (let i = 0; i < lines.length; i++) {
+        for (const pattern of FORBIDDEN_PATTERNS) {
+          if (pattern.test(lines[i])) {
+            const rel = path.relative(srcDir, filePath);
+            violations.push(`${rel}:${i + 1} matches ${pattern}`);
+          }
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
 });

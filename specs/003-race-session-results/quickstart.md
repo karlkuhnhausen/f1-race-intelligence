@@ -171,3 +171,28 @@ Key response shape for `GET /api/v1/rounds/{round}?year=2026`:
 No changes to Helm charts or Kubernetes resources are expected. The new endpoint is served by the existing backend deployment. Frontend changes are served by the existing nginx container.
 
 Standard deployment pipeline: `lint → test → build → push → deploy` via GitHub Actions.
+
+## 5. End-to-end validation notes
+
+### Phases 1–4 (completed)
+- Backend compiles, all domain types and session repository wired
+- Round detail API returns sessions with results grouped by type
+- Frontend renders race results with classified/non-classified separation
+- Calendar rows link to round detail pages, back navigation works
+
+### Phases 5–7 (completed)
+- **QualifyingResults** component renders Q1/Q2/Q3 times, shows "—" for segments not reached
+- **PracticeResults** component renders best lap, gap to fastest, and lap count
+- **RoundDetailPage** routes qualifying/sprint_qualifying → QualifyingResults, practice1/2/3 → PracticeResults
+- Upcoming sessions show "Not yet available" instead of an empty results table
+- Backend unit tests: session type mapping, slug generation, type predicates, transform functions (18 tests)
+- Backend integration tests: session ingestion round-trip, upsert idempotency, empty round handling (4 tests)
+- Backend integration tests: structured log schema for session ingestion, round detail API, and upsert errors (3 tests)
+- Frontend network boundary test extended to explicitly scan rounds feature files
+- Helm charts verified — no changes needed (same backend service, same Cosmos DB connection)
+
+### Test counts
+- Backend unit: 18 tests (next_race_selector + session_transform)
+- Backend integration: 19 tests (cache flow, cancellations, countdown, log schema, session ingestion)
+- Backend contract: 11 tests (calendar, rounds, standings)
+- Frontend: 30 tests (calendar, countdown, standings, race results, round detail, network boundary)
