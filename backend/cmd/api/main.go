@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"log/slog"
 	"net/http"
@@ -8,7 +9,9 @@ import (
 	"time"
 
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/api"
+	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/ingest"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/observability"
+	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/standings"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/storage"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/storage/cosmos"
 )
@@ -31,6 +34,19 @@ func main() {
 	}
 
 	router := api.NewRouter(calendarRepo, standingsRepo, logger)
+
+	// Start data pollers if Cosmos is configured.
+	if calendarRepo != nil {
+		season := time.Now().Year()
+		ctx := context.Background()
+
+		calendarPoller := ingest.NewOpenF1Poller(calendarRepo, logger)
+		go calendarPoller.Start(ctx, season)
+
+		standingsPoller := standings.NewHypraceClient(standingsRepo, logger)
+		go standingsPoller.Start(ctx, season)
+	}
+
 	server := &http.Server{
 		Addr:              addr,
 		Handler:           router,
