@@ -15,7 +15,7 @@ resource aks 'Microsoft.ContainerService/managedClusters@2024-02-01' = {
   }
   properties: {
     dnsPrefix: baseName
-    kubernetesVersion: '1.30'
+    kubernetesVersion: '1.33'
     agentPoolProfiles: [
       {
         name: 'system'

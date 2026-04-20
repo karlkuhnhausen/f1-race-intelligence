@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchCalendar, type CalendarResponse, type RaceMeetingDTO } from './calendarApi';
+import NextRaceCard from './NextRaceCard';
 
 export default function CalendarPage() {
   const [calendar, setCalendar] = useState<CalendarResponse | null>(null);
@@ -25,7 +26,7 @@ export default function CalendarPage() {
       </p>
 
       {calendar.next_round > 0 && calendar.countdown_target_utc && (
-        <NextRaceHighlight
+        <NextRaceCard
           round={calendar.rounds.find((r) => r.round === calendar.next_round)!}
           countdownTarget={calendar.countdown_target_utc}
         />
@@ -75,30 +76,5 @@ function RaceRow({ round, isNext }: { round: RaceMeetingDTO; isNext: boolean }) 
         )}
       </td>
     </tr>
-  );
-}
-
-function NextRaceHighlight({
-  round,
-  countdownTarget,
-}: {
-  round: RaceMeetingDTO;
-  countdownTarget: string;
-}) {
-  const targetDate = new Date(countdownTarget);
-  const now = new Date();
-  const diffMs = targetDate.getTime() - now.getTime();
-  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
-  return (
-    <div className="next-race-card">
-      <h3>Next Race</h3>
-      <p className="race-name">{round.race_name}</p>
-      <p className="circuit">{round.circuit_name}, {round.country_name}</p>
-      <p className="countdown">
-        {days > 0 ? `${days}d ${hours}h` : `${hours}h`} until lights out
-      </p>
-    </div>
   );
 }
