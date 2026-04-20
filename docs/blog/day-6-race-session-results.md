@@ -174,3 +174,4 @@ Eighteen tasks. Forty-two tests. One new Cosmos container. Zero lines typed by a
 ---
 
 *Previous: [Day 5: Forty-Seven Tasks, Zero Lines — The Final Phase](day-5-phase-6-final-polish.md)*
+*Next: [Day 7: Race Results, Rate Limits, and the Branch You Forgot You Were On](day-7-phase-4-and-branch-confusion.md)*
