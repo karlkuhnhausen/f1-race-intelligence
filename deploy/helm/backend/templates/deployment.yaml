@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: f1-backend
+  labels:
+    app.kubernetes.io/name: f1-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: f1-backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: f1-backend
+        azure.workload.identity/use: "true"
+      annotations:
+        azure.workload.identity/client-id: "{{ .Values.workloadIdentity.clientId }}"
+    spec:
+      serviceAccountName: f1-backend
+      containers:
+        - name: f1-backend
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          env:
+            - name: BACKEND_LISTEN_ADDR
+              value: "{{ .Values.env.BACKEND_LISTEN_ADDR }}"
+            - name: KEYVAULT_URI
+              value: "{{ .Values.env.KEYVAULT_URI }}"
+            - name: COSMOS_ACCOUNT_ENDPOINT
+              value: "{{ .Values.env.COSMOS_ACCOUNT_ENDPOINT }}"
+            - name: COSMOS_DATABASE_NAME
+              value: "{{ .Values.env.COSMOS_DATABASE_NAME }}"
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: {{ .Values.service.port }}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.service.port }}
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: {{ .Values.resources.requests.cpu }}
+              memory: {{ .Values.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.resources.limits.cpu }}
+              memory: {{ .Values.resources.limits.memory }}

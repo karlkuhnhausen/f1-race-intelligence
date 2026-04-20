@@ -1,0 +1,37 @@
+namespace: f1-race-intelligence
+
+image:
+  repository: ""
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+service:
+  port: 8080
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+ingress:
+  enabled: true
+  className: nginx
+  host: api.f1.example.com
+  tlsSecretName: f1-api-tls
+
+workloadIdentity:
+  clientId: ""
+
+env:
+  BACKEND_LISTEN_ADDR: ":8080"
+  KEYVAULT_URI: ""
+  COSMOS_ACCOUNT_ENDPOINT: ""
+  COSMOS_DATABASE_NAME: "f1raceintelligence"
+
+networkPolicy:
+  enabled: true
+  dnsNamespace: kube-system
+  allowedCIDRs: []

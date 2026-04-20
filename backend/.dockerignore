@@ -1,0 +1,7 @@
+bin/
+coverage.out
+.git/
+.github/
+.specify/
+specs/
+infra/

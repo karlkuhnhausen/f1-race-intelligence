@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: f1-frontend
+  labels:
+    app.kubernetes.io/name: f1-frontend
+spec:
+  selector:
+    app.kubernetes.io/name: f1-frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: {{ .Values.service.port }}

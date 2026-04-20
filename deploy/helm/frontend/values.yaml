@@ -1,0 +1,23 @@
+namespace: f1-race-intelligence
+
+image:
+  repository: ""
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+service:
+  port: 80
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+ingress:
+  enabled: true
+  className: nginx
+  host: app.f1.example.com
+  tlsSecretName: f1-app-tls

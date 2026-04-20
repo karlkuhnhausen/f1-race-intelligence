@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "baseName": { "value": "f1raceintel" },
+    "location": { "value": "westus3" },
+    "githubRepo": { "value": "karlkuhnhausen/f1-race-intelligence" },
+    "aksNodeCount": { "value": 2 },
+    "aksNodeVmSize": { "value": "Standard_B2s" },
+    "budgetThreshold": { "value": 150 }
+  }
+}

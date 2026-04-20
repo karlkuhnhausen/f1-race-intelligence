@@ -129,32 +129,88 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
-      
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to ACR
+        run: az acr login --name ${{ secrets.ACR_LOGIN_SERVER }}
+
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      
-      - name: Build backend image
-        run: |
-          echo "Backend image build step (Dockerfile integration to be added)"
-      
-      - name: Build frontend image
-        run: |
-          echo "Frontend image build step (Dockerfile integration to be added)"
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: backend
+          push: true
+          tags: |
+            ${{ secrets.ACR_LOGIN_SERVER }}/f1-backend:${{ github.sha }}
+            ${{ secrets.ACR_LOGIN_SERVER }}/f1-backend:latest
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: frontend
+          push: true
+          tags: |
+            ${{ secrets.ACR_LOGIN_SERVER }}/f1-frontend:${{ github.sha }}
+            ${{ secrets.ACR_LOGIN_SERVER }}/f1-frontend:latest
 
   deploy:
     name: Deploy to AKS
     runs-on: ubuntu-latest
     needs: push
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Configure kubectl
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get AKS credentials
         run: |
-          echo "kubectl configuration step (AKS credentials integration to be added)"
-      
-      - name: Deploy with Helm
+          az aks get-credentials \
+            --resource-group ${{ secrets.AKS_RESOURCE_GROUP }} \
+            --name ${{ secrets.AKS_CLUSTER_NAME }} \
+            --overwrite-existing
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Deploy backend
         run: |
-          echo "Helm deployment step (deploy/helm integration to be added)"
+          helm upgrade --install f1-backend deploy/helm/backend \
+            --namespace f1-race-intelligence \
+            --create-namespace \
+            --set image.repository=${{ secrets.ACR_LOGIN_SERVER }}/f1-backend \
+            --set image.tag=${{ github.sha }} \
+            --set workloadIdentity.clientId=${{ secrets.BACKEND_IDENTITY_CLIENT_ID }} \
+            --set env.KEYVAULT_URI=${{ secrets.KEYVAULT_URI }} \
+            --set env.COSMOS_ACCOUNT_ENDPOINT=${{ secrets.COSMOS_ENDPOINT }} \
+            --wait --timeout 5m
+
+      - name: Deploy frontend
+        run: |
+          helm upgrade --install f1-frontend deploy/helm/frontend \
+            --namespace f1-race-intelligence \
+            --create-namespace \
+            --set image.repository=${{ secrets.ACR_LOGIN_SERVER }}/f1-frontend \
+            --set image.tag=${{ github.sha }} \
+            --wait --timeout 5m

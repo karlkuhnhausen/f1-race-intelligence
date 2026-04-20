@@ -1,0 +1,6 @@
+apiVersion: v2
+name: f1-frontend
+description: F1 Race Intelligence frontend Helm chart
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
