@@ -1,0 +1,63 @@
+name: AKS Scheduled Stop/Start
+
+on:
+  schedule:
+    # Stop at midnight Pacific (07:00 UTC during PDT)
+    - cron: "0 7 * * *"
+    # Start at 8am Pacific (15:00 UTC during PDT)
+    - cron: "0 15 * * *"
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Action to perform"
+        required: true
+        type: choice
+        options:
+          - stop
+          - start
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  aks-power:
+    name: AKS Stop/Start
+    runs-on: ubuntu-latest
+    steps:
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Determine action
+        id: action
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "action=${{ inputs.action }}" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.event.schedule }}" == "0 7 * * *" ]]; then
+            echo "action=stop" >> "$GITHUB_OUTPUT"
+          else
+            echo "action=start" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Stop AKS cluster
+        if: steps.action.outputs.action == 'stop'
+        run: |
+          echo "Stopping AKS cluster ${{ secrets.AKS_CLUSTER_NAME }}..."
+          az aks stop \
+            --resource-group ${{ secrets.AKS_RESOURCE_GROUP }} \
+            --name ${{ secrets.AKS_CLUSTER_NAME }} \
+            --no-wait
+          echo "Stop command issued (no-wait). Cluster will deallocate nodes."
+
+      - name: Start AKS cluster
+        if: steps.action.outputs.action == 'start'
+        run: |
+          echo "Starting AKS cluster ${{ secrets.AKS_CLUSTER_NAME }}..."
+          az aks start \
+            --resource-group ${{ secrets.AKS_RESOURCE_GROUP }} \
+            --name ${{ secrets.AKS_CLUSTER_NAME }}
+          echo "Cluster started and nodes ready."
