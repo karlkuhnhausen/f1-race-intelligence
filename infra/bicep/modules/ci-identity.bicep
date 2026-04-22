@@ -24,6 +24,28 @@ resource ciMainFedCred 'Microsoft.ManagedIdentity/userAssignedIdentities/federat
   }
 }
 
+// Federated credential for GitHub Actions OIDC on 'production' environment (ci-cd.yml push/deploy jobs)
+resource ciProductionFedCred 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2023-01-31' = {
+  parent: ciIdentity
+  name: 'github-env-production'
+  properties: {
+    issuer: 'https://token.actions.githubusercontent.com'
+    subject: 'repo:${githubRepo}:environment:production'
+    audiences: ['api://AzureADTokenExchange']
+  }
+}
+
+// Federated credential for GitHub Actions OIDC on 'aks-management' environment (aks-schedule.yml)
+resource ciAksManagementFedCred 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2023-01-31' = {
+  parent: ciIdentity
+  name: 'github-env-aks-management'
+  properties: {
+    issuer: 'https://token.actions.githubusercontent.com'
+    subject: 'repo:${githubRepo}:environment:aks-management'
+    audiences: ['api://AzureADTokenExchange']
+  }
+}
+
 // Grant CI identity AcrPush on ACR
 resource ciAcrPush 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(acrId, ciIdentity.id, 'acrpush')
