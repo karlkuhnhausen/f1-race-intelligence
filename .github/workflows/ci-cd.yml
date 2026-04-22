@@ -7,10 +7,18 @@ on:
       - main
       - "feature/**"
       - "bugfix/**"
+    paths-ignore:
+      - "docs/blog/**"
+      - "**.md"
+      - "docs/**"
   pull_request:
     branches:
       - master
       - main
+    paths-ignore:
+      - "docs/blog/**"
+      - "**.md"
+      - "docs/**"
 
 jobs:
   lint:
