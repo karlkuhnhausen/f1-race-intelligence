@@ -18,6 +18,9 @@ param aksNodeVmSize string = 'Standard_B2s'
 @description('Monthly budget alert threshold in USD')
 param budgetThreshold int = 150
 
+@description('Authorized IP ranges for the AKS API server (comma-separated CIDRs). Set via ADMIN_IP_RANGES GitHub secret — do not commit real IPs here.')
+param aksAuthorizedIPRanges array = []
+
 var rgName = 'rg-${baseName}'
 var tags = {
   project: 'f1-race-intelligence'
@@ -91,6 +94,7 @@ module aks 'modules/aks.bicep' = {
     nodeVmSize: aksNodeVmSize
     logAnalyticsWorkspaceId: logAnalytics.outputs.workspaceId
     vnetSubnetId: vnet.outputs.aksSubnetId
+    authorizedIPRanges: aksAuthorizedIPRanges
   }
 }
 

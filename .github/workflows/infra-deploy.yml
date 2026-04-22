@@ -26,6 +26,12 @@ jobs:
     name: Validate Bicep
     runs-on: ubuntu-latest
     steps:
+      - name: Verify authorized actor
+        if: github.actor != 'karlkuhnhausen'
+        run: |
+          echo "Unauthorized actor '${{ github.actor }}' attempted to trigger this workflow."
+          exit 1
+
       - uses: actions/checkout@v4
 
       - name: Azure Login (OIDC)
@@ -97,6 +103,21 @@ jobs:
             --name aks-f1raceintel \
             --overwrite-existing
 
+      - name: Get runner public IP
+        id: runner-ip
+        run: echo "ip=$(curl -fsSL https://api.ipify.org)" >> "$GITHUB_OUTPUT"
+
+      - name: Add runner IP to AKS API server allowlist
+        run: |
+          RANGES="${{ steps.runner-ip.outputs.ip }}/32"
+          if [[ -n "${{ secrets.ADMIN_IP_RANGES }}" ]]; then
+            RANGES="${RANGES},${{ secrets.ADMIN_IP_RANGES }}"
+          fi
+          az aks update \
+            --resource-group rg-f1raceintel \
+            --name aks-f1raceintel \
+            --api-server-authorized-ip-ranges "${RANGES}"
+
       - name: Install Helm
         uses: azure/setup-helm@v4
 
@@ -140,3 +161,12 @@ jobs:
           echo "Waiting 60s for backend to attempt Cosmos connection..."
           sleep 60
           kubectl logs -n f1-race-intelligence -l app=f1-backend --tail=20 | grep -i 'error\|started\|cosmos' || true
+
+      - name: Remove runner IP from AKS API server allowlist
+        if: always()
+        run: |
+          az aks update \
+            --resource-group rg-f1raceintel \
+            --name aks-f1raceintel \
+            --api-server-authorized-ip-ranges "${{ secrets.ADMIN_IP_RANGES }}" \
+            --no-wait

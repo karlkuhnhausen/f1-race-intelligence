@@ -9,6 +9,9 @@ param logAnalyticsWorkspaceId string
 @description('Subnet ID for AKS nodes.')
 param vnetSubnetId string
 
+@description('Authorized IP ranges for the Kubernetes API server (CIDR format). Empty array disables restriction.')
+param authorizedIPRanges array = []
+
 resource aks 'Microsoft.ContainerService/managedClusters@2024-02-01' = {
   name: 'aks-${baseName}'
   location: location
@@ -41,6 +44,9 @@ resource aks 'Microsoft.ContainerService/managedClusters@2024-02-01' = {
       workloadIdentity: {
         enabled: true
       }
+    }
+    apiServerAccessProfile: {
+      authorizedIPRanges: authorizedIPRanges
     }
     addonProfiles: {
       omsagent: {
