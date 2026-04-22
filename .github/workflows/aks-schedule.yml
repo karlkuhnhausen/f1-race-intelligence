@@ -1,11 +1,6 @@
 name: AKS Scheduled Stop/Start
 
 on:
-  schedule:
-    # Stop at 7pm Pacific (02:00 UTC next day during PDT)
-    - cron: "0 2 * * *"
-    # Start at 8am Pacific (15:00 UTC during PDT)
-    - cron: "0 15 * * *"
   workflow_dispatch:
     inputs:
       action:
@@ -42,13 +37,7 @@ jobs:
       - name: Determine action
         id: action
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "action=${{ inputs.action }}" >> "$GITHUB_OUTPUT"
-          elif [[ "${{ github.event.schedule }}" == "0 2 * * *" ]]; then
-            echo "action=stop" >> "$GITHUB_OUTPUT"
-          else
-            echo "action=start" >> "$GITHUB_OUTPUT"
-          fi
+          echo "action=${{ inputs.action }}" >> "$GITHUB_OUTPUT"
 
       - name: Check cluster power state
         id: state
