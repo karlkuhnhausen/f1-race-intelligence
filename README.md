@@ -38,6 +38,10 @@ This project is being built in public, with architecture decisions and progress 
 - [Day 6: Clicking Into the Race — Session Results & Round Detail](docs/blog/day-6-race-session-results.md)
 - [Day 7: Race Results, Rate Limits, and the Branch You Forgot You Were On](docs/blog/day-7-phase-4-and-branch-confusion.md)
 
+### Security & Operations
+
+- [Day 8: The Security Alert I Got at 5 AM — And What I Did About It](docs/blog/day-8-ops-security-lockdown.md)
+
 ## Architecture Direction
 
 - Go backend with Chi router

@@ -7,10 +7,18 @@ on:
       - main
       - "feature/**"
       - "bugfix/**"
+    paths-ignore:
+      - "docs/blog/**"
+      - "**.md"
+      - "docs/**"
   pull_request:
     branches:
       - master
       - main
+    paths-ignore:
+      - "docs/blog/**"
+      - "**.md"
+      - "docs/**"
 
 jobs:
   lint:
@@ -195,6 +203,16 @@ jobs:
             --resource-group ${{ secrets.AKS_RESOURCE_GROUP }} \
             --name ${{ secrets.AKS_CLUSTER_NAME }} \
             --overwrite-existing
+
+      - name: Wait for AKS cluster to be ready
+        run: |
+          echo "Waiting for AKS cluster to reach Succeeded provisioning state..."
+          az aks wait \
+            --resource-group ${{ secrets.AKS_RESOURCE_GROUP }} \
+            --name ${{ secrets.AKS_CLUSTER_NAME }} \
+            --updated \
+            --timeout 300
+          echo "AKS cluster is ready."
 
       - name: Get runner public IP
         id: runner-ip
