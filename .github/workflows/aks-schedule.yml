@@ -24,7 +24,14 @@ jobs:
   aks-power:
     name: AKS Stop/Start
     runs-on: ubuntu-latest
+    environment: aks-management
     steps:
+      - name: Verify authorized actor
+        if: github.event_name == 'workflow_dispatch' && github.actor != 'karlkuhnhausen'
+        run: |
+          echo "Unauthorized actor '${{ github.actor }}' attempted to trigger this workflow."
+          exit 1
+
       - name: Azure Login (OIDC)
         uses: azure/login@v2
         with:
