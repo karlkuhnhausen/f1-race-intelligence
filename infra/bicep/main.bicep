@@ -18,6 +18,9 @@ param aksNodeVmSize string = 'Standard_B2s'
 @description('Monthly budget alert threshold in USD')
 param budgetThreshold int = 150
 
+@description('Authorized IP ranges for the AKS API server (comma-separated CIDRs). Set via ADMIN_IP_RANGES GitHub secret — do not commit real IPs here.')
+param aksAuthorizedIPRanges array = []
+
 var rgName = 'rg-${baseName}'
 var tags = {
   project: 'f1-race-intelligence'
@@ -28,6 +31,16 @@ resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
   name: rgName
   location: location
   tags: tags
+}
+
+module vnet 'modules/vnet.bicep' = {
+  scope: rg
+  name: 'vnet'
+  params: {
+    baseName: baseName
+    location: location
+    tags: tags
+  }
 }
 
 module logAnalytics 'modules/log-analytics.bicep' = {
@@ -80,6 +93,8 @@ module aks 'modules/aks.bicep' = {
     nodeCount: aksNodeCount
     nodeVmSize: aksNodeVmSize
     logAnalyticsWorkspaceId: logAnalytics.outputs.workspaceId
+    vnetSubnetId: vnet.outputs.aksSubnetId
+    authorizedIPRanges: aksAuthorizedIPRanges
   }
 }
 
@@ -107,6 +122,29 @@ module ciIdentity 'modules/ci-identity.bicep' = {
     githubRepo: githubRepo
     acrId: acr.outputs.acrId
     aksId: aks.outputs.aksId
+  }
+}
+
+module privateDns 'modules/private-dns.bicep' = {
+  scope: rg
+  name: 'privateDns'
+  params: {
+    baseName: baseName
+    tags: tags
+    vnetId: vnet.outputs.vnetId
+  }
+}
+
+module privateEndpoints 'modules/private-endpoints.bicep' = {
+  scope: rg
+  name: 'privateEndpoints'
+  params: {
+    baseName: baseName
+    location: location
+    tags: tags
+    subnetId: vnet.outputs.servicesSubnetId
+    cosmosAccountId: cosmosDb.outputs.accountId
+    cosmosPrivateDnsZoneId: privateDns.outputs.cosmosPrivateDnsZoneId
   }
 }
 

@@ -1,0 +1,172 @@
+name: Infrastructure Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Action to perform"
+        required: true
+        type: choice
+        options:
+          - preview
+          - deploy
+        default: preview
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TEMPLATE_FILE: infra/bicep/main.bicep
+  PARAMETERS_FILE: infra/bicep/main.parameters.json
+  LOCATION: westus3
+
+jobs:
+  validate:
+    name: Validate Bicep
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify authorized actor
+        if: github.actor != 'karlkuhnhausen'
+        run: |
+          echo "Unauthorized actor '${{ github.actor }}' attempted to trigger this workflow."
+          exit 1
+
+      - uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Lint Bicep
+        run: az bicep build --file ${{ env.TEMPLATE_FILE }} --stdout > /dev/null
+
+      - name: Validate deployment
+        run: |
+          az deployment sub validate \
+            --location ${{ env.LOCATION }} \
+            --template-file ${{ env.TEMPLATE_FILE }} \
+            --parameters ${{ env.PARAMETERS_FILE }}
+
+  preview:
+    name: Preview Changes (What-If)
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: What-If
+        run: |
+          az deployment sub what-if \
+            --location ${{ env.LOCATION }} \
+            --template-file ${{ env.TEMPLATE_FILE }} \
+            --parameters ${{ env.PARAMETERS_FILE }}
+
+  deploy:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    needs: preview
+    if: inputs.action == 'deploy'
+    environment: infrastructure
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Bicep
+        run: |
+          az deployment sub create \
+            --location ${{ env.LOCATION }} \
+            --template-file ${{ env.TEMPLATE_FILE }} \
+            --parameters ${{ env.PARAMETERS_FILE }} \
+            --name "infra-$(date +%Y%m%d-%H%M%S)"
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group rg-f1raceintel \
+            --name aks-f1raceintel \
+            --overwrite-existing
+
+      - name: Get runner public IP
+        id: runner-ip
+        run: echo "ip=$(curl -fsSL https://api.ipify.org)" >> "$GITHUB_OUTPUT"
+
+      - name: Add runner IP to AKS API server allowlist
+        run: |
+          RANGES="${{ steps.runner-ip.outputs.ip }}/32"
+          if [[ -n "${{ secrets.ADMIN_IP_RANGES }}" ]]; then
+            RANGES="${RANGES},${{ secrets.ADMIN_IP_RANGES }}"
+          fi
+          az aks update \
+            --resource-group rg-f1raceintel \
+            --name aks-f1raceintel \
+            --api-server-authorized-ip-ranges "${RANGES}"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Deploy ingress-nginx
+        run: |
+          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+          helm repo update
+          helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+            --namespace ingress-nginx \
+            --create-namespace \
+            --set controller.replicaCount=1 \
+            --set controller.service.externalTrafficPolicy=Local \
+            --wait --timeout 5m
+
+      - name: Deploy backend
+        run: |
+          helm upgrade --install f1-backend deploy/helm/backend \
+            --namespace f1-race-intelligence \
+            --create-namespace \
+            --set image.repository=${{ secrets.ACR_LOGIN_SERVER }}/f1-backend \
+            --set image.tag=latest \
+            --set workloadIdentity.clientId=${{ secrets.BACKEND_IDENTITY_CLIENT_ID }} \
+            --set env.KEYVAULT_URI=${{ secrets.KEYVAULT_URI }} \
+            --set env.COSMOS_ACCOUNT_ENDPOINT=${{ secrets.COSMOS_ENDPOINT }} \
+            --wait --timeout 5m
+
+      - name: Deploy frontend
+        run: |
+          helm upgrade --install f1-frontend deploy/helm/frontend \
+            --namespace f1-race-intelligence \
+            --create-namespace \
+            --set image.repository=${{ secrets.ACR_LOGIN_SERVER }}/f1-frontend \
+            --set image.tag=latest \
+            --wait --timeout 5m
+
+      - name: Verify pods
+        run: kubectl get pods -n f1-race-intelligence
+
+      - name: Verify Cosmos connectivity
+        run: |
+          echo "Waiting 60s for backend to attempt Cosmos connection..."
+          sleep 60
+          kubectl logs -n f1-race-intelligence -l app=f1-backend --tail=20 | grep -i 'error\|started\|cosmos' || true
+
+      - name: Remove runner IP from AKS API server allowlist
+        if: always()
+        run: |
+          az aks update \
+            --resource-group rg-f1raceintel \
+            --name aks-f1raceintel \
+            --api-server-authorized-ip-ranges "${{ secrets.ADMIN_IP_RANGES }}" \
+            --no-wait
