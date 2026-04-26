@@ -167,8 +167,12 @@ jobs:
       - name: Remove runner IP from AKS API server allowlist
         if: always()
         run: |
-          az aks update \
-            --resource-group rg-f1raceintel \
-            --name aks-f1raceintel \
-            --api-server-authorized-ip-ranges "${{ secrets.ADMIN_IP_RANGES }}" \
-            --no-wait
+          if az aks show --resource-group rg-f1raceintel --name aks-f1raceintel >/dev/null 2>&1; then
+            az aks update \
+              --resource-group rg-f1raceintel \
+              --name aks-f1raceintel \
+              --api-server-authorized-ip-ranges "${{ secrets.ADMIN_IP_RANGES }}" \
+              --no-wait
+          else
+            echo "AKS cluster not found; skipping IP allowlist removal."
+          fi

@@ -26,6 +26,7 @@ resource ciMainFedCred 'Microsoft.ManagedIdentity/userAssignedIdentities/federat
 resource ciInfraFedCred 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2023-01-31' = {
   parent: ciIdentity
   name: 'github-infra-env'
+  dependsOn: [ciMainFedCred]
   properties: {
     issuer: 'https://token.actions.githubusercontent.com'
     subject: 'repo:${githubRepo}:environment:infrastructure'
@@ -37,6 +38,7 @@ resource ciInfraFedCred 'Microsoft.ManagedIdentity/userAssignedIdentities/federa
 resource ciProductionFedCred 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2023-01-31' = {
   parent: ciIdentity
   name: 'github-env-production'
+  dependsOn: [ciInfraFedCred]
   properties: {
     issuer: 'https://token.actions.githubusercontent.com'
     subject: 'repo:${githubRepo}:environment:production'
@@ -48,6 +50,7 @@ resource ciProductionFedCred 'Microsoft.ManagedIdentity/userAssignedIdentities/f
 resource ciAksManagementFedCred 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2023-01-31' = {
   parent: ciIdentity
   name: 'github-env-aks-management'
+  dependsOn: [ciProductionFedCred]
   properties: {
     issuer: 'https://token.actions.githubusercontent.com'
     subject: 'repo:${githubRepo}:environment:aks-management'
