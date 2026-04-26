@@ -1,11 +1,7 @@
 name: AKS Scheduled Stop/Start
 
 on:
-  schedule:
-    # Stop at 7pm Pacific (02:00 UTC next day during PDT)
-    - cron: "0 2 * * *"
-    # Start at 8am Pacific (15:00 UTC during PDT)
-    - cron: "0 15 * * *"
+  # schedule disabled — use workflow_dispatch to start/stop manually
   workflow_dispatch:
     inputs:
       action:
