@@ -25,6 +25,7 @@ jobs:
   validate:
     name: Validate Bicep
     runs-on: ubuntu-latest
+    environment: infrastructure
     steps:
       - name: Verify authorized actor
         if: github.actor != 'karlkuhnhausen'
@@ -55,6 +56,7 @@ jobs:
     name: Preview Changes (What-If)
     runs-on: ubuntu-latest
     needs: validate
+    environment: infrastructure
     steps:
       - uses: actions/checkout@v4
 

@@ -12,6 +12,7 @@ resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2024-02-15-preview
   kind: 'GlobalDocumentDB'
   properties: {
     databaseAccountOfferType: 'Standard'
+    publicNetworkAccess: 'Disabled'
     locations: [
       {
         locationName: location
@@ -98,4 +99,5 @@ resource sessionsContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/c
 }
 
 output accountName string = cosmosAccount.name
+output accountId string = cosmosAccount.id
 output endpoint string = cosmosAccount.properties.documentEndpoint
