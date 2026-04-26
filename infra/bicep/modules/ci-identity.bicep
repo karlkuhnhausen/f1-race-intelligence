@@ -33,6 +33,29 @@ resource ciInfraFedCred 'Microsoft.ManagedIdentity/userAssignedIdentities/federa
   }
 }
 
+// Federated credential for GitHub Actions OIDC on 'production' environment (ci-cd.yml push/deploy jobs)
+resource ciProductionFedCred 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2023-01-31' = {
+  parent: ciIdentity
+  name: 'github-env-production'
+  properties: {
+    issuer: 'https://token.actions.githubusercontent.com'
+    subject: 'repo:${githubRepo}:environment:production'
+    audiences: ['api://AzureADTokenExchange']
+  }
+}
+
+// Federated credential for GitHub Actions OIDC on 'aks-management' environment (aks-schedule.yml)
+resource ciAksManagementFedCred 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2023-01-31' = {
+  parent: ciIdentity
+  name: 'github-env-aks-management'
+  properties: {
+    issuer: 'https://token.actions.githubusercontent.com'
+    subject: 'repo:${githubRepo}:environment:aks-management'
+    audiences: ['api://AzureADTokenExchange']
+  }
+}
+
+
 // Role assignments for CI identity (AcrPush, AKS Cluster User) are NOT defined here.
 // They are granted by infra/scripts/grant-roles.sh, run manually by an Owner.
 // This keeps the CI managed identity at Contributor only and prevents automation

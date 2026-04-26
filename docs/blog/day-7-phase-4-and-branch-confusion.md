@@ -215,4 +215,4 @@ And Feature 004 — the Design System and Brand Identity — has 37 tasks waitin
 
 ---
 
-*Previous: [Day 6: Clicking Into the Race — Session Results & Round Detail](day-6-race-session-results.md)*
+*Previous: [Day 6: Clicking Into the Race — Session Results & Round Detail](day-6-race-session-results.md)* | *Next: [Day 8: The Security Alert I Got at 5 AM — And What I Did About It](day-8-ops-security-lockdown.md)*
