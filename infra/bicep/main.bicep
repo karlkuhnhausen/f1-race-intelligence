@@ -106,9 +106,6 @@ module identities 'modules/identities.bicep' = {
     location: location
     tags: tags
     aksOidcIssuer: aks.outputs.oidcIssuerUrl
-    acrId: acr.outputs.acrId
-    cosmosAccountName: cosmosDb.outputs.accountName
-    keyVaultName: keyVault.outputs.vaultName
   }
 }
 
@@ -120,8 +117,6 @@ module ciIdentity 'modules/ci-identity.bicep' = {
     location: location
     tags: tags
     githubRepo: githubRepo
-    acrId: acr.outputs.acrId
-    aksId: aks.outputs.aksId
   }
 }
 
@@ -150,10 +145,15 @@ module privateEndpoints 'modules/private-endpoints.bicep' = {
 
 output resourceGroupName string = rg.name
 output aksName string = aks.outputs.aksName
+output acrName string = acr.outputs.acrName
 output acrLoginServer string = acr.outputs.loginServer
+output cosmosAccountName string = cosmosDb.outputs.accountName
 output cosmosEndpoint string = cosmosDb.outputs.endpoint
+output keyVaultName string = keyVault.outputs.vaultName
 output keyVaultUri string = keyVault.outputs.vaultUri
 output backendIdentityClientId string = identities.outputs.backendClientId
+output backendPrincipalId string = identities.outputs.backendPrincipalId
 output ciClientId string = ciIdentity.outputs.clientId
+output ciPrincipalId string = ciIdentity.outputs.principalId
 output ciTenantId string = ciIdentity.outputs.tenantId
 output ciSubscriptionId string = subscription().subscriptionId
