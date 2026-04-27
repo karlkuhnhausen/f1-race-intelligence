@@ -17,6 +17,7 @@ type openF1Session struct {
 	DateStart   string `json:"date_start"`
 	DateEnd     string `json:"date_end"`
 	Year        int    `json:"year"`
+	IsCancelled bool   `json:"is_cancelled"`
 }
 
 // openF1Driver is the raw upstream driver shape from OpenF1 /v1/drivers.
@@ -79,6 +80,9 @@ func TransformSession(raw openF1Session, season, round int) storage.Session {
 		DateEndUTC:   dateEnd,
 		DataAsOfUTC:  time.Now().UTC(),
 		Source:       "openf1",
+		// Finalized is set by the poller after results are successfully
+		// fetched and the session has ended (see finalizationBuffer).
+		SchemaVersion: SessionSchemaVersion,
 	}
 }
 

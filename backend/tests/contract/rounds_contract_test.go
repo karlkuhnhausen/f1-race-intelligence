@@ -51,6 +51,16 @@ func (m *mockSessionRepo) GetSessionResultsByRound(_ context.Context, season, ro
 	return out, nil
 }
 
+func (m *mockSessionRepo) GetFinalizedSessionKeys(_ context.Context, season int) (map[int]int, error) {
+	out := make(map[int]int)
+	for _, s := range m.sessions {
+		if s.Season == season && s.Finalized {
+			out[s.SessionKey] = s.SchemaVersion
+		}
+	}
+	return out, nil
+}
+
 func seedSessions() (*mockSessionRepo, *mockCalendarRepo) {
 	now := time.Now().UTC()
 

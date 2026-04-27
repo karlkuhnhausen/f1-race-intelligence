@@ -107,3 +107,38 @@ func (c *Client) GetSessionResultsByRound(ctx context.Context, season, round int
 	})
 	return results, nil
 }
+
+// GetFinalizedSessionKeys returns a map of session_key → schema_version for
+// every cached session in the season where finalized=true. The poller uses
+// this to skip re-fetching results/drivers/laps for sessions that have
+// already been fully cached.
+func (c *Client) GetFinalizedSessionKeys(ctx context.Context, season int) (map[int]int, error) {
+	pk := azcosmos.NewPartitionKeyNumber(float64(season))
+	query := "SELECT c.session_key, c.schema_version FROM c WHERE c.season = @season AND c.type = 'session' AND c.finalized = true"
+	queryOpts := &azcosmos.QueryOptions{
+		QueryParameters: []azcosmos.QueryParameter{
+			{Name: "@season", Value: season},
+		},
+	}
+
+	pager := c.sessions.NewQueryItemsPager(query, pk, queryOpts)
+	out := make(map[int]int)
+
+	for pager.More() {
+		resp, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("cosmos: query finalized sessions: %w", err)
+		}
+		for _, item := range resp.Items {
+			var row struct {
+				SessionKey    int `json:"session_key"`
+				SchemaVersion int `json:"schema_version"`
+			}
+			if err := json.Unmarshal(item, &row); err != nil {
+				return nil, fmt.Errorf("cosmos: unmarshal finalized session row: %w", err)
+			}
+			out[row.SessionKey] = row.SchemaVersion
+		}
+	}
+	return out, nil
+}

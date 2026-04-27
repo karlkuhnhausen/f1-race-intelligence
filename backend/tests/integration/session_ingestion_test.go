@@ -66,6 +66,16 @@ func (r *inMemorySessionRepo) GetSessionResultsByRound(_ context.Context, season
 	return result, nil
 }
 
+func (r *inMemorySessionRepo) GetFinalizedSessionKeys(_ context.Context, season int) (map[int]int, error) {
+	out := make(map[int]int)
+	for _, s := range r.sessions {
+		if s.Season == season && s.Finalized {
+			out[s.SessionKey] = s.SchemaVersion
+		}
+	}
+	return out, nil
+}
+
 // TestSessionIngestionRoundTrip verifies the poll → transform → upsert → query → API response flow.
 func TestSessionIngestionRoundTrip(t *testing.T) {
 	calRepo := newInMemoryRepo()

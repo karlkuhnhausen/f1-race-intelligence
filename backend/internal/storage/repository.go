@@ -79,6 +79,17 @@ type Session struct {
 	DateEndUTC   time.Time `json:"date_end_utc"`
 	DataAsOfUTC  time.Time `json:"data_as_of_utc"`
 	Source       string    `json:"source"`
+
+	// Finalized indicates the session is over and its results/drivers/laps
+	// have been fully fetched and cached. Once true, the session poller
+	// skips re-fetching from OpenF1.
+	Finalized bool `json:"finalized,omitempty"`
+	// FinalizedAtUTC is the time the session was first marked finalized.
+	FinalizedAtUTC *time.Time `json:"finalized_at_utc,omitempty"`
+	// SchemaVersion tracks the cached document layout. If the code's
+	// current schema version is newer than the cached value, the
+	// finalized flag is treated as stale and the session is re-fetched.
+	SchemaVersion int `json:"schema_version,omitempty"`
 }
 
 // SessionResult represents one driver's result within a session stored in Cosmos DB.
@@ -121,4 +132,9 @@ type SessionRepository interface {
 	UpsertSessionResult(ctx context.Context, r SessionResult) error
 	GetSessionsByRound(ctx context.Context, season, round int) ([]Session, error)
 	GetSessionResultsByRound(ctx context.Context, season, round int) ([]SessionResult, error)
+	// GetFinalizedSessionKeys returns the set of session_key values for the
+	// season whose cached document has Finalized=true. The poller uses this
+	// as a skip-list so it does not re-fetch results/drivers/laps for sessions
+	// that already finished and were fully cached.
+	GetFinalizedSessionKeys(ctx context.Context, season int) (map[int]int, error)
 }
