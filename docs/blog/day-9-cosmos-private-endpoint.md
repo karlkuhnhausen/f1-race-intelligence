@@ -379,3 +379,5 @@ The struggle bus stops here. For now.
 **Healthz:** http://f1raceintel.westus3.cloudapp.azure.com/healthz
 
 [← Day 8: The Security Alert I Got at 5 AM](day-8-ops-security-lockdown.md)
+
+[Day 10: The Rate Limit Cascade →](day-10-rate-limit-cascade.md)

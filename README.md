@@ -37,6 +37,7 @@ This project is being built in public, with architecture decisions and progress 
 
 - [Day 6: Clicking Into the Race — Session Results & Round Detail](docs/blog/day-6-race-session-results.md)
 - [Day 7: Race Results, Rate Limits, and the Branch You Forgot You Were On](docs/blog/day-7-phase-4-and-branch-confusion.md)
+- [Day 10: The Rate Limit Cascade — Three PRs to Make a Race Page Render](docs/blog/day-10-rate-limit-cascade.md)
 
 ### Security & Operations
 
@@ -57,15 +58,15 @@ This project is being built in public, with architecture decisions and progress 
 
 **Feature 1 — Calendar & Standings:** Complete. All 47 tasks across 6 phases done.
 
-**Feature 2 — Race Session Results:** In progress. Phases 1–4 complete (21/31 tasks). Backend data pipeline, Cosmos storage, rounds API, frontend routing, round detail page, and dedicated race results component deployed. Rate limiting added to session poller. Phases 5–7 (qualifying/practice components and polish) remaining.
+**Feature 2 — Race Session Results:** Complete. All phases shipped. Race, qualifying, and practice components rendering with correct data on the live site. Backend ingests `/v1/session_result` from OpenF1, transforms polymorphic duration/gap fields by session type, derives fastest-lap holder from `/v1/laps`, and finalizes session documents in Cosmos 2 hours after each session ends so the poller skips them on subsequent cycles. Steady-state OpenF1 traffic is 0 requests/cycle for finalized weekends.
 
 **Security Lockdown (April 26, 2026):** Cosmos DB public access disabled; all reads/writes now flow through an Azure Private Endpoint in a dedicated subnet. CI managed identity restricted to `Contributor` only — role grants extracted to a manual Owner-only script. Live URL migrated from `*.nip.io` to Azure FQDN (`f1raceintel.westus3.cloudapp.azure.com`). Subnet NSGs explicit in Bicep to prevent Azure Policy from creating empty defaults that drop ingress traffic.
 
 - **Frontend**: http://f1raceintel.westus3.cloudapp.azure.com/
 - **API**: http://f1raceintel.westus3.cloudapp.azure.com/api/v1/calendar?year=2026
-- **Round Detail**: http://f1raceintel.westus3.cloudapp.azure.com/api/v1/rounds/3?year=2026
+- **Round Detail**: http://f1raceintel.westus3.cloudapp.azure.com/rounds/3?year=2026
 - **Pipeline**: Fully green — lint → test → build → push → deploy
-- **Tests**: 51 passing (22 backend + 29 frontend)
+- **Tests**: 60 passing (22 backend + 38 frontend)
 
 ## Why Spec-Driven Development
 
