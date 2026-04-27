@@ -19,5 +19,5 @@ resources:
 ingress:
   enabled: true
   className: nginx
-  host: f1.20.171.233.61.nip.io
+  host: f1.135.234.65.19.nip.io
   tls: false
