@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { fetchRoundDetail, type RoundDetailResponse, type SessionDetail } from './roundApi';
 import RaceResults from './RaceResults';
-import SessionResultsTable from './SessionResultsTable';
+import QualifyingResults from './QualifyingResults';
+import PracticeResults from './PracticeResults';
 
 export default function RoundDetailPage() {
   const { round } = useParams<{ round: string }>();
@@ -67,10 +68,10 @@ export default function RoundDetailPage() {
 }
 
 const RACE_TYPES = new Set(['race', 'sprint']);
+const QUALIFYING_TYPES = new Set(['qualifying', 'sprint_qualifying']);
+const PRACTICE_TYPES = new Set(['practice1', 'practice2', 'practice3']);
 
 function SessionCard({ session }: { session: SessionDetail }) {
-  const isRace = RACE_TYPES.has(session.session_type);
-
   return (
     <div className="session-card" style={{ marginBottom: '1.5rem' }}>
       <h3>{session.session_name}</h3>
@@ -79,11 +80,17 @@ function SessionCard({ session }: { session: SessionDetail }) {
         {' | '}
         {new Date(session.date_start_utc).toLocaleString()}
       </p>
-      {session.results.length > 0 ? (
-        isRace ? (
+      {session.status === 'upcoming' ? (
+        <p>Not yet available</p>
+      ) : session.results.length > 0 ? (
+        RACE_TYPES.has(session.session_type) ? (
           <RaceResults results={session.results} />
+        ) : QUALIFYING_TYPES.has(session.session_type) ? (
+          <QualifyingResults results={session.results} />
+        ) : PRACTICE_TYPES.has(session.session_type) ? (
+          <PracticeResults results={session.results} />
         ) : (
-          <SessionResultsTable results={session.results} sessionType={session.session_type} />
+          <p>No results available.</p>
         )
       ) : (
         <p>No results available.</p>

@@ -92,3 +92,89 @@ func TestStructuredLogSchemaErrorLevel(t *testing.T) {
 		t.Errorf("expected error 'connection refused', got %v", entry["error"])
 	}
 }
+
+// TestStructuredLogSchemaSessionIngestion validates session ingestion log output.
+func TestStructuredLogSchemaSessionIngestion(t *testing.T) {
+	var buf bytes.Buffer
+	handler := slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelInfo})
+	logger := slog.New(handler)
+
+	logger.Info("session_poll_complete",
+		slog.String("source", "openf1"),
+		slog.Int("season", 2026),
+		slog.Int("sessions", 7),
+	)
+
+	var entry map[string]interface{}
+	if err := json.Unmarshal(buf.Bytes(), &entry); err != nil {
+		t.Fatalf("log output is not valid JSON: %v", err)
+	}
+
+	if entry["msg"] != "session_poll_complete" {
+		t.Errorf("expected msg 'session_poll_complete', got %v", entry["msg"])
+	}
+	if entry["source"] != "openf1" {
+		t.Errorf("expected source 'openf1', got %v", entry["source"])
+	}
+	if entry["season"] != float64(2026) {
+		t.Errorf("expected season 2026, got %v", entry["season"])
+	}
+	if entry["sessions"] != float64(7) {
+		t.Errorf("expected sessions 7, got %v", entry["sessions"])
+	}
+}
+
+// TestStructuredLogSchemaRoundDetailAPI validates round detail request log output.
+func TestStructuredLogSchemaRoundDetailAPI(t *testing.T) {
+	var buf bytes.Buffer
+	handler := slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelInfo})
+	logger := slog.New(handler)
+
+	logger.Info("request",
+		slog.String("method", "GET"),
+		slog.String("path", "/api/v1/rounds/1"),
+		slog.Int("status", 200),
+		slog.Float64("duration_ms", 45.67),
+		slog.Int("year", 2026),
+		slog.Int("round", 1),
+	)
+
+	var entry map[string]interface{}
+	if err := json.Unmarshal(buf.Bytes(), &entry); err != nil {
+		t.Fatalf("log output is not valid JSON: %v", err)
+	}
+
+	if entry["path"] != "/api/v1/rounds/1" {
+		t.Errorf("expected path '/api/v1/rounds/1', got %v", entry["path"])
+	}
+	if entry["year"] != float64(2026) {
+		t.Errorf("expected year 2026, got %v", entry["year"])
+	}
+	if entry["round"] != float64(1) {
+		t.Errorf("expected round 1, got %v", entry["round"])
+	}
+}
+
+// TestStructuredLogSchemaSessionUpsertError validates session upsert error logging.
+func TestStructuredLogSchemaSessionUpsertError(t *testing.T) {
+	var buf bytes.Buffer
+	handler := slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelInfo})
+	logger := slog.New(handler)
+
+	logger.Error("session_upsert_failed",
+		slog.String("session_id", "2026-01-race"),
+		slog.String("error", "cosmos: conflict"),
+	)
+
+	var entry map[string]interface{}
+	if err := json.Unmarshal(buf.Bytes(), &entry); err != nil {
+		t.Fatalf("log output is not valid JSON: %v", err)
+	}
+
+	if entry["level"] != "ERROR" {
+		t.Errorf("expected level ERROR, got %v", entry["level"])
+	}
+	if entry["session_id"] != "2026-01-race" {
+		t.Errorf("expected session_id '2026-01-race', got %v", entry["session_id"])
+	}
+}
