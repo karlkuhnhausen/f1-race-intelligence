@@ -17,8 +17,15 @@ spec:
     - host: {{ .Values.ingress.host }}
       http:
         paths:
-          - path: /
+          - path: /api
             pathType: Prefix
+            backend:
+              service:
+                name: f1-backend
+                port:
+                  number: 80
+          - path: /healthz
+            pathType: Exact
             backend:
               service:
                 name: f1-backend
