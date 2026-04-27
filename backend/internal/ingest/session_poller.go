@@ -139,7 +139,13 @@ func (p *SessionPoller) poll(ctx context.Context, season int) {
 		// Skip sessions that haven't ended yet — no results to fetch and
 		// hitting /session_result for future sessions just earns 404s and
 		// rate-limit pressure.
-		if dateEnd, err := time.Parse(time.RFC3339, raw.DateEnd); err == nil && dateEnd.After(now) {
+		//
+		// We check date_end first, falling back to date_start when date_end
+		// is missing/unparseable (OpenF1 occasionally returns null date_end
+		// for not-yet-scheduled sessions). Treating an unparseable date as
+		// "ended in the past" caused future sessions to be written with
+		// stale "completed" status — see fix/session-status-badge.
+		if isFutureSession(raw, now, p.logger) {
 			skippedFuture++
 			continue
 		}
@@ -386,4 +392,36 @@ func (p *SessionPoller) LastPoll() (time.Time, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.lastPoll, p.lastErr
+}
+
+// isFutureSession reports whether a raw OpenF1 session is scheduled in the
+// future relative to now. It prefers date_end (session ended) but falls back
+// to date_start when date_end is missing or unparseable.
+//
+// Returning true skips the session in the poll loop. When neither date is
+// usable we conservatively treat the session as future to avoid writing
+// hardcoded statuses for sessions that may not have happened yet.
+func isFutureSession(raw openF1Session, now time.Time, logger *slog.Logger) bool {
+	if raw.DateEnd != "" {
+		if dateEnd, err := time.Parse(time.RFC3339, raw.DateEnd); err == nil {
+			return dateEnd.After(now)
+		}
+		logger.Warn("session date_end unparseable; falling back to date_start",
+			"session_key", raw.SessionKey,
+			"date_end_raw", raw.DateEnd,
+		)
+	}
+
+	if raw.DateStart != "" {
+		if dateStart, err := time.Parse(time.RFC3339, raw.DateStart); err == nil {
+			return !dateStart.Before(now)
+		}
+		logger.Warn("session date_start unparseable; treating as future",
+			"session_key", raw.SessionKey,
+			"date_start_raw", raw.DateStart,
+		)
+	}
+
+	// Neither date usable — skip defensively.
+	return true
 }

@@ -75,7 +75,7 @@ func TransformSession(raw openF1Session, season, round int) storage.Session {
 		SessionKey:   raw.SessionKey,
 		SessionName:  raw.SessionName,
 		SessionType:  string(sessionType),
-		Status:       "completed",
+		Status:       deriveStoredStatus(time.Now().UTC(), dateStart, dateEnd),
 		DateStartUTC: dateStart,
 		DateEndUTC:   dateEnd,
 		DataAsOfUTC:  time.Now().UTC(),
@@ -84,6 +84,24 @@ func TransformSession(raw openF1Session, season, round int) storage.Session {
 		// fetched and the session has ended (see finalizationBuffer).
 		SchemaVersion: SessionSchemaVersion,
 	}
+}
+
+// deriveStoredStatus returns the lifecycle status to persist for a session
+// based on its scheduled times. The rounds API service re-derives status at
+// read time (see backend/internal/api/rounds/service.go) so this stored value
+// is mainly for diagnostics and direct cache inspection — but writing the
+// correct value here prevents stale "completed" entries for future sessions.
+func deriveStoredStatus(now, dateStart, dateEnd time.Time) string {
+	if dateStart.IsZero() {
+		return "upcoming"
+	}
+	if dateStart.After(now) {
+		return "upcoming"
+	}
+	if dateEnd.IsZero() || dateEnd.After(now) {
+		return "in_progress"
+	}
+	return "completed"
 }
 
 // TransformSessionResult converts an OpenF1 session_result + driver into our storage SessionResult.

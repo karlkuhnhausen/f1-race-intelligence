@@ -7,15 +7,57 @@ import (
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/storage"
 )
 
+// Session lifecycle status values returned to clients. These align with the
+// Feature 003 data-model.md status enum.
+const (
+	statusUpcoming   = "upcoming"
+	statusInProgress = "in_progress"
+	statusCompleted  = "completed"
+)
+
 // Service provides round detail business logic and response shaping.
 type Service struct {
 	sessionRepo  storage.SessionRepository
 	calendarRepo storage.CalendarRepository
+	now          func() time.Time // injectable clock for testing
 }
 
 // NewService creates a new rounds service.
 func NewService(sessionRepo storage.SessionRepository, calendarRepo storage.CalendarRepository) *Service {
-	return &Service{sessionRepo: sessionRepo, calendarRepo: calendarRepo}
+	return &Service{
+		sessionRepo:  sessionRepo,
+		calendarRepo: calendarRepo,
+		now:          func() time.Time { return time.Now().UTC() },
+	}
+}
+
+// NewServiceWithClock creates a rounds service with an injectable clock,
+// primarily for deterministic testing of session status derivation.
+func NewServiceWithClock(sessionRepo storage.SessionRepository, calendarRepo storage.CalendarRepository, now func() time.Time) *Service {
+	return &Service{sessionRepo: sessionRepo, calendarRepo: calendarRepo, now: now}
+}
+
+// deriveSessionStatus returns the lifecycle status for a session based on its
+// scheduled start/end times relative to now. Stored values are ignored because
+// historical ingest writes hardcoded the status field (see session_transform.go).
+//
+// Rules:
+//   - dateStart in the future → "upcoming"
+//   - dateStart <= now < dateEnd → "in_progress"
+//   - dateEnd <= now → "completed"
+//   - Zero/missing dates → "upcoming" (safe default — avoids falsely marking
+//     unscheduled sessions as completed)
+func deriveSessionStatus(now, dateStart, dateEnd time.Time) string {
+	if dateStart.IsZero() {
+		return statusUpcoming
+	}
+	if dateStart.After(now) {
+		return statusUpcoming
+	}
+	if dateEnd.IsZero() || dateEnd.After(now) {
+		return statusInProgress
+	}
+	return statusCompleted
 }
 
 // GetRoundDetail retrieves session data and results for a specific round.
@@ -63,6 +105,7 @@ func (s *Service) GetRoundDetail(ctx context.Context, season, round int) (*Round
 
 	var latestDataAsOf time.Time
 	sessionDTOs := make([]SessionDetailDTO, 0, len(sessions))
+	now := s.now()
 
 	for _, sess := range sessions {
 		if sess.DataAsOfUTC.After(latestDataAsOf) {
@@ -95,7 +138,7 @@ func (s *Service) GetRoundDetail(ctx context.Context, season, round int) (*Round
 		sessionDTOs = append(sessionDTOs, SessionDetailDTO{
 			SessionName: sess.SessionName,
 			SessionType: sess.SessionType,
-			Status:      sess.Status,
+			Status:      deriveSessionStatus(now, sess.DateStartUTC, sess.DateEndUTC),
 			DateStart:   sess.DateStartUTC,
 			DateEnd:     sess.DateEndUTC,
 			Results:     resultDTOs,

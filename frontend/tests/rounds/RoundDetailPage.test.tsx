@@ -114,4 +114,48 @@ describe('RoundDetailPage', () => {
     const link = await screen.findByText(/Back to Calendar/);
     expect(link).toBeDefined();
   });
+
+  it('renders friendly status labels for each session lifecycle state', async () => {
+    const { fetchRoundDetail } = await import('../../src/features/rounds/roundApi');
+    (fetchRoundDetail as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      year: 2026,
+      round: 8,
+      race_name: 'Test GP',
+      circuit_name: 'Test Circuit',
+      country_name: 'Testland',
+      data_as_of_utc: '2026-04-27T12:00:00Z',
+      sessions: [
+        {
+          session_name: 'Practice 1',
+          session_type: 'practice1',
+          status: 'upcoming',
+          date_start_utc: '2026-05-01T10:00:00Z',
+          date_end_utc: '2026-05-01T11:00:00Z',
+          results: [],
+        },
+        {
+          session_name: 'Qualifying',
+          session_type: 'qualifying',
+          status: 'in_progress',
+          date_start_utc: '2026-04-27T10:00:00Z',
+          date_end_utc: '2026-04-27T13:00:00Z',
+          results: [],
+        },
+        {
+          session_name: 'Race',
+          session_type: 'race',
+          status: 'completed',
+          date_start_utc: '2026-04-26T10:00:00Z',
+          date_end_utc: '2026-04-26T12:00:00Z',
+          results: [],
+        },
+      ],
+    } as RoundDetailResponse);
+
+    renderRoundDetail('8');
+
+    expect(await screen.findByText('Upcoming')).toBeDefined();
+    expect(screen.getByText('Live')).toBeDefined();
+    expect(screen.getByText('Completed')).toBeDefined();
+  });
 });
