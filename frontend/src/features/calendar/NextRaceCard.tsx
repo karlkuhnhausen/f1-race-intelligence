@@ -1,5 +1,5 @@
 import type { RaceMeetingDTO } from './calendarApi';
-import { useCountdown } from './useCountdown';
+import RaceCountdown from '../design-system/RaceCountdown';
 
 interface NextRaceCardProps {
   round: RaceMeetingDTO;
@@ -7,16 +7,22 @@ interface NextRaceCardProps {
 }
 
 export default function NextRaceCard({ round, countdownTarget }: NextRaceCardProps) {
-  const countdown = useCountdown(countdownTarget);
-
   return (
-    <div className="next-race-card" role="region" aria-label="Next race countdown">
-      <h3>Next Race</h3>
-      <p className="race-name">{round.race_name}</p>
-      <p className="circuit">
+    <div
+      className="rounded-lg border border-border bg-surface p-6 shadow-lg"
+      role="region"
+      aria-label="Next race countdown"
+    >
+      <p className="font-display text-xs uppercase tracking-[0.2em] text-accent-red">
+        Next Race
+      </p>
+      <h3 className="mt-2 font-display text-2xl font-bold tracking-tight">
+        {round.race_name}
+      </h3>
+      <p className="text-muted-foreground">
         {round.circuit_name}, {round.country_name}
       </p>
-      <p className="race-date">
+      <p className="mt-1 text-sm text-muted-foreground font-mono">
         {new Date(round.start_datetime_utc).toLocaleDateString(undefined, {
           weekday: 'long',
           year: 'numeric',
@@ -24,18 +30,9 @@ export default function NextRaceCard({ round, countdownTarget }: NextRaceCardPro
           day: 'numeric',
         })}
       </p>
-      {countdown && !countdown.expired && (
-        <p className="countdown" aria-live="polite">
-          {countdown.days > 0 && <span className="countdown-segment">{countdown.days}d </span>}
-          <span className="countdown-segment">{countdown.hours}h </span>
-          <span className="countdown-segment">{countdown.minutes}m </span>
-          <span className="countdown-segment">{countdown.seconds}s</span>
-          <span className="countdown-label"> until lights out</span>
-        </p>
-      )}
-      {countdown?.expired && (
-        <p className="countdown expired">Race underway!</p>
-      )}
+      <div className="mt-4">
+        <RaceCountdown targetUtc={countdownTarget} label="until lights out" />
+      </div>
     </div>
   );
 }

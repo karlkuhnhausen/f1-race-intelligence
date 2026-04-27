@@ -22,3 +22,6 @@ Thumbs.db
 
 # Deployment outputs
 /tmp/f1-deploy-output.json
+
+# TypeScript incremental build info
+*.tsbuildinfo

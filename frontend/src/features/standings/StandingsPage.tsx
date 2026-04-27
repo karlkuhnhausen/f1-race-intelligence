@@ -5,8 +5,32 @@ import {
   type DriverStandingDTO,
   type ConstructorStandingDTO,
 } from './standingsApi';
+import StandingsTable, {
+  type StandingsRow,
+} from '../design-system/StandingsTable';
 
 type Tab = 'drivers' | 'constructors';
+
+function driversToRows(drivers: DriverStandingDTO[]): StandingsRow[] {
+  return drivers.map((d) => ({
+    position: d.position,
+    name: d.driver_name,
+    constructorId: d.team_name,
+    points: d.points,
+    wins: d.wins,
+  }));
+}
+
+function constructorsToRows(
+  constructors: ConstructorStandingDTO[],
+): StandingsRow[] {
+  return constructors.map((c) => ({
+    position: c.position,
+    name: c.team_name,
+    constructorId: c.team_name,
+    points: c.points,
+  }));
+}
 
 export default function StandingsPage() {
   const [tab, setTab] = useState<Tab>('drivers');
@@ -30,78 +54,52 @@ export default function StandingsPage() {
       .finally(() => setLoading(false));
   }, [year]);
 
-  if (loading) return <p>Loading standings…</p>;
-  if (error) return <p>Error: {error}</p>;
+  if (loading) return <p className="text-muted-foreground">Loading standings…</p>;
+  if (error) return <p className="text-negative">Error: {error}</p>;
+
+  const tabClass = (active: boolean) =>
+    `px-4 py-2 font-display text-sm uppercase tracking-wider transition-colors border-b-2 ${
+      active
+        ? 'border-accent-red text-foreground'
+        : 'border-transparent text-muted-foreground hover:text-foreground'
+    }`;
 
   return (
-    <section>
-      <div style={{ marginBottom: '1rem' }}>
+    <section className="space-y-6">
+      <h2 className="font-display text-3xl font-bold tracking-tight">
+        {year} Standings
+      </h2>
+
+      <div className="flex gap-2 border-b border-border">
         <button
+          type="button"
           onClick={() => setTab('drivers')}
-          style={{ fontWeight: tab === 'drivers' ? 'bold' : 'normal', marginRight: '0.5rem' }}
+          className={tabClass(tab === 'drivers')}
         >
           Drivers
         </button>
         <button
+          type="button"
           onClick={() => setTab('constructors')}
-          style={{ fontWeight: tab === 'constructors' ? 'bold' : 'normal' }}
+          className={tabClass(tab === 'constructors')}
         >
           Constructors
         </button>
       </div>
 
       {tab === 'drivers' ? (
-        <table>
-          <thead>
-            <tr>
-              <th>Pos</th>
-              <th>Driver</th>
-              <th>Team</th>
-              <th>Points</th>
-              <th>Wins</th>
-            </tr>
-          </thead>
-          <tbody>
-            {drivers.map((d) => (
-              <tr key={d.position}>
-                <td>{d.position}</td>
-                <td>{d.driver_name}</td>
-                <td>{d.team_name}</td>
-                <td>{d.points}</td>
-                <td>{d.wins}</td>
-              </tr>
-            ))}
-            {drivers.length === 0 && (
-              <tr>
-                <td colSpan={5}>No driver standings available yet.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        <StandingsTable
+          title="Drivers Championship"
+          nameLabel="Driver"
+          rows={driversToRows(drivers)}
+          columns={["wins"]}
+        />
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Pos</th>
-              <th>Team</th>
-              <th>Points</th>
-            </tr>
-          </thead>
-          <tbody>
-            {constructors.map((c) => (
-              <tr key={c.position}>
-                <td>{c.position}</td>
-                <td>{c.team_name}</td>
-                <td>{c.points}</td>
-              </tr>
-            ))}
-            {constructors.length === 0 && (
-              <tr>
-                <td colSpan={3}>No constructor standings available yet.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        <StandingsTable
+          title="Constructors Championship"
+          nameLabel="Team"
+          rows={constructorsToRows(constructors)}
+        />
       )}
     </section>
   );

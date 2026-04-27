@@ -55,13 +55,13 @@ describe('NextRaceCard', () => {
     expect(countdownEl).toBeDefined();
   });
 
-  it('shows "Race underway!" when countdown expires', () => {
+  it('shows "RACE LIVE" when countdown expires', () => {
     // Set time to after the race start.
     vi.setSystemTime(new Date('2026-05-10T19:00:01Z'));
 
     render(<NextRaceCard round={miamiRound} countdownTarget={miamiRound.start_datetime_utc} />);
 
-    expect(screen.getByText('Race underway!')).toBeDefined();
+    expect(screen.getByText('RACE LIVE')).toBeDefined();
   });
 
   it('has accessible region role', () => {

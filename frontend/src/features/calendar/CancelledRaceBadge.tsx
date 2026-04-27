@@ -7,16 +7,7 @@ export default function CancelledRaceBadge({ label, reason }: CancelledRaceBadge
   return (
     <span
       title={reason}
-      style={{
-        display: 'inline-block',
-        padding: '0.15em 0.5em',
-        fontSize: '0.8em',
-        fontWeight: 'bold',
-        color: '#fff',
-        backgroundColor: '#d32f2f',
-        borderRadius: '4px',
-        marginLeft: '0.5em',
-      }}
+      className="cancelled ml-2 inline-flex items-center rounded-md bg-negative/20 px-2 py-0.5 text-xs font-display font-bold uppercase tracking-wider text-negative"
     >
       {label ?? 'Cancelled'}
     </span>
