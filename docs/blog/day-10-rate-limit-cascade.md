@@ -171,4 +171,4 @@ For now, the rate-limit cascade is dead. The race page renders. I'm calling it a
 **Round 3 (Australian GP):** http://f1raceintel.westus3.cloudapp.azure.com/rounds/3?year=2026
 **API:** http://f1raceintel.westus3.cloudapp.azure.com/api/v1/rounds/3?year=2026
 
-[← Day 9: The Struggle Bus to a Private Cosmos DB](day-9-cosmos-private-endpoint.md)
+[← Day 9: The Struggle Bus to a Private Cosmos DB](day-9-cosmos-private-endpoint.md) · [Day 11: From Generic Data Table to Race Car →](day-11-design-system.md)
