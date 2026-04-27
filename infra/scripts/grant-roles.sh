@@ -72,9 +72,18 @@ create_assignment() {
   fi
 }
 
-# Backend identity grants (runtime app)
+# Backend identity grants (runtime app — for in-pod Azure SDK calls to Key Vault & Cosmos)
 create_assignment "$ROLE_ACR_PULL"        "$BACKEND_PRINCIPAL" "$ACR_ID" "backend → AcrPull on ACR"
 create_assignment "$ROLE_KV_SECRETS_USER" "$BACKEND_PRINCIPAL" "$KV_ID"  "backend → Key Vault Secrets User"
+
+# AKS kubelet identity grant (for image pulls — kubelet authenticates to ACR with this identity,
+# NOT the workload identity above). Without this, pods get ImagePullBackOff with 401 Unauthorized.
+KUBELET_PRINCIPAL=$(az aks show -g "$RG" -n "$AKS_NAME" --query "identityProfile.kubeletidentity.objectId" -o tsv)
+if [[ -n "$KUBELET_PRINCIPAL" ]]; then
+  create_assignment "$ROLE_ACR_PULL" "$KUBELET_PRINCIPAL" "$ACR_ID" "aks-kubelet → AcrPull on ACR"
+else
+  echo "  ! Could not resolve AKS kubelet identity — image pulls may fail" >&2
+fi
 
 # CI identity grants (deploy pipeline)
 create_assignment "$ROLE_ACR_PUSH"         "$CI_PRINCIPAL" "$ACR_ID" "ci → AcrPush on ACR"
