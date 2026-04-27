@@ -209,3 +209,5 @@ And the cluster auto-stops at 7 PM Pacific. I approved that workflow run manuall
 ---
 
 *Previous: [Day 7: Race Results, Rate Limits, and the Branch You Forgot You Were On](day-7-phase-4-and-branch-confusion.md)*
+
+*Next: [Day 9: The Struggle Bus to a Private Cosmos DB](day-9-cosmos-private-endpoint.md)*
