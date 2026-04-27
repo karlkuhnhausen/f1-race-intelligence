@@ -19,5 +19,5 @@ resources:
 ingress:
   enabled: true
   className: nginx
-  host: f1.135.234.65.19.nip.io
+  host: f1raceintel.westus3.cloudapp.azure.com
   tls: false
