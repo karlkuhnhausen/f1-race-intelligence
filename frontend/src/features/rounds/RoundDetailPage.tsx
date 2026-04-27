@@ -85,9 +85,18 @@ function SessionCard({ session }: { session: SessionDetail }) {
   const statusColor =
     session.status === 'completed'
       ? 'bg-positive/20 text-positive'
-      : session.status === 'live'
+      : session.status === 'in_progress'
         ? 'bg-accent-red/20 text-accent-red'
         : 'bg-surface text-muted-foreground border border-border';
+
+  const statusLabel =
+    session.status === 'completed'
+      ? 'Completed'
+      : session.status === 'in_progress'
+        ? 'Live'
+        : session.status === 'upcoming'
+          ? 'Upcoming'
+          : session.status;
 
   return (
     <div className="rounded-lg border border-border bg-surface p-5">
@@ -101,7 +110,7 @@ function SessionCard({ session }: { session: SessionDetail }) {
         <span
           className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-display font-bold uppercase tracking-wider ${statusColor}`}
         >
-          {session.status}
+          {statusLabel}
         </span>
       </p>
       <div className="mt-4">
