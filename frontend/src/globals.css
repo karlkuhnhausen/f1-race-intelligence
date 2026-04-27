@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+/* Dark theme is the only theme — declare class for explicit nesting parity */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Design tokens for F1 Race Intelligence dashboard.
+ * Colors, typography, and team colors all live here per Feature 004 spec.
+ *
+ * Token naming follows Tailwind v4 @theme convention:
+ *   --color-<name> generates bg-<name>, text-<name>, border-<name> utilities
+ *   --font-<name>  generates font-<name> utilities
+ */
+@theme {
+  /* Surface colors */
+  --color-background: #0f0f13;
+  --color-surface: #1a1a23;
+  --color-border: #2a2a38;
+
+  /* Foreground / text */
+  --color-foreground: #ffffff;
+  --color-muted-foreground: #8888aa;
+
+  /* Brand accents */
+  --color-accent-red: #e8002d;
+  --color-accent-cyan: #00d2ff;
+
+  /* Semantic deltas */
+  --color-positive: #00c853;
+  --color-negative: #ff1744;
+
+  /* Typography */
+  --font-display: "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
+}
+
+/*
+ * Team color CSS custom properties.
+ * Not exposed as Tailwind utilities — consumed via inline style from teamColors.ts.
+ */
+:root {
+  --team-mercedes: #00d2be;
+  --team-redbull: #3671c6;
+  --team-ferrari: #e8002d;
+  --team-mclaren: #ff8000;
+  --team-aston: #358c75;
+  --team-alpine: #ff87bc;
+}
+
+/* Global resets / dark theme baseline */
+html,
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}

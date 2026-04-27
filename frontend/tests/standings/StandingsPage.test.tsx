@@ -44,12 +44,13 @@ describe('StandingsPage', () => {
     expect(screen.getByText('Charles Leclerc')).toBeDefined();
   });
 
-  it('renders driver position, team, points, and wins', async () => {
+  it('renders driver position, points, and wins', async () => {
     render(<StandingsPage />);
 
     await screen.findByText('Max Verstappen');
 
-    expect(screen.getByText('Red Bull Racing')).toBeDefined();
+    // Team is conveyed via color accent border, not as a text column,
+    // so we only assert the data columns now present in StandingsTable.
     expect(screen.getByText('119')).toBeDefined();
     expect(screen.getByText('4')).toBeDefined();
   });

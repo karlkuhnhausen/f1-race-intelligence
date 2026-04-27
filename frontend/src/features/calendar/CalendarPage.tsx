@@ -15,16 +15,20 @@ export default function CalendarPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="loading">Loading calendar…</div>;
-  if (error) return <div className="error">Error: {error}</div>;
+  if (loading) return <div className="text-muted-foreground">Loading calendar…</div>;
+  if (error) return <div className="text-negative">Error: {error}</div>;
   if (!calendar) return null;
 
   return (
-    <section className="calendar-page">
-      <h2>2026 FIA Formula 1 World Championship</h2>
-      <p className="data-freshness">
-        Data as of: {new Date(calendar.data_as_of_utc).toLocaleString()}
-      </p>
+    <section className="space-y-6">
+      <div>
+        <h2 className="font-display text-3xl font-bold tracking-tight">
+          2026 FIA Formula 1 World Championship
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground font-mono">
+          Data as of: {new Date(calendar.data_as_of_utc).toLocaleString()}
+        </p>
+      </div>
 
       {calendar.next_round > 0 && calendar.countdown_target_utc && (
         <NextRaceCard
@@ -33,53 +37,72 @@ export default function CalendarPage() {
         />
       )}
 
-      <table className="calendar-table">
-        <thead>
-          <tr>
-            <th>Round</th>
-            <th>Race</th>
-            <th>Circuit</th>
-            <th>Country</th>
-            <th>Date</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {calendar.rounds.map((round) => (
-            <RaceRow key={round.round} round={round} isNext={round.round === calendar.next_round} />
-          ))}
-        </tbody>
-      </table>
+      <div className="overflow-hidden rounded-lg border border-border bg-surface">
+        <table className="w-full text-sm">
+          <thead className="border-b border-border bg-background/50">
+            <tr>
+              <th className="px-4 py-3 text-left font-display text-xs uppercase tracking-wider text-muted-foreground">Round</th>
+              <th className="px-4 py-3 text-left font-display text-xs uppercase tracking-wider text-muted-foreground">Race</th>
+              <th className="px-4 py-3 text-left font-display text-xs uppercase tracking-wider text-muted-foreground">Circuit</th>
+              <th className="px-4 py-3 text-left font-display text-xs uppercase tracking-wider text-muted-foreground">Country</th>
+              <th className="px-4 py-3 text-left font-display text-xs uppercase tracking-wider text-muted-foreground">Date</th>
+              <th className="px-4 py-3 text-left font-display text-xs uppercase tracking-wider text-muted-foreground">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {calendar.rounds.map((round) => (
+              <RaceRow key={round.round} round={round} isNext={round.round === calendar.next_round} />
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }
 
 function RaceRow({ round, isNext }: { round: RaceMeetingDTO; isNext: boolean }) {
-  const rowClass = [
-    round.is_cancelled ? 'cancelled' : '',
-    isNext ? 'next-race' : '',
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const baseRow = 'border-b border-border last:border-0 transition-colors';
+  const stateClass = round.is_cancelled
+    ? 'opacity-50 line-through'
+    : isNext
+      ? 'bg-accent-cyan/5 hover:bg-accent-cyan/10'
+      : 'hover:bg-background/40';
 
   return (
-    <tr className={rowClass}>
-      <td>{round.round}</td>
-      <td>
+    <tr className={`${baseRow} ${stateClass}`}>
+      <td className="px-4 py-3 font-mono text-foreground">{round.round}</td>
+      <td className="px-4 py-3">
         {round.is_cancelled ? (
-          round.race_name
+          <span>{round.race_name}</span>
         ) : (
-          <Link to={`/rounds/${round.round}?year=2026`}>{round.race_name}</Link>
+          <Link
+            to={`/rounds/${round.round}?year=2026`}
+            className="font-display font-bold text-foreground hover:text-accent-cyan transition-colors"
+          >
+            {round.race_name}
+          </Link>
         )}
       </td>
-      <td>{round.circuit_name}</td>
-      <td>{round.country_name}</td>
-      <td>{new Date(round.start_datetime_utc).toLocaleDateString()}</td>
-      <td>
+      <td className="px-4 py-3 text-muted-foreground">{round.circuit_name}</td>
+      <td className="px-4 py-3 text-muted-foreground">{round.country_name}</td>
+      <td className="px-4 py-3 font-mono text-muted-foreground">
+        {new Date(round.start_datetime_utc).toLocaleDateString()}
+      </td>
+      <td className="px-4 py-3">
         {round.is_cancelled ? (
-          <span className="badge cancelled">{round.cancelled_label ?? 'Cancelled'}</span>
+          <span className="cancelled inline-flex items-center rounded-md bg-negative/20 px-2 py-0.5 text-xs font-display font-bold uppercase tracking-wider text-negative">
+            {round.cancelled_label ?? 'Cancelled'}
+          </span>
         ) : (
-          <span className={`badge ${round.status}`}>{round.status}</span>
+          <span
+            className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-display font-bold uppercase tracking-wider ${round.status} ${
+              round.status === 'scheduled'
+                ? 'bg-surface text-muted-foreground border border-border'
+                : 'bg-positive/20 text-positive'
+            }`}
+          >
+            {round.status}
+          </span>
         )}
       </td>
     </tr>
