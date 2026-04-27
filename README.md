@@ -41,6 +41,7 @@ This project is being built in public, with architecture decisions and progress 
 ### Security & Operations
 
 - [Day 8: The Security Alert I Got at 5 AM — And What I Did About It](docs/blog/day-8-ops-security-lockdown.md)
+- [Day 9: The Struggle Bus to a Private Cosmos DB](docs/blog/day-9-cosmos-private-endpoint.md)
 
 ## Architecture Direction
 
@@ -58,9 +59,11 @@ This project is being built in public, with architecture decisions and progress 
 
 **Feature 2 — Race Session Results:** In progress. Phases 1–4 complete (21/31 tasks). Backend data pipeline, Cosmos storage, rounds API, frontend routing, round detail page, and dedicated race results component deployed. Rate limiting added to session poller. Phases 5–7 (qualifying/practice components and polish) remaining.
 
-- **Frontend**: http://f1.20.171.233.61.nip.io/
-- **API**: http://api-f1.20.171.233.61.nip.io/api/v1/calendar?year=2026
-- **Round Detail**: http://api-f1.20.171.233.61.nip.io/api/v1/rounds/3?year=2026
+**Security Lockdown (April 26, 2026):** Cosmos DB public access disabled; all reads/writes now flow through an Azure Private Endpoint in a dedicated subnet. CI managed identity restricted to `Contributor` only — role grants extracted to a manual Owner-only script. Live URL migrated from `*.nip.io` to Azure FQDN (`f1raceintel.westus3.cloudapp.azure.com`). Subnet NSGs explicit in Bicep to prevent Azure Policy from creating empty defaults that drop ingress traffic.
+
+- **Frontend**: http://f1raceintel.westus3.cloudapp.azure.com/
+- **API**: http://f1raceintel.westus3.cloudapp.azure.com/api/v1/calendar?year=2026
+- **Round Detail**: http://f1raceintel.westus3.cloudapp.azure.com/api/v1/rounds/3?year=2026
 - **Pipeline**: Fully green — lint → test → build → push → deploy
 - **Tests**: 51 passing (22 backend + 29 frontend)
 
