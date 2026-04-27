@@ -44,6 +44,10 @@ This project is being built in public, with architecture decisions and progress 
 - [Day 8: The Security Alert I Got at 5 AM — And What I Did About It](docs/blog/day-8-ops-security-lockdown.md)
 - [Day 9: The Struggle Bus to a Private Cosmos DB](docs/blog/day-9-cosmos-private-endpoint.md)
 
+### Feature 4: Design System & Brand Identity
+
+- [Day 11: From Generic Data Table to Race Car — A Design System in an Afternoon](docs/blog/day-11-design-system.md)
+
 ## Architecture Direction
 
 - Go backend with Chi router
@@ -62,11 +66,13 @@ This project is being built in public, with architecture decisions and progress 
 
 **Security Lockdown (April 26, 2026):** Cosmos DB public access disabled; all reads/writes now flow through an Azure Private Endpoint in a dedicated subnet. CI managed identity restricted to `Contributor` only — role grants extracted to a manual Owner-only script. Live URL migrated from `*.nip.io` to Azure FQDN (`f1raceintel.westus3.cloudapp.azure.com`). Subnet NSGs explicit in Bicep to prevent Azure Policy from creating empty defaults that drop ingress traffic.
 
+**Feature 4 — Design System & Brand Identity:** Complete. All 37 tasks across 6 phases done. Tailwind v4 `@theme` tokens, shadcn/ui primitives, self-hosted Inter and JetBrains Mono fonts. Near-black F1 theme with team-color accents on every standings/results row. New atomic components (`DriverCard`, `LapTimeDisplay`, `TireCompound`, `RaceCountdown`, `StandingsTable`). Same data, same routes — now it looks like motorsport.
+
 - **Frontend**: http://f1raceintel.westus3.cloudapp.azure.com/
 - **API**: http://f1raceintel.westus3.cloudapp.azure.com/api/v1/calendar?year=2026
 - **Round Detail**: http://f1raceintel.westus3.cloudapp.azure.com/rounds/3?year=2026
 - **Pipeline**: Fully green — lint → test → build → push → deploy
-- **Tests**: 60 passing (22 backend + 38 frontend)
+- **Tests**: 70 passing (22 backend + 48 frontend)
 
 ## Why Spec-Driven Development
 
