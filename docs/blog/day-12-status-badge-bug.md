@@ -109,7 +109,7 @@ This is the right division. The contract uses the spec's enum. The UI uses whate
 After the PR merged and CI ran the deploy job, I went to run `kubectl` and got a connection refused. Ran the IP-sync skill script:
 
 ```
-Detected current public IP: 23.93.233.7/32
+Detected current public IP: <REDACTED>/32
 
 Fetching current AKS authorized IP ranges...
 Current ranges: (none — API server is open to all)
@@ -149,7 +149,7 @@ A second small bit of session-startup hygiene came out of this: I added a VS Cod
 
 - **PR #20** ([fix(rounds): show correct session status for future rounds](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/20)) — merged, deployed.
 - **PR #21** ([chore: auto-approve git checkout and git pull in chat terminal](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/21)) — small DX win merged the same hour.
-- **AKS allowlist** — restored to `23.93.233.7/32`, secret repopulated.
+- **AKS allowlist** — restored to my home IP, secret repopulated.
 - **VS Code folder-open task** — `sync-ip.sh` now runs automatically when I open this workspace.
 - **Tests**: 22 backend + 48 frontend, all green. New unit tests for `deriveSessionStatus`, `deriveStoredStatus`, `isFutureSession`, and the read-time override.
 
