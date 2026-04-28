@@ -123,6 +123,20 @@ When writing a blog post:
 4. Update the "## Current Status" section in `README.md` if progress changed
 5. Commit blog posts and README updates directly to `master`
 
+### Sensitive data in blog posts (MANDATORY)
+
+Blog posts are public. Before writing or committing a post, redact:
+
+- **Public IP addresses** (home IP, runner IPs, any `a.b.c.d` literal). Replace with `<REDACTED>` or a phrase like "my home IP". This applies to prose, code blocks, and command output transcripts.
+- **CIDR ranges** that identify a person or office (e.g. `23.93.233.7/32`). Same treatment.
+- **Cluster/tenant/subscription GUIDs**, Key Vault names that aren't already public, storage account keys, connection strings, SAS tokens, bearer tokens, OAuth codes.
+- **Personal email addresses, phone numbers, physical addresses.**
+- **Internal hostnames or private DNS names** that aren't already public on the deployed site.
+
+Generic public infrastructure that's already discoverable (the deployed site URL, the ACR name `acrf1raceintel.azurecr.io`, the resource group name `rg-f1raceintel`, public GitHub repo URLs, PR numbers) is fine.
+
+When pasting terminal output into a post, scan it line-by-line for the items above and redact before committing. If unsure, redact.
+
 ## Session Startup Checklist
 
 At the start of every session, before any implementation work:
