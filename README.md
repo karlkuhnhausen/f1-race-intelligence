@@ -48,6 +48,10 @@ This project is being built in public, with architecture decisions and progress 
 
 - [Day 11: From Generic Data Table to Race Car — A Design System in an Afternoon](docs/blog/day-11-design-system.md)
 
+### Bug Fixes & Hardening
+
+- [Day 12: The Bug That Said "Completed" When the Race Hadn't Started](docs/blog/day-12-status-badge-bug.md)
+
 ## Architecture Direction
 
 - Go backend with Chi router
@@ -67,6 +71,8 @@ This project is being built in public, with architecture decisions and progress 
 **Security Lockdown (April 26, 2026):** Cosmos DB public access disabled; all reads/writes now flow through an Azure Private Endpoint in a dedicated subnet. CI managed identity restricted to `Contributor` only — role grants extracted to a manual Owner-only script. Live URL migrated from `*.nip.io` to Azure FQDN (`f1raceintel.westus3.cloudapp.azure.com`). Subnet NSGs explicit in Bicep to prevent Azure Policy from creating empty defaults that drop ingress traffic.
 
 **Feature 4 — Design System & Brand Identity:** Complete. All 37 tasks across 6 phases done. Tailwind v4 `@theme` tokens, shadcn/ui primitives, self-hosted Inter and JetBrains Mono fonts. Near-black F1 theme with team-color accents on every standings/results row. New atomic components (`DriverCard`, `LapTimeDisplay`, `TireCompound`, `RaceCountdown`, `StandingsTable`). Same data, same routes — now it looks like motorsport.
+
+**Bug Fix (April 27, 2026):** Future round sessions were displaying a green "Completed" badge instead of "Upcoming." Two stacked root causes: the ingest transform hardcoded `Status: "completed"` for every session it wrote to Cosmos, and the poller's future-skip guard silently fell through when OpenF1 returned a null `date_end`. Fixed by deriving status at read time in the rounds API service (immediate user-visible correction, no Cosmos backfill needed) and stopping the hardcoded value at write time (durable prevention). Frontend now maps the wire-level `in_progress` enum to a friendly "Live" label.
 
 - **Frontend**: http://f1raceintel.westus3.cloudapp.azure.com/
 - **API**: http://f1raceintel.westus3.cloudapp.azure.com/api/v1/calendar?year=2026

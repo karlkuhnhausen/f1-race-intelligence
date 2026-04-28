@@ -95,4 +95,4 @@ The product looks like an F1 product now. The next feature can be something othe
 
 ---
 
-[← Day 10: The Rate Limit Cascade](day-10-rate-limit-cascade.md)
+[← Day 10: The Rate Limit Cascade](day-10-rate-limit-cascade.md) · [Day 12: The Bug That Said "Completed" When the Race Hadn't Started →](day-12-status-badge-bug.md)
