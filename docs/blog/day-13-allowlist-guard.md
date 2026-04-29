@@ -122,7 +122,7 @@ echo "exit=$?"
 
 ```bash
 # Populated case — guard should pass
-ADMIN_IP_RANGES="1.2.3.4/32" bash -c \
+ADMIN_IP_RANGES="203.0.113.1/32" bash -c \
   'if [[ -z "${ADMIN_IP_RANGES}" ]]; then
      echo "::error::empty"; exit 1
    fi
