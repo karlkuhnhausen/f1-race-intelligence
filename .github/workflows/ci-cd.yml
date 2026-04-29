@@ -197,6 +197,16 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Validate ADMIN_IP_RANGES is set
+        env:
+          ADMIN_IP_RANGES: ${{ secrets.ADMIN_IP_RANGES }}
+        run: |
+          if [[ -z "${ADMIN_IP_RANGES}" ]]; then
+            echo "::error::ADMIN_IP_RANGES secret is empty/unset. Refusing to deploy: an empty value would lock the admin out of AKS or open the API server to the Internet during cleanup."
+            exit 1
+          fi
+          echo "ADMIN_IP_RANGES is set; proceeding."
+
       - name: Get AKS credentials
         run: |
           az aks get-credentials \
@@ -255,9 +265,15 @@ jobs:
 
       - name: Remove runner IP from AKS API server allowlist
         if: always()
+        env:
+          ADMIN_IP_RANGES: ${{ secrets.ADMIN_IP_RANGES }}
         run: |
+          if [[ -z "${ADMIN_IP_RANGES}" ]]; then
+            echo "::error::ADMIN_IP_RANGES is empty; refusing to update allowlist (would open AKS API server to the Internet)."
+            exit 1
+          fi
           az aks update \
             --resource-group ${{ secrets.AKS_RESOURCE_GROUP }} \
             --name ${{ secrets.AKS_CLUSTER_NAME }} \
-            --api-server-authorized-ip-ranges "${{ secrets.ADMIN_IP_RANGES }}" \
+            --api-server-authorized-ip-ranges "${ADMIN_IP_RANGES}" \
             --no-wait
