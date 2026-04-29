@@ -46,6 +46,14 @@ func (s *Service) GetCalendar(ctx context.Context, season int) (*CalendarRespons
 			m.CancelledReason = override.Reason
 		}
 
+		// Derive lifecycle status at read time so past meetings flip to
+		// "completed" without requiring an ingest cycle. The stored Status is
+		// effectively a cache; dates + the wall clock are the source of truth.
+		// Cancellation override (set above) always wins.
+		if !m.IsCancelled {
+			m.Status = deriveMeetingStatus(now, m.StartDatetimeUTC, m.EndDatetimeUTC)
+		}
+
 		rounds = append(rounds, RoundDTO{
 			Round:            m.Round,
 			RaceName:         m.RaceName,
@@ -93,4 +101,28 @@ func (s *Service) GetCalendar(ctx context.Context, season int) (*CalendarRespons
 		CountdownTargetUTC: countdownTarget,
 		Rounds:             rounds,
 	}, nil
+}
+
+// deriveMeetingStatus computes a meeting's lifecycle status from the current
+// time and its scheduled start/end times. Mirrors the day-12 session-level
+// pattern: status is a derived value, not a stored fact.
+//
+// Rules:
+//   - zero start time           -> unknown
+//   - start is in the future    -> scheduled
+//   - end is zero or in future  -> scheduled (race weekend in progress)
+//   - else                      -> completed
+//
+// Cancellations are handled by the caller and take precedence.
+func deriveMeetingStatus(now, start, end time.Time) string {
+	if start.IsZero() {
+		return string(domain.StatusUnknown)
+	}
+	if start.After(now) {
+		return string(domain.StatusScheduled)
+	}
+	if end.IsZero() || end.After(now) {
+		return string(domain.StatusScheduled)
+	}
+	return string(domain.StatusCompleted)
 }
