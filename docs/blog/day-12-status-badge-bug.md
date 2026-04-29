@@ -157,4 +157,4 @@ The dashboard now correctly reports that a race that hasn't happened hasn't happ
 
 ---
 
-[← Day 11: From Generic Data Table to Race Car](day-11-design-system.md)
+[← Day 11: From Generic Data Table to Race Car](day-11-design-system.md) · [Day 13: An Empty String Is a Wildcard →](day-13-allowlist-guard.md)
