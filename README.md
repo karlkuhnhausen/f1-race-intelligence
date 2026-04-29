@@ -51,6 +51,7 @@ This project is being built in public, with architecture decisions and progress 
 ### Bug Fixes & Hardening
 
 - [Day 12: The Bug That Said "Completed" When the Race Hadn't Started](docs/blog/day-12-status-badge-bug.md)
+- [Day 13: An Empty String Is a Wildcard — Closing the AKS Allowlist Hole](docs/blog/day-13-allowlist-guard.md)
 
 ## Architecture Direction
 
@@ -73,6 +74,8 @@ This project is being built in public, with architecture decisions and progress 
 **Feature 4 — Design System & Brand Identity:** Complete. All 37 tasks across 6 phases done. Tailwind v4 `@theme` tokens, shadcn/ui primitives, self-hosted Inter and JetBrains Mono fonts. Near-black F1 theme with team-color accents on every standings/results row. New atomic components (`DriverCard`, `LapTimeDisplay`, `TireCompound`, `RaceCountdown`, `StandingsTable`). Same data, same routes — now it looks like motorsport.
 
 **Bug Fix (April 27, 2026):** Future round sessions were displaying a green "Completed" badge instead of "Upcoming." Two stacked root causes: the ingest transform hardcoded `Status: "completed"` for every session it wrote to Cosmos, and the poller's future-skip guard silently fell through when OpenF1 returned a null `date_end`. Fixed by deriving status at read time in the rounds API service (immediate user-visible correction, no Cosmos backfill needed) and stopping the hardcoded value at write time (durable prevention). Frontend now maps the wire-level `in_progress` enum to a friendly "Live" label.
+
+**CI Hardening (April 28, 2026):** Closed an AKS API-server allowlist hole surfaced on Day 12. The deploy cleanup step passed `${{ secrets.ADMIN_IP_RANGES }}` directly to `az aks update --api-server-authorized-ip-ranges`, and Azure interprets an empty value as "remove all restrictions" — one missing secret away from publishing the cluster's control plane to the Internet. Fix layered three guards: a preflight check at the top of each deploy job in `ci-cd.yml` and `infra-deploy.yml` that fails fast before any cluster mutation, an emptiness check on the cleanup `az aks update` (refuses with `exit 1` rather than silently opening the cluster), and a `gh secret set --body ""` refusal in `sync-ip.sh`. Both workflows reference the secret via `env:` rather than inline template substitution. PR [#25](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/25).
 
 - **Frontend**: http://f1raceintel.westus3.cloudapp.azure.com/
 - **API**: http://f1raceintel.westus3.cloudapp.azure.com/api/v1/calendar?year=2026
