@@ -61,6 +61,14 @@ echo ""
 echo "✓ AKS API server updated."
 
 # ── Update GitHub secret ───────────────────────────────────────────────────────
+# Defense in depth: never push an empty value. An empty ADMIN_IP_RANGES secret
+# would cause the CI cleanup step to run `az aks update --api-server-authorized-ip-ranges ""`,
+# which Azure interprets as "remove all restrictions" — opening the API server to the Internet.
+if [[ -z "$NEW_RANGES" ]]; then
+  echo "✗ Refusing to set empty value for '$SECRET_NAME' — aborting." >&2
+  exit 1
+fi
+
 if command -v gh &>/dev/null; then
   echo "Updating GitHub secret '$SECRET_NAME'..."
   gh secret set "$SECRET_NAME" --body "$NEW_RANGES" --repo "$REPO"

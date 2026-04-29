@@ -98,6 +98,16 @@ jobs:
             --parameters ${{ env.PARAMETERS_FILE }} \
             --name "infra-$(date +%Y%m%d-%H%M%S)"
 
+      - name: Validate ADMIN_IP_RANGES is set
+        env:
+          ADMIN_IP_RANGES: ${{ secrets.ADMIN_IP_RANGES }}
+        run: |
+          if [[ -z "${ADMIN_IP_RANGES}" ]]; then
+            echo "::error::ADMIN_IP_RANGES secret is empty/unset. Refusing to deploy: an empty value would lock the admin out of AKS or open the API server to the Internet during cleanup."
+            exit 1
+          fi
+          echo "ADMIN_IP_RANGES is set; proceeding."
+
       - name: Get AKS credentials
         run: |
           az aks get-credentials \
@@ -166,12 +176,18 @@ jobs:
 
       - name: Remove runner IP from AKS API server allowlist
         if: always()
+        env:
+          ADMIN_IP_RANGES: ${{ secrets.ADMIN_IP_RANGES }}
         run: |
+          if [[ -z "${ADMIN_IP_RANGES}" ]]; then
+            echo "::error::ADMIN_IP_RANGES is empty; refusing to update allowlist (would open AKS API server to the Internet)."
+            exit 1
+          fi
           if az aks show --resource-group rg-f1raceintel --name aks-f1raceintel >/dev/null 2>&1; then
             az aks update \
               --resource-group rg-f1raceintel \
               --name aks-f1raceintel \
-              --api-server-authorized-ip-ranges "${{ secrets.ADMIN_IP_RANGES }}" \
+              --api-server-authorized-ip-ranges "${ADMIN_IP_RANGES}" \
               --no-wait
           else
             echo "AKS cluster not found; skipping IP allowlist removal."
