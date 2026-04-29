@@ -158,4 +158,102 @@ describe('RoundDetailPage', () => {
     expect(screen.getByText('Live')).toBeDefined();
     expect(screen.getByText('Completed')).toBeDefined();
   });
+
+  it('orders sessions newest-first when all sessions are completed', async () => {
+    const { fetchRoundDetail } = await import('../../src/features/rounds/roundApi');
+    (fetchRoundDetail as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      year: 2026,
+      round: 1,
+      race_name: 'Australian Grand Prix',
+      circuit_name: 'Albert Park',
+      country_name: 'Australia',
+      data_as_of_utc: '2026-03-16T00:00:00Z',
+      sessions: [
+        {
+          session_name: 'Practice 1',
+          session_type: 'practice1',
+          status: 'completed',
+          date_start_utc: '2026-03-13T01:30:00Z',
+          date_end_utc: '2026-03-13T02:30:00Z',
+          results: [],
+        },
+        {
+          session_name: 'Qualifying',
+          session_type: 'qualifying',
+          status: 'completed',
+          date_start_utc: '2026-03-14T06:00:00Z',
+          date_end_utc: '2026-03-14T07:00:00Z',
+          results: [],
+        },
+        {
+          session_name: 'Race',
+          session_type: 'race',
+          status: 'completed',
+          date_start_utc: '2026-03-15T05:00:00Z',
+          date_end_utc: '2026-03-15T07:00:00Z',
+          results: [],
+        },
+      ],
+    } as RoundDetailResponse);
+
+    renderRoundDetail();
+
+    // Wait for content to load.
+    await screen.findByText('Race');
+
+    // Session names render as h3 inside SessionCard.
+    const headings = screen.getAllByRole('heading', { level: 3 });
+    const sessionHeadings = headings
+      .map((h) => h.textContent ?? '')
+      .filter((t) => ['Race', 'Qualifying', 'Practice 1'].includes(t));
+    expect(sessionHeadings).toEqual(['Race', 'Qualifying', 'Practice 1']);
+  });
+
+  it('preserves chronological order when not all sessions are completed', async () => {
+    const { fetchRoundDetail } = await import('../../src/features/rounds/roundApi');
+    (fetchRoundDetail as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      year: 2026,
+      round: 8,
+      race_name: 'Test GP',
+      circuit_name: 'Test Circuit',
+      country_name: 'Testland',
+      data_as_of_utc: '2026-04-27T12:00:00Z',
+      sessions: [
+        {
+          session_name: 'Race',
+          session_type: 'race',
+          status: 'upcoming',
+          date_start_utc: '2026-05-03T13:00:00Z',
+          date_end_utc: '2026-05-03T15:00:00Z',
+          results: [],
+        },
+        {
+          session_name: 'Practice 1',
+          session_type: 'practice1',
+          status: 'completed',
+          date_start_utc: '2026-05-01T10:00:00Z',
+          date_end_utc: '2026-05-01T11:00:00Z',
+          results: [],
+        },
+        {
+          session_name: 'Qualifying',
+          session_type: 'qualifying',
+          status: 'upcoming',
+          date_start_utc: '2026-05-02T13:00:00Z',
+          date_end_utc: '2026-05-02T14:00:00Z',
+          results: [],
+        },
+      ],
+    } as RoundDetailResponse);
+
+    renderRoundDetail('8');
+
+    await screen.findByText('Race');
+
+    const headings = screen.getAllByRole('heading', { level: 3 });
+    const sessionHeadings = headings
+      .map((h) => h.textContent ?? '')
+      .filter((t) => ['Race', 'Qualifying', 'Practice 1'].includes(t));
+    expect(sessionHeadings).toEqual(['Practice 1', 'Qualifying', 'Race']);
+  });
 });

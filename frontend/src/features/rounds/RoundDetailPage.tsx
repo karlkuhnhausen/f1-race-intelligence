@@ -28,16 +28,31 @@ export default function RoundDetailPage() {
   if (error) return <div className="text-negative">Error: {error}</div>;
   if (!data) return null;
 
-  // Order sessions: practice → qualifying → race
+  // Order sessions: practice → qualifying → race for upcoming/in-progress
+  // rounds. For fully completed rounds, flip to date-descending so the race
+  // sits at the top and FP1 at the bottom.
   const sessionOrder: Record<string, number> = {
     practice1: 1, practice2: 2, practice3: 3,
     sprint_qualifying: 4, sprint: 5,
     qualifying: 6, race: 7,
   };
 
-  const sortedSessions = [...data.sessions].sort(
-    (a, b) => (sessionOrder[a.session_type] ?? 99) - (sessionOrder[b.session_type] ?? 99)
-  );
+  const allCompleted =
+    data.sessions.length > 0 &&
+    data.sessions.every((s) => s.status === 'completed');
+
+  const sortedSessions = [...data.sessions].sort((a, b) => {
+    if (allCompleted) {
+      return (
+        new Date(b.date_start_utc).getTime() -
+        new Date(a.date_start_utc).getTime()
+      );
+    }
+    return (
+      (sessionOrder[a.session_type] ?? 99) -
+      (sessionOrder[b.session_type] ?? 99)
+    );
+  });
 
   return (
     <section className="space-y-6">
