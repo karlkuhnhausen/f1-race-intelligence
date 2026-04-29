@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { fetchRoundDetail, type RoundDetailResponse, type SessionDetail } from './roundApi';
-import RaceResults from './RaceResults';
-import QualifyingResults from './QualifyingResults';
-import PracticeResults from './PracticeResults';
+import SessionResultsTable from './SessionResultsTable';
 
 export default function RoundDetailPage() {
   const { round } = useParams<{ round: string }>();
@@ -28,16 +26,31 @@ export default function RoundDetailPage() {
   if (error) return <div className="text-negative">Error: {error}</div>;
   if (!data) return null;
 
-  // Order sessions: practice → qualifying → race
+  // Order sessions: practice → qualifying → race for upcoming/in-progress
+  // rounds. For fully completed rounds, flip to date-descending so the race
+  // sits at the top and FP1 at the bottom.
   const sessionOrder: Record<string, number> = {
     practice1: 1, practice2: 2, practice3: 3,
     sprint_qualifying: 4, sprint: 5,
     qualifying: 6, race: 7,
   };
 
-  const sortedSessions = [...data.sessions].sort(
-    (a, b) => (sessionOrder[a.session_type] ?? 99) - (sessionOrder[b.session_type] ?? 99)
-  );
+  const allCompleted =
+    data.sessions.length > 0 &&
+    data.sessions.every((s) => s.status === 'completed');
+
+  const sortedSessions = [...data.sessions].sort((a, b) => {
+    if (allCompleted) {
+      return (
+        new Date(b.date_start_utc).getTime() -
+        new Date(a.date_start_utc).getTime()
+      );
+    }
+    return (
+      (sessionOrder[a.session_type] ?? 99) -
+      (sessionOrder[b.session_type] ?? 99)
+    );
+  });
 
   return (
     <section className="space-y-6">
@@ -77,10 +90,6 @@ export default function RoundDetailPage() {
   );
 }
 
-const RACE_TYPES = new Set(['race', 'sprint']);
-const QUALIFYING_TYPES = new Set(['qualifying', 'sprint_qualifying']);
-const PRACTICE_TYPES = new Set(['practice1', 'practice2', 'practice3']);
-
 function SessionCard({ session }: { session: SessionDetail }) {
   const statusColor =
     session.status === 'completed'
@@ -117,15 +126,10 @@ function SessionCard({ session }: { session: SessionDetail }) {
         {session.status === 'upcoming' ? (
           <p className="text-muted-foreground">Not yet available</p>
         ) : session.results.length > 0 ? (
-          RACE_TYPES.has(session.session_type) ? (
-            <RaceResults results={session.results} />
-          ) : QUALIFYING_TYPES.has(session.session_type) ? (
-            <QualifyingResults results={session.results} />
-          ) : PRACTICE_TYPES.has(session.session_type) ? (
-            <PracticeResults results={session.results} />
-          ) : (
-            <p className="text-muted-foreground">No results available.</p>
-          )
+          <SessionResultsTable
+            results={session.results}
+            sessionType={session.session_type}
+          />
         ) : (
           <p className="text-muted-foreground">No results available.</p>
         )}
