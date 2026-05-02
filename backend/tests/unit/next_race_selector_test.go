@@ -85,6 +85,46 @@ func TestSelectNextRace_EmptySlice(t *testing.T) {
 	}
 }
 
+func TestSelectNextRace_WeekendInProgressReturnsCurrentRound(t *testing.T) {
+	// Saturday during Miami weekend: Miami started Friday 19:00 UTC, ends
+	// Sunday 23:59 UTC. Selector must return the current round, not skip
+	// ahead to the next one.
+	miamiStart := time.Date(2026, 5, 1, 19, 0, 0, 0, time.UTC) // Friday
+	miamiEnd := miamiStart.Add(72 * time.Hour)
+	now := time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC) // Saturday
+	meetings := []domain.RaceMeeting{
+		{Round: 5, RaceName: "Miami GP", StartDatetimeUTC: miamiStart, EndDatetimeUTC: miamiEnd, Status: domain.StatusScheduled},
+		{Round: 6, RaceName: "Spanish GP", StartDatetimeUTC: time.Date(2026, 5, 22, 13, 0, 0, 0, time.UTC), Status: domain.StatusScheduled},
+	}
+
+	result := domain.SelectNextRace(meetings, now)
+	if !result.Found {
+		t.Fatal("expected to find next race")
+	}
+	if result.Round != 5 {
+		t.Errorf("expected current weekend (round 5), got %d", result.Round)
+	}
+}
+
+func TestSelectNextRace_AdvancesAfterWeekendEnd(t *testing.T) {
+	// Once the weekend window closes, the selector advances to the next round.
+	miamiStart := time.Date(2026, 5, 1, 19, 0, 0, 0, time.UTC)
+	miamiEnd := miamiStart.Add(72 * time.Hour) // ends 2026-05-04 19:00 UTC
+	now := time.Date(2026, 5, 5, 0, 0, 0, 0, time.UTC)
+	meetings := []domain.RaceMeeting{
+		{Round: 5, RaceName: "Miami GP", StartDatetimeUTC: miamiStart, EndDatetimeUTC: miamiEnd, Status: domain.StatusScheduled},
+		{Round: 6, RaceName: "Spanish GP", StartDatetimeUTC: time.Date(2026, 5, 22, 13, 0, 0, 0, time.UTC), Status: domain.StatusScheduled},
+	}
+
+	result := domain.SelectNextRace(meetings, now)
+	if !result.Found {
+		t.Fatal("expected to find next race")
+	}
+	if result.Round != 6 {
+		t.Errorf("expected next round 6 after weekend ended, got %d", result.Round)
+	}
+}
+
 func TestSelectNextRace_StatusCancelledWithoutFlag(t *testing.T) {
 	// A round with StatusCancelled but IsCancelled=false should still be skipped.
 	now := time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC)

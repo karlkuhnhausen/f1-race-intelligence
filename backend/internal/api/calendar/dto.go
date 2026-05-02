@@ -17,11 +17,23 @@ type RoundDTO struct {
 	CancelledReason  string    `json:"cancelled_reason,omitempty"`
 }
 
+// ActiveSessionDTO describes the session currently in focus during an
+// in-progress race weekend (live or imminently next).
+type ActiveSessionDTO struct {
+	SessionType string    `json:"session_type"`
+	SessionName string    `json:"session_name"`
+	Status      string    `json:"status"` // upcoming | in_progress | completed
+	DateStart   time.Time `json:"date_start_utc"`
+	DateEnd     time.Time `json:"date_end_utc"`
+}
+
 // CalendarResponse is the full API response for GET /api/v1/calendar.
 type CalendarResponse struct {
-	Year               int        `json:"year"`
-	DataAsOfUTC        time.Time  `json:"data_as_of_utc"`
-	NextRound          int        `json:"next_round"`
-	CountdownTargetUTC *time.Time `json:"countdown_target_utc"`
-	Rounds             []RoundDTO `json:"rounds"`
+	Year               int               `json:"year"`
+	DataAsOfUTC        time.Time         `json:"data_as_of_utc"`
+	NextRound          int               `json:"next_round"`
+	CountdownTargetUTC *time.Time        `json:"countdown_target_utc"`
+	WeekendInProgress  bool              `json:"weekend_in_progress"`
+	ActiveSession      *ActiveSessionDTO `json:"active_session,omitempty"`
+	Rounds             []RoundDTO        `json:"rounds"`
 }

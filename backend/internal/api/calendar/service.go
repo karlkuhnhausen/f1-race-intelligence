@@ -10,8 +10,9 @@ import (
 
 // Service provides calendar business logic and response shaping.
 type Service struct {
-	repo storage.CalendarRepository
-	now  func() time.Time // injectable clock for testing
+	repo        storage.CalendarRepository
+	sessionRepo storage.SessionRepository // optional; nil disables weekend-active-session enrichment
+	now         func() time.Time          // injectable clock for testing
 }
 
 // NewService creates a new calendar service.
@@ -22,6 +23,18 @@ func NewService(repo storage.CalendarRepository) *Service {
 // NewServiceWithClock creates a calendar service with an injectable clock.
 func NewServiceWithClock(repo storage.CalendarRepository, now func() time.Time) *Service {
 	return &Service{repo: repo, now: now}
+}
+
+// NewServiceWithSessions creates a calendar service that also surfaces the
+// active session for an in-progress race weekend.
+func NewServiceWithSessions(repo storage.CalendarRepository, sessionRepo storage.SessionRepository) *Service {
+	return &Service{repo: repo, sessionRepo: sessionRepo, now: func() time.Time { return time.Now().UTC() }}
+}
+
+// NewServiceWithSessionsAndClock is like NewServiceWithSessions with an
+// injectable clock for deterministic testing.
+func NewServiceWithSessionsAndClock(repo storage.CalendarRepository, sessionRepo storage.SessionRepository, now func() time.Time) *Service {
+	return &Service{repo: repo, sessionRepo: sessionRepo, now: now}
 }
 
 // GetCalendar retrieves the full season calendar and computes next-race metadata.
@@ -94,13 +107,82 @@ func (s *Service) GetCalendar(ctx context.Context, season int) (*CalendarRespons
 		countdownTarget = &t
 	}
 
-	return &CalendarResponse{
+	resp := &CalendarResponse{
 		Year:               season,
 		DataAsOfUTC:        latestDataAsOf,
 		NextRound:          nextResult.Round,
 		CountdownTargetUTC: countdownTarget,
 		Rounds:             rounds,
-	}, nil
+	}
+
+	// Race-weekend enrichment: if the next round's weekend window contains
+	// `now`, surface the currently-active session so the frontend can render
+	// "Race Weekend" context instead of a multi-day countdown to the wrong
+	// race. Best-effort — silently skipped if no session repo is wired or if
+	// the session lookup fails.
+	if nextResult.Found && s.sessionRepo != nil {
+		if nextMeeting, ok := findMeeting(domainMeetings, nextResult.Round); ok {
+			weekendEnd := nextMeeting.EndDatetimeUTC
+			if weekendEnd.IsZero() && !nextMeeting.StartDatetimeUTC.IsZero() {
+				weekendEnd = nextMeeting.StartDatetimeUTC.Add(72 * time.Hour)
+			}
+			weekendStart := nextMeeting.StartDatetimeUTC
+			inWeekend := !weekendStart.IsZero() &&
+				!now.Before(weekendStart) &&
+				(weekendEnd.IsZero() || now.Before(weekendEnd))
+
+			if inWeekend {
+				resp.WeekendInProgress = true
+
+				sessions, err := s.sessionRepo.GetSessionsByRound(ctx, season, nextResult.Round)
+				if err == nil && len(sessions) > 0 {
+					windows := make([]domain.SessionWindow, 0, len(sessions))
+					for _, sess := range sessions {
+						windows = append(windows, domain.SessionWindow{
+							SessionType:  domain.SessionType(sess.SessionType),
+							SessionName:  sess.SessionName,
+							DateStartUTC: sess.DateStartUTC,
+							DateEndUTC:   sess.DateEndUTC,
+						})
+					}
+					if active, ok := domain.SelectActiveSession(windows, now); ok {
+						resp.ActiveSession = &ActiveSessionDTO{
+							SessionType: string(active.SessionType),
+							SessionName: active.SessionName,
+							Status:      string(active.Status),
+							DateStart:   active.DateStart,
+							DateEnd:     active.DateEnd,
+						}
+						// Prefer a session-scoped countdown target during the
+						// weekend: count down to the next session start, or
+						// to the active session's end while it is live.
+						switch active.Status {
+						case domain.SessionStatusUpcoming:
+							t := active.DateStart
+							resp.CountdownTargetUTC = &t
+						case domain.SessionStatusInProgress:
+							if !active.DateEnd.IsZero() {
+								t := active.DateEnd
+								resp.CountdownTargetUTC = &t
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return resp, nil
+}
+
+// findMeeting returns the first meeting matching the given round number.
+func findMeeting(meetings []domain.RaceMeeting, round int) (domain.RaceMeeting, bool) {
+	for _, m := range meetings {
+		if m.Round == round {
+			return m, true
+		}
+	}
+	return domain.RaceMeeting{}, false
 }
 
 // deriveMeetingStatus computes a meeting's lifecycle status from the current

@@ -126,8 +126,9 @@ func TestCountdownTransition_BeforeMiami(t *testing.T) {
 func TestCountdownTransition_AfterMiami(t *testing.T) {
 	repo := seedThreeRounds()
 
-	// "Now" is after the Miami GP — next round should transition to Spanish GP (R3).
-	afterMiami := time.Date(2026, 5, 5, 0, 0, 0, 0, time.UTC)
+	// "Now" is after the entire Miami weekend (Miami ends May 7 19:00 UTC) —
+	// next round should transition to Spanish GP (R3).
+	afterMiami := time.Date(2026, 5, 8, 0, 0, 0, 0, time.UTC)
 	svc := calendar.NewServiceWithClock(repo, fixedClock(afterMiami))
 	handler := calendar.NewHandler(svc, slog.Default())
 

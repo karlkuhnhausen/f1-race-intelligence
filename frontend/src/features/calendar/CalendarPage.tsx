@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchCalendar, type CalendarResponse, type RaceMeetingDTO } from './calendarApi';
 import NextRaceCard from './NextRaceCard';
+import RaceWeekendCard from './RaceWeekendCard';
 
 export default function CalendarPage() {
   const [calendar, setCalendar] = useState<CalendarResponse | null>(null);
@@ -30,12 +31,23 @@ export default function CalendarPage() {
         </p>
       </div>
 
-      {calendar.next_round > 0 && calendar.countdown_target_utc && (
-        <NextRaceCard
-          round={calendar.rounds.find((r) => r.round === calendar.next_round)!}
-          countdownTarget={calendar.countdown_target_utc}
-        />
-      )}
+      {(() => {
+        if (calendar.next_round <= 0) return null;
+        const nextRound = calendar.rounds.find((r) => r.round === calendar.next_round);
+        if (!nextRound) return null;
+
+        if (calendar.weekend_in_progress && calendar.active_session) {
+          return <RaceWeekendCard round={nextRound} session={calendar.active_session} />;
+        }
+
+        if (calendar.countdown_target_utc) {
+          return (
+            <NextRaceCard round={nextRound} countdownTarget={calendar.countdown_target_utc} />
+          );
+        }
+
+        return null;
+      })()}
 
       <div className="overflow-hidden rounded-lg border border-border bg-surface">
         <table className="w-full text-sm">
