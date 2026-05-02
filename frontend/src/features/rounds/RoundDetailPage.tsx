@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { fetchRoundDetail, type RoundDetailResponse, type SessionDetail } from './roundApi';
 import SessionResultsTable from './SessionResultsTable';
-import RaceCountdown from '@/features/design-system/RaceCountdown';
+import SessionTicker from './SessionTicker';
 import { formatLocalDateTime, isWithinWeekendWindow } from './sessionTime';
 
 export default function RoundDetailPage() {
@@ -163,7 +163,8 @@ function SessionCard({
       )}
 
       {showUpcomingCountdown && (
-        <RaceCountdown
+        <SessionTicker
+          mode="countdown"
           targetUtc={session.date_start_utc}
           label={`Until ${session.session_name}`}
           className="mt-4"
@@ -171,9 +172,10 @@ function SessionCard({
       )}
 
       {showLiveCountdown && (
-        <RaceCountdown
-          targetUtc={session.date_end_utc}
-          label={`${session.session_name} live — ends in`}
+        <SessionTicker
+          mode="elapsed"
+          targetUtc={session.date_start_utc}
+          label={`${session.session_name} elapsed`}
           className="mt-4"
         />
       )}
