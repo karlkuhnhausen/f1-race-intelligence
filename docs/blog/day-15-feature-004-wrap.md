@@ -130,4 +130,4 @@ The branch protection rule on master held through Feature 4 — every change shi
 
 ---
 
-[← Day 14: Three Bugs, One Cause — When Stale Cached State Becomes a UX Smell](day-14-design-polish.md)
+[← Day 14: Three Bugs, One Cause — When Stale Cached State Becomes a UX Smell](day-14-design-polish.md) · [Day 16: The Countdown Was Lying — Race Weekend Status →](day-16-race-weekend-countdown.md)

@@ -54,6 +54,7 @@ This project is being built in public, with architecture decisions and progress 
 - [Day 12: The Bug That Said "Completed" When the Race Hadn't Started](docs/blog/day-12-status-badge-bug.md)
 - [Day 13: An Empty String Is a Wildcard — Closing the AKS Allowlist Hole](docs/blog/day-13-allowlist-guard.md)
 - [Day 14: Three Bugs, One Cause — When Stale Cached State Becomes a UX Smell](docs/blog/day-14-design-polish.md)
+- [Day 16: The Countdown Was Lying — Race Weekend Status](docs/blog/day-16-race-weekend-countdown.md)
 
 ## Architecture Direction
 
