@@ -60,7 +60,7 @@ function TeamCell({ teamName }: { teamName: string }) {
 
 function DriverCell({ acronym, name }: { acronym: string; name: string }) {
   return (
-    <td className={cellLeft}>
+    <td className={`${cellLeft} whitespace-nowrap`}>
       <span className="font-mono font-bold text-accent-cyan mr-2">{acronym}</span>
       <span className="font-display">{name}</span>
     </td>
@@ -172,7 +172,7 @@ export default function SessionResultsTable({ results, sessionType }: Props) {
         <colgroup>
           <col className="w-14" />
           <col className="w-14" />
-          <col />
+          <col className="w-56" />
           <col className="w-[22%]" />
           {isRace && (
             <>
