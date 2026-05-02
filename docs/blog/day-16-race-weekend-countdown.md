@@ -181,4 +181,4 @@ The Miami Sprint goes off in 7 hours and 21 minutes. I know because the dashboar
 
 ---
 
-[← Day 15: Feature 4 — What a "Pure Frontend" Feature Actually Cost](day-15-feature-004-wrap.md)
+[← Day 15: Feature 4 — What a "Pure Frontend" Feature Actually Cost](day-15-feature-004-wrap.md) · [Day 17: A Real CVE Lands on a Real Cluster →](day-17-cve-aks-5753-patching.md)
