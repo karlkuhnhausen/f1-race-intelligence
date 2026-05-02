@@ -1,0 +1,14 @@
+{
+  "name": "f1-screenshots",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "capture": "node capture.mjs",
+    "capture:local": "BASE_URL=http://localhost:5173 node capture.mjs",
+    "capture:prod": "BASE_URL=https://f1raceintel.westus3.cloudapp.azure.com node capture.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0"
+  }
+}
