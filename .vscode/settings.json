@@ -37,6 +37,10 @@
         "git add": true,
         "git checkout": true,
         "git pull": true,
-        "gh": true
+        "gh": true,
+        "golangci-lint": true,
+        "git commit": true,
+        "git push": true,
+        "az": true
     }
 }
