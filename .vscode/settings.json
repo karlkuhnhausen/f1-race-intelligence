@@ -36,6 +36,7 @@
         "npx tsc": true,
         "git add": true,
         "git checkout": true,
-        "git pull": true
+        "git pull": true,
+        "gh": true
     }
 }
