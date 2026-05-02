@@ -321,19 +321,18 @@ describe('RoundDetailPage — session countdowns and completed time', () => {
     });
 
     expect(screen.getByText('Until Practice 1')).toBeDefined();
-    expect(screen.getByText('1h')).toBeDefined();
-    expect(screen.getByText('0m')).toBeDefined();
-    expect(screen.getByText('0s')).toBeDefined();
+    // Initial: 1h 0m 0s remaining => 01:00:00
+    expect(screen.getByText('01:00:00')).toBeDefined();
 
-    // Tick 1 second; seconds segment changes.
+    // Tick 1 second; ticker decrements.
     await act(async () => {
       vi.advanceTimersByTime(1_000);
     });
-    expect(screen.queryByText('0s')).toBeNull();
-    expect(screen.getByText('59s')).toBeDefined();
+    expect(screen.queryByText('01:00:00')).toBeNull();
+    expect(screen.getByText('00:59:59')).toBeDefined();
   });
 
-  it('renders a "live — ends in" countdown for in_progress sessions targeting end time', async () => {
+  it('renders an elapsed ticker (count-up from start) for in_progress sessions', async () => {
     await mockResponse({
       year: 2026,
       round: 8,
@@ -360,8 +359,11 @@ describe('RoundDetailPage — session countdowns and completed time', () => {
       await Promise.resolve();
     });
 
-    expect(screen.getByText('Qualifying live — ends in')).toBeDefined();
-    expect(screen.getByText('30m')).toBeDefined();
+    expect(screen.getByText('Qualifying elapsed')).toBeDefined();
+    // 30 minutes elapsed => 00:30:00
+    expect(screen.getByText('00:30:00')).toBeDefined();
+    const ticker = screen.getByTestId('session-ticker');
+    expect(ticker.dataset.mode).toBe('elapsed');
   });
 
   it('does NOT render a countdown for completed sessions and shows a "Completed …" line', async () => {
@@ -390,8 +392,8 @@ describe('RoundDetailPage — session countdowns and completed time', () => {
       await Promise.resolve();
     });
 
-    // No countdown component.
-    expect(screen.queryByTestId('race-countdown')).toBeNull();
+    // No ticker component.
+    expect(screen.queryByTestId('session-ticker')).toBeNull();
 
     // "Completed " line present, with a localized end-time string after it.
     const completedLine = screen.getByTestId('session-completed-at');
@@ -437,7 +439,7 @@ describe('RoundDetailPage — session countdowns and completed time', () => {
       await Promise.resolve();
     });
 
-    expect(screen.queryByTestId('race-countdown')).toBeNull();
+    expect(screen.queryByTestId('session-ticker')).toBeNull();
     expect(screen.queryByText(/^Until /)).toBeNull();
   });
 
@@ -491,11 +493,14 @@ describe('RoundDetailPage — session countdowns and completed time', () => {
       await Promise.resolve();
     });
 
-    // Two countdowns for upcoming + one for in_progress = 3 total.
-    expect(screen.getAllByTestId('race-countdown').length).toBe(3);
+    // Two countdown tickers (upcoming) + one elapsed ticker (in_progress) = 3 total.
+    const tickers = screen.getAllByTestId('session-ticker');
+    expect(tickers.length).toBe(3);
+    const modes = tickers.map((t) => t.dataset.mode).sort();
+    expect(modes).toEqual(['countdown', 'countdown', 'elapsed']);
     expect(screen.getByText('Until Qualifying')).toBeDefined();
     expect(screen.getByText('Until Race')).toBeDefined();
-    expect(screen.getByText('Practice 2 live — ends in')).toBeDefined();
+    expect(screen.getByText('Practice 2 elapsed')).toBeDefined();
     // Completed FP1 has the local-time line.
     expect(screen.getByTestId('session-completed-at')).toBeDefined();
   });
@@ -526,7 +531,7 @@ describe('RoundDetailPage — session countdowns and completed time', () => {
       await Promise.resolve();
     });
 
-    expect(screen.getByTestId('race-countdown')).toBeDefined();
+    expect(screen.getByTestId('session-ticker')).toBeDefined();
 
     unmount();
 
@@ -534,6 +539,6 @@ describe('RoundDetailPage — session countdowns and completed time', () => {
     await act(async () => {
       vi.advanceTimersByTime(5_000);
     });
-    expect(screen.queryByTestId('race-countdown')).toBeNull();
+    expect(screen.queryByTestId('session-ticker')).toBeNull();
   });
 });
