@@ -47,6 +47,7 @@ This project is being built in public, with architecture decisions and progress 
 ### Feature 4: Design System & Brand Identity
 
 - [Day 11: From Generic Data Table to Race Car — A Design System in an Afternoon](docs/blog/day-11-design-system.md)
+- [Day 15: Feature 4 — What a "Pure Frontend" Feature Actually Cost](docs/blog/day-15-feature-004-wrap.md)
 
 ### Bug Fixes & Hardening
 

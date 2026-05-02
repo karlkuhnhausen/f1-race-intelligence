@@ -220,4 +220,4 @@ A small follow-up surfaced on the way: pre-season testing currently shows up as 
 
 ---
 
-[← Day 13: An Empty String Is a Wildcard — Closing the AKS Allowlist Hole](day-13-allowlist-guard.md)
+[← Day 13: An Empty String Is a Wildcard — Closing the AKS Allowlist Hole](day-13-allowlist-guard.md) · [Day 15: Feature 4 — What a "Pure Frontend" Feature Actually Cost →](day-15-feature-004-wrap.md)
