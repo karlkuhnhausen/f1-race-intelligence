@@ -43,6 +43,7 @@ This project is being built in public, with architecture decisions and progress 
 
 - [Day 8: The Security Alert I Got at 5 AM — And What I Did About It](docs/blog/day-8-ops-security-lockdown.md)
 - [Day 9: The Struggle Bus to a Private Cosmos DB](docs/blog/day-9-cosmos-private-endpoint.md)
+- [Day 17: A Real CVE Lands on a Real Cluster](docs/blog/day-17-cve-aks-5753-patching.md) — runbook: [`docs/security/cve-aks-5753.md`](docs/security/cve-aks-5753.md)
 
 ### Feature 4: Design System & Brand Identity
 
@@ -77,6 +78,8 @@ This project is being built in public, with architecture decisions and progress 
 **Feature 4 — Design System & Brand Identity:** Complete. All 37 tasks across 6 phases done. Tailwind v4 `@theme` tokens, shadcn/ui primitives, self-hosted Inter and JetBrains Mono fonts. Near-black F1 theme with team-color accents on every standings/results row. New atomic components (`DriverCard`, `LapTimeDisplay`, `TireCompound`, `RaceCountdown`, `StandingsTable`). Same data, same routes — now it looks like motorsport.
 
 **Bug Fix (April 27, 2026):** Future round sessions were displaying a green "Completed" badge instead of "Upcoming." Two stacked root causes: the ingest transform hardcoded `Status: "completed"` for every session it wrote to Cosmos, and the poller's future-skip guard silently fell through when OpenF1 returned a null `date_end`. Fixed by deriving status at read time in the rounds API service (immediate user-visible correction, no Cosmos backfill needed) and stopping the hardcoded value at write time (durable prevention). Frontend now maps the wire-level `in_progress` enum to a friendly "Live" label.
+
+**CVE Patch (May 2, 2026):** [CVE-2026-31431](https://github.com/advisories/GHSA-2274-3hgr-wxv6) ("Copy Fail") — Linux kernel `algif_aead` LPE allowing unprivileged container → root on the node. AKS system pool reimaged via `az aks nodepool upgrade --node-image-only` (`AKSAzureLinux-V3gen2-202603.30.0` → `202604.13.0`). Verified the AKS CSE-applied modprobe blacklist (`install algif_aead /bin/false`) on both nodes via `kubectl debug node`. Rolling reimage completed without ingress downtime. Runbook: [`docs/security/cve-aks-5753.md`](docs/security/cve-aks-5753.md).
 
 **CI Hardening (April 28, 2026):** Closed an AKS API-server allowlist hole surfaced on Day 12. The deploy cleanup step passed `${{ secrets.ADMIN_IP_RANGES }}` directly to `az aks update --api-server-authorized-ip-ranges`, and Azure interprets an empty value as "remove all restrictions" — one missing secret away from publishing the cluster's control plane to the Internet. Fix layered three guards: a preflight check at the top of each deploy job in `ci-cd.yml` and `infra-deploy.yml` that fails fast before any cluster mutation, an emptiness check on the cleanup `az aks update` (refuses with `exit 1` rather than silently opening the cluster), and a `gh secret set --body ""` refusal in `sync-ip.sh`. Both workflows reference the secret via `env:` rather than inline template substitution. PR [#25](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/25).
 
