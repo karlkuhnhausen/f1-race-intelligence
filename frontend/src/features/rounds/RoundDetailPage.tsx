@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { fetchRoundDetail, type RoundDetailResponse, type SessionDetail } from './roundApi';
 import SessionResultsTable from './SessionResultsTable';
+import RaceCountdown from '@/features/design-system/RaceCountdown';
+import { formatLocalDateTime, isWithinWeekendWindow } from './sessionTime';
 
 export default function RoundDetailPage() {
   const { round } = useParams<{ round: string }>();
@@ -38,6 +40,8 @@ export default function RoundDetailPage() {
   const allCompleted =
     data.sessions.length > 0 &&
     data.sessions.every((s) => s.status === 'completed');
+
+  const weekendActive = isWithinWeekendWindow(data.sessions);
 
   const sortedSessions = [...data.sessions].sort((a, b) => {
     if (allCompleted) {
@@ -82,7 +86,11 @@ export default function RoundDetailPage() {
       ) : (
         <div className="space-y-4">
           {sortedSessions.map((session) => (
-            <SessionCard key={session.session_type} session={session} />
+            <SessionCard
+              key={session.session_type}
+              session={session}
+              weekendActive={weekendActive}
+            />
           ))}
         </div>
       )}
@@ -90,7 +98,13 @@ export default function RoundDetailPage() {
   );
 }
 
-function SessionCard({ session }: { session: SessionDetail }) {
+function SessionCard({
+  session,
+  weekendActive,
+}: {
+  session: SessionDetail;
+  weekendActive: boolean;
+}) {
   const statusColor =
     session.status === 'completed'
       ? 'bg-positive/20 text-positive'
@@ -107,13 +121,22 @@ function SessionCard({ session }: { session: SessionDetail }) {
           ? 'Upcoming'
           : session.status;
 
+  const showUpcomingCountdown =
+    session.status === 'upcoming' && weekendActive;
+  const showLiveCountdown = session.status === 'in_progress';
+  const showCompletedAt = session.status === 'completed';
+
   return (
     <div className="rounded-lg border border-border bg-surface p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="font-display text-xl font-bold tracking-tight">{session.session_name}</h3>
-        <span className="text-sm text-muted-foreground font-mono">
-          {new Date(session.date_start_utc).toLocaleString()}
-        </span>
+        <time
+          dateTime={session.date_start_utc}
+          title={session.date_start_utc}
+          className="text-sm text-muted-foreground font-mono"
+        >
+          {formatLocalDateTime(session.date_start_utc)}
+        </time>
       </div>
       <p className="mt-2">
         <span
@@ -122,6 +145,39 @@ function SessionCard({ session }: { session: SessionDetail }) {
           {statusLabel}
         </span>
       </p>
+
+      {showCompletedAt && (
+        <p
+          data-testid="session-completed-at"
+          className="mt-2 text-sm text-muted-foreground"
+        >
+          Completed{' '}
+          <time
+            dateTime={session.date_end_utc}
+            title={session.date_end_utc}
+            className="font-mono"
+          >
+            {formatLocalDateTime(session.date_end_utc)}
+          </time>
+        </p>
+      )}
+
+      {showUpcomingCountdown && (
+        <RaceCountdown
+          targetUtc={session.date_start_utc}
+          label={`Until ${session.session_name}`}
+          className="mt-4"
+        />
+      )}
+
+      {showLiveCountdown && (
+        <RaceCountdown
+          targetUtc={session.date_end_utc}
+          label={`${session.session_name} live — ends in`}
+          className="mt-4"
+        />
+      )}
+
       <div className="mt-4">
         {session.status === 'upcoming' ? (
           <p className="text-muted-foreground">Not yet available</p>
