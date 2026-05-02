@@ -1,7 +1,10 @@
 name: AKS Scheduled Stop/Start
 
 on:
-  # schedule disabled — use workflow_dispatch to start/stop manually
+  schedule:
+    # Safety-net auto-stop at 09:00 UTC daily (= 2 AM PDT / 1 AM PST).
+    # Idempotent: skipped if cluster is already Stopped.
+    - cron: "0 9 * * *"
   workflow_dispatch:
     inputs:
       action:
@@ -40,10 +43,9 @@ jobs:
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "action=${{ inputs.action }}" >> "$GITHUB_OUTPUT"
-          elif [[ "${{ github.event.schedule }}" == "0 2 * * *" ]]; then
-            echo "action=stop" >> "$GITHUB_OUTPUT"
           else
-            echo "action=start" >> "$GITHUB_OUTPUT"
+            # Any scheduled run is a safety-net stop.
+            echo "action=stop" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Check cluster power state
