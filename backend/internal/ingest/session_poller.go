@@ -26,7 +26,13 @@ var errNoResultsYet = errors.New("openf1: no results yet (404)")
 // session_result documents that should trigger a re-fetch from OpenF1.
 // Cached documents whose schema_version is below this constant are treated
 // as not-finalized and re-polled.
-const SessionSchemaVersion = 1
+//
+// Version history:
+//
+//	1 — initial schema.
+//	2 — round numbers recalculated after pre-season testing exclusion.
+//	    All previously-finalized sessions must re-fetch to fix round mapping.
+const SessionSchemaVersion = 2
 
 // finalizationBuffer is how long after a session's DateEndUTC we wait
 // before marking it finalized in the cache. This gives OpenF1 time to
