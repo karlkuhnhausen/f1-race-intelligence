@@ -220,6 +220,11 @@ func (p *SessionPoller) poll(ctx context.Context, season int) {
 		}
 	}
 
+	// Reconcile: remove stale session documents that no longer exist
+	// upstream. This handles cases where round numbering changed (e.g.,
+	// pre-season testing exclusion) and orphaned sessions remain in cache.
+	p.reconcileStaleSessions(ctx, sessions, meetingRounds, season)
+
 	p.mu.Lock()
 	p.lastPoll = time.Now().UTC()
 	p.lastErr = nil
@@ -277,6 +282,60 @@ func (p *SessionPoller) buildMeetingRoundMap(sessions []openF1Session) map[int]i
 		result[m.key] = i + 1
 	}
 	return result
+}
+
+// reconcileStaleSessions compares cached sessions per round against what
+// OpenF1 currently reports and deletes any cached sessions (and their results)
+// that no longer exist upstream. This handles orphaned documents left behind
+// by round-renumbering or format changes (e.g., sprint weekends).
+func (p *SessionPoller) reconcileStaleSessions(ctx context.Context, upstreamSessions []openF1Session, meetingRounds map[int]int, season int) {
+	// Build set of valid (round, session_type) pairs from upstream.
+	type roundSession struct {
+		round       int
+		sessionType string
+	}
+	validSessions := make(map[roundSession]bool)
+	for _, raw := range upstreamSessions {
+		round, ok := meetingRounds[raw.MeetingKey]
+		if !ok {
+			continue
+		}
+		st := string(domain.MapOpenF1SessionType(raw.SessionName))
+		validSessions[roundSession{round: round, sessionType: st}] = true
+	}
+
+	// Check each round that has cached sessions.
+	roundsToCheck := make(map[int]bool)
+	for _, round := range meetingRounds {
+		roundsToCheck[round] = true
+	}
+
+	for round := range roundsToCheck {
+		cached, err := p.repo.GetSessionsByRound(ctx, season, round)
+		if err != nil {
+			p.logger.Error("reconcile: failed to get cached sessions", "round", round, "error", err)
+			continue
+		}
+
+		for _, sess := range cached {
+			key := roundSession{round: round, sessionType: sess.SessionType}
+			if !validSessions[key] {
+				// This session no longer exists upstream — delete it and its results.
+				p.logger.Info("reconcile: removing stale session",
+					"session_id", sess.ID,
+					"round", round,
+					"session_type", sess.SessionType,
+				)
+				if err := p.repo.DeleteSession(ctx, season, sess.ID); err != nil {
+					p.logger.Error("reconcile: delete session failed", "session_id", sess.ID, "error", err)
+					continue
+				}
+				if err := p.repo.DeleteSessionResultsBySessionType(ctx, season, round, sess.SessionType); err != nil {
+					p.logger.Error("reconcile: delete session results failed", "round", round, "session_type", sess.SessionType, "error", err)
+				}
+			}
+		}
+	}
 }
 
 func (p *SessionPoller) fetchAndUpsertResults(ctx context.Context, raw openF1Session, sessionType domain.SessionType, season, round int) error {

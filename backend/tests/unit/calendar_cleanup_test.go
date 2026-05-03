@@ -38,6 +38,12 @@ func (f *fakeSessionRepoWithResults) GetSessionResultsBySeason(_ context.Context
 func (f *fakeSessionRepoWithResults) GetFinalizedSessionKeys(_ context.Context, _ int) (map[int]int, error) {
 	return nil, nil
 }
+func (f *fakeSessionRepoWithResults) DeleteSession(_ context.Context, _ int, _ string) error {
+	return nil
+}
+func (f *fakeSessionRepoWithResults) DeleteSessionResultsBySessionType(_ context.Context, _, _ int, _ string) error {
+	return nil
+}
 
 // TestIsPreSeasonTesting verifies the predicate matches typical OpenF1
 // pre-season testing meeting names without false-positive matches against

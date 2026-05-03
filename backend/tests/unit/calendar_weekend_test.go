@@ -32,6 +32,12 @@ func (f *fakeSessionRepo) GetSessionResultsBySeason(_ context.Context, _ int) ([
 func (f *fakeSessionRepo) GetFinalizedSessionKeys(_ context.Context, _ int) (map[int]int, error) {
 	return nil, nil
 }
+func (f *fakeSessionRepo) DeleteSession(_ context.Context, _ int, _ string) error {
+	return nil
+}
+func (f *fakeSessionRepo) DeleteSessionResultsBySessionType(_ context.Context, _, _ int, _ string) error {
+	return nil
+}
 
 // TestGetCalendar_WeekendInProgress_ReturnsActiveSession verifies that during
 // a race weekend, the calendar response surfaces the in-progress session and

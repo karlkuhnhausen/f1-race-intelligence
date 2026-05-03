@@ -70,6 +70,12 @@ func (m *mockSessionRepo) GetFinalizedSessionKeys(_ context.Context, season int)
 	}
 	return out, nil
 }
+func (m *mockSessionRepo) DeleteSession(_ context.Context, _ int, _ string) error {
+	return nil
+}
+func (m *mockSessionRepo) DeleteSessionResultsBySessionType(_ context.Context, _, _ int, _ string) error {
+	return nil
+}
 
 func seedSessions() (*mockSessionRepo, *mockCalendarRepo) {
 	now := time.Now().UTC()

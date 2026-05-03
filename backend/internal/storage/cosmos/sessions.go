@@ -173,3 +173,53 @@ func (c *Client) GetFinalizedSessionKeys(ctx context.Context, season int) (map[i
 	}
 	return out, nil
 }
+
+// DeleteSession removes a session document by its ID.
+func (c *Client) DeleteSession(ctx context.Context, season int, id string) error {
+	pk := azcosmos.NewPartitionKeyNumber(float64(season))
+	_, err := c.sessions.DeleteItem(ctx, pk, id, nil)
+	if err != nil {
+		return fmt.Errorf("cosmos: delete session %s: %w", id, err)
+	}
+	return nil
+}
+
+// DeleteSessionResultsBySessionType removes all session_result documents for
+// a given season, round, and session_type. Used during stale-session cleanup
+// to remove orphaned results when a session no longer exists upstream.
+func (c *Client) DeleteSessionResultsBySessionType(ctx context.Context, season, round int, sessionType string) error {
+	pk := azcosmos.NewPartitionKeyNumber(float64(season))
+	query := "SELECT c.id FROM c WHERE c.season = @season AND c.round = @round AND c.session_type = @sessionType AND c.type = 'session_result'"
+	queryOpts := &azcosmos.QueryOptions{
+		QueryParameters: []azcosmos.QueryParameter{
+			{Name: "@season", Value: season},
+			{Name: "@round", Value: round},
+			{Name: "@sessionType", Value: sessionType},
+		},
+	}
+
+	pager := c.sessions.NewQueryItemsPager(query, pk, queryOpts)
+	var ids []string
+	for pager.More() {
+		resp, err := pager.NextPage(ctx)
+		if err != nil {
+			return fmt.Errorf("cosmos: query session results for delete: %w", err)
+		}
+		for _, item := range resp.Items {
+			var row struct {
+				ID string `json:"id"`
+			}
+			if err := json.Unmarshal(item, &row); err != nil {
+				return fmt.Errorf("cosmos: unmarshal result id: %w", err)
+			}
+			ids = append(ids, row.ID)
+		}
+	}
+
+	for _, id := range ids {
+		if _, err := c.sessions.DeleteItem(ctx, pk, id, nil); err != nil {
+			return fmt.Errorf("cosmos: delete session result %s: %w", id, err)
+		}
+	}
+	return nil
+}
