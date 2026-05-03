@@ -62,6 +62,10 @@ This project is being built in public, with architecture decisions and progress 
 
 - [Day 19: The Session Recap Strip — Summarizing a Weekend at a Glance](docs/blog/day-19-session-recap-strip.md)
 
+### Feature 6: Session Deep Dive
+
+- [Day 20: The Session Deep Dive — Telling the Story of a Race in Four Charts](docs/blog/day-20-session-deep-dive.md)
+
 ## Architecture Direction
 
 - Go backend with Chi router
@@ -92,9 +96,12 @@ This project is being built in public, with architecture decisions and progress 
 
 **Feature 5 — Session Recap Strip (May 2, 2026):** Complete. All 32 tasks done. A horizontal strip of recap cards on the round detail page — one per completed session, showing winner, gap to P2, fastest lap, race-control events. Backend ingests `/v1/race_control` at session finalization, deduplicates events, and caches a `RaceControlSummary` in Cosmos. Rounds API derives recap DTOs at read time with lazy hydration for pre-existing sessions. Frontend renders `RaceRecapCard`, `QualifyingRecapCard`, and `PracticeRecapCard` in descending date order (race first). Calendar shows "Race Weekend" badge during active weekends. Backfill CLI at `cmd/backfill` populates historical sessions. PRs [#46](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/46), [#47](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/47).
 
+**Feature 6 — Session Deep Dive (May 3, 2026):** In progress. Four analysis charts per race/sprint session: Position Battle (lap-by-lap position changes as colored lines), Gap to Leader (time delta progression), Tire Strategy (compound swimlanes), and Pit Stops (timeline with duration-scaled dots). Backend fetches `/positions`, `/intervals`, `/stints`, `/pit`, and `/drivers` from OpenF1, aggregates per-lap, and stores typed analysis documents in Cosmos. Frontend renders with recharts, team-colored lines, and sorted tooltips. Data backfilled for Rounds 1-3. PR [#52](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/52).
+
 - **Frontend**: http://f1raceintel.westus3.cloudapp.azure.com/
 - **API**: http://f1raceintel.westus3.cloudapp.azure.com/api/v1/calendar?year=2026
 - **Round Detail**: http://f1raceintel.westus3.cloudapp.azure.com/rounds/3?year=2026
+- **Race Analysis**: http://f1raceintel.westus3.cloudapp.azure.com/rounds/1/sessions/race/analysis
 - **Pipeline**: Fully green — lint → test → build → push → deploy
 - **Tests**: 149 passing (35 backend + 114 frontend)
 
