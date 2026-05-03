@@ -97,4 +97,4 @@ The first iteration used `overflow-x-auto` for horizontal scrolling. It felt wro
 
 ---
 
-[← Day 18: The Race Weekend That Showed Nothing](day-18-live-race-data-bugs.md)
+[← Day 18: The Race Weekend That Showed Nothing](day-18-live-race-data-bugs.md) · [Day 20: The Session Deep Dive →](day-20-session-deep-dive.md)
