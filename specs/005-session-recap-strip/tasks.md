@@ -162,7 +162,7 @@
 
 - [x] T028 [P] Verify all backend tests pass: `cd backend && go test ./...` — confirm contract, unit, and any integration tests all green
 - [x] T029 [P] Verify all frontend tests pass: `cd frontend && npx vitest run` — confirm `SessionRecapStrip`, `RecapCards`, and `RoundDetailPage` tests all green
-- [ ] T030 [P] Run `export PATH="$HOME/go/bin:$PATH" && cd backend && golangci-lint run ./...` and resolve any lint issues in new or modified files
+- [x] T030 [P] Run `export PATH="$HOME/go/bin:$PATH" && cd backend && golangci-lint run ./...` and resolve any lint issues in new or modified files
 - [x] T031 Validate `omitempty` behaviour end-to-end: call `GET /api/v1/rounds/{round}?year=2026` for a completed round and confirm zero-value race-control fields (`red_flag_count: 0`, `top_event: null`) are absent from the JSON response body
 - [x] T032 Run post-deploy backfill dry-run: `./backfill --season=2026 --dry-run --rate-limit-ms=1000` and confirm one structured JSON log line per finalized session plus the summary line; then run without `--dry-run` in production and spot-check at least 3 completed round detail pages for correct recap cards (SC-001)
 
