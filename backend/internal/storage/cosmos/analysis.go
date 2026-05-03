@@ -174,3 +174,39 @@ func (c *Client) HasAnalysisData(ctx context.Context, season, round int, session
 	}
 	return false, nil
 }
+
+// DeleteAnalysisData deletes all analysis documents for a given season/round/sessionType.
+func (c *Client) DeleteAnalysisData(ctx context.Context, season, round int, sessionType string) (int, error) {
+	pk := azcosmos.NewPartitionKeyNumber(float64(season))
+	query := `SELECT c.id FROM c WHERE c.season = @season AND c.round = @round AND c.session_type = @sessionType AND STARTSWITH(c.type, 'analysis_')`
+	queryOpts := &azcosmos.QueryOptions{
+		QueryParameters: []azcosmos.QueryParameter{
+			{Name: "@season", Value: season},
+			{Name: "@round", Value: round},
+			{Name: "@sessionType", Value: sessionType},
+		},
+	}
+
+	pager := c.sessions.NewQueryItemsPager(query, pk, queryOpts)
+	deleted := 0
+
+	for pager.More() {
+		resp, err := pager.NextPage(ctx)
+		if err != nil {
+			return deleted, fmt.Errorf("cosmos: query analysis docs for delete: %w", err)
+		}
+		for _, item := range resp.Items {
+			var doc struct {
+				ID string `json:"id"`
+			}
+			if err := json.Unmarshal(item, &doc); err != nil {
+				continue
+			}
+			if _, err := c.sessions.DeleteItem(ctx, pk, doc.ID, nil); err != nil {
+				return deleted, fmt.Errorf("cosmos: delete analysis doc %s: %w", doc.ID, err)
+			}
+			deleted++
+		}
+	}
+	return deleted, nil
+}
