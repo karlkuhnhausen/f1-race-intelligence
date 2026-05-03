@@ -462,11 +462,60 @@ type AnalysisFetchResult struct {
 	Overtakes []domain.AnalysisOvertake
 }
 
+// rawDriver is the OpenF1 /drivers response shape (subset).
+type rawDriver struct {
+	DriverNumber int    `json:"driver_number"`
+	TeamColour   string `json:"team_colour"` //nolint:misspell // OpenF1 API field name
+	NameAcronym  string `json:"name_acronym"`
+}
+
+// fetchDriverColours fetches team colours from OpenF1 /drivers endpoint and
+// enriches the provided drivers map. Non-fatal — if it fails, colours stay empty.
+func fetchDriverColours(ctx context.Context, client *http.Client, sessionKey int, drivers map[int]DriverInfo, logger *slog.Logger) {
+	url := fmt.Sprintf("%s/drivers?session_key=%d", openF1BaseURL, sessionKey)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		logger.Warn("analysis: driver colours request build failed", "error", err.Error())
+		return
+	}
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		logger.Warn("analysis: driver colours fetch failed", "error", err.Error())
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		logger.Warn("analysis: driver colours unexpected status", "status", resp.StatusCode)
+		return
+	}
+
+	var rawDrivers []rawDriver
+	if err := json.NewDecoder(resp.Body).Decode(&rawDrivers); err != nil {
+		logger.Warn("analysis: driver colours decode failed", "error", err.Error())
+		return
+	}
+
+	for _, rd := range rawDrivers {
+		if info, ok := drivers[rd.DriverNumber]; ok {
+			info.TeamColor = rd.TeamColour
+			drivers[rd.DriverNumber] = info
+		}
+	}
+	logger.Info("analysis: fetched driver colours", "session_key", sessionKey, "count", len(rawDrivers))
+}
+
 // FetchAllAnalysisData orchestrates fetching all 5 analysis data types for a session.
 // Position data is required (returns error if it fails). Other 4 are non-fatal on failure.
 // Applies 500ms delays between requests to respect rate limits.
 func FetchAllAnalysisData(ctx context.Context, client *http.Client, sessionKey int, drivers map[int]DriverInfo, logger *slog.Logger) (*AnalysisFetchResult, error) {
 	const delayBetweenFetches = 500 * time.Millisecond
+
+	// Fetch team colours first (non-fatal)
+	fetchDriverColours(ctx, client, sessionKey, drivers, logger)
+	time.Sleep(delayBetweenFetches)
 
 	// 1. Position (required)
 	rawPos, err := FetchPositionData(ctx, client, sessionKey)
