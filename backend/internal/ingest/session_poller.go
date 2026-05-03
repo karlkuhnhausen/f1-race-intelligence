@@ -188,7 +188,8 @@ func (p *SessionPoller) poll(ctx context.Context, season int) {
 		processed++
 
 		sessionType := domain.MapOpenF1SessionType(raw.SessionName)
-		if err := p.fetchAndUpsertResults(ctx, raw, sessionType, season, round); err != nil {
+		fastestLapTimeSecs, err := p.fetchAndUpsertResults(ctx, raw, sessionType, season, round)
+		if err != nil {
 			if errors.Is(err, errNoResultsYet) {
 				// Benign: session exists in /sessions but has no published
 				// /session_result yet. Will retry on the next poll cycle.
@@ -212,6 +213,27 @@ func (p *SessionPoller) poll(ctx context.Context, season int) {
 			now := time.Now().UTC()
 			sess.Finalized = true
 			sess.FinalizedAtUTC = &now
+
+			// Fetch race control data for this session (500ms delay to respect rate limit).
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(500 * time.Millisecond):
+			}
+			rcMsgs, rcErr := FetchRaceControlMsgs(ctx, p.client, raw.SessionKey)
+			if rcErr != nil {
+				p.logger.Warn("race control fetch failed during finalization; recap events unavailable",
+					"session_id", sess.ID, "error", rcErr)
+			} else {
+				summary := SummarizeRaceControl(rcMsgs)
+				sess.RaceControlSummary = &summary
+			}
+
+			// Store fastest lap time derived from the laps already fetched above.
+			if fastestLapTimeSecs != nil {
+				sess.FastestLapTimeSeconds = fastestLapTimeSecs
+			}
+
 			if err := p.repo.UpsertSession(ctx, sess); err != nil {
 				p.logger.Error("session finalize upsert failed", "session_id", sess.ID, "error", err)
 			} else {
@@ -338,16 +360,16 @@ func (p *SessionPoller) reconcileStaleSessions(ctx context.Context, upstreamSess
 	}
 }
 
-func (p *SessionPoller) fetchAndUpsertResults(ctx context.Context, raw openF1Session, sessionType domain.SessionType, season, round int) error {
+func (p *SessionPoller) fetchAndUpsertResults(ctx context.Context, raw openF1Session, sessionType domain.SessionType, season, round int) (*float64, error) {
 	rawResults, err := p.fetchSessionResults(ctx, raw.SessionKey)
 	if err != nil {
-		return fmt.Errorf("fetch session_result: %w", err)
+		return nil, fmt.Errorf("fetch session_result: %w", err)
 	}
 
 	// Rate-limit before driver fetch
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return nil, ctx.Err()
 	case <-time.After(300 * time.Millisecond):
 	}
 
@@ -362,13 +384,14 @@ func (p *SessionPoller) fetchAndUpsertResults(ctx context.Context, raw openF1Ses
 		driverMap[drivers[i].DriverNumber] = &drivers[i]
 	}
 
-	// For race/sprint, fetch laps and derive the fastest-lap holder.
+	// For race/sprint, fetch laps and derive the fastest-lap holder and fastest lap time.
 	fastestLapDriver := 0
 	hasFastest := false
+	var fastestLapTimeSecs *float64
 	if domain.IsRaceType(sessionType) {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return nil, ctx.Err()
 		case <-time.After(300 * time.Millisecond):
 		}
 		laps, err := p.fetchLaps(ctx, raw.SessionKey)
@@ -376,6 +399,13 @@ func (p *SessionPoller) fetchAndUpsertResults(ctx context.Context, raw openF1Ses
 			p.logger.Warn("session laps fetch failed, fastest lap will be unset", "error", err)
 		} else {
 			fastestLapDriver, hasFastest = DeriveFastestLap(laps)
+			// Derive fastest lap time: minimum non-nil LapDuration across all laps.
+			for _, l := range laps {
+				if l.LapDuration != nil && (fastestLapTimeSecs == nil || *l.LapDuration < *fastestLapTimeSecs) {
+					val := *l.LapDuration
+					fastestLapTimeSecs = &val
+				}
+			}
 		}
 	}
 
@@ -403,10 +433,10 @@ func (p *SessionPoller) fetchAndUpsertResults(ctx context.Context, raw openF1Ses
 	// driver data, return an error so the session is not finalized. It will
 	// be retried on the next poll cycle when drivers may be available.
 	if len(rawResults) > 0 && len(driverMap) == 0 {
-		return errNoDriverData
+		return nil, errNoDriverData
 	}
 
-	return nil
+	return fastestLapTimeSecs, nil
 }
 
 func (p *SessionPoller) fetchSessions(ctx context.Context, season int) ([]openF1Session, error) {

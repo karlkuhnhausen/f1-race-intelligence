@@ -174,6 +174,36 @@ func (c *Client) GetFinalizedSessionKeys(ctx context.Context, season int) (map[i
 	return out, nil
 }
 
+// GetFinalizedSessions returns all session documents for the season where
+// finalized=true. Used by the backfill CLI.
+func (c *Client) GetFinalizedSessions(ctx context.Context, season int) ([]storage.Session, error) {
+	pk := azcosmos.NewPartitionKeyNumber(float64(season))
+	query := "SELECT * FROM c WHERE c.season = @season AND c.type = 'session' AND c.finalized = true"
+	queryOpts := &azcosmos.QueryOptions{
+		QueryParameters: []azcosmos.QueryParameter{
+			{Name: "@season", Value: season},
+		},
+	}
+
+	pager := c.sessions.NewQueryItemsPager(query, pk, queryOpts)
+	var sessions []storage.Session
+
+	for pager.More() {
+		resp, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("cosmos: query finalized sessions: %w", err)
+		}
+		for _, item := range resp.Items {
+			var s storage.Session
+			if err := json.Unmarshal(item, &s); err != nil {
+				return nil, fmt.Errorf("cosmos: unmarshal session: %w", err)
+			}
+			sessions = append(sessions, s)
+		}
+	}
+	return sessions, nil
+}
+
 // DeleteSession removes a session document by its ID.
 func (c *Client) DeleteSession(ctx context.Context, season int, id string) error {
 	pk := azcosmos.NewPartitionKeyNumber(float64(season))

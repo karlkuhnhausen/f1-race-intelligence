@@ -44,6 +44,9 @@ func (f *fakeSessionRepoWithResults) DeleteSession(_ context.Context, _ int, _ s
 func (f *fakeSessionRepoWithResults) DeleteSessionResultsBySessionType(_ context.Context, _, _ int, _ string) error {
 	return nil
 }
+func (f *fakeSessionRepoWithResults) GetFinalizedSessions(_ context.Context, _ int) ([]storage.Session, error) {
+	return nil, nil
+}
 
 // TestIsPreSeasonTesting verifies the predicate matches typical OpenF1
 // pre-season testing meeting names without false-positive matches against

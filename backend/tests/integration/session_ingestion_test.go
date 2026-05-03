@@ -105,6 +105,9 @@ func (r *inMemorySessionRepo) DeleteSessionResultsBySessionType(_ context.Contex
 	r.results = kept
 	return nil
 }
+func (r *inMemorySessionRepo) GetFinalizedSessions(_ context.Context, _ int) ([]storage.Session, error) {
+	return nil, nil
+}
 
 // TestSessionIngestionRoundTrip verifies the poll → transform → upsert → query → API response flow.
 func TestSessionIngestionRoundTrip(t *testing.T) {

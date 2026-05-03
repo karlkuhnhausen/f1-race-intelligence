@@ -3,6 +3,7 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { fetchRoundDetail, type RoundDetailResponse, type SessionDetail } from './roundApi';
 import SessionResultsTable from './SessionResultsTable';
 import SessionTicker from './SessionTicker';
+import SessionRecapStrip from './SessionRecapStrip';
 import { formatLocalDateTime, isWithinWeekendWindow } from './sessionTime';
 
 export default function RoundDetailPage() {
@@ -84,15 +85,18 @@ export default function RoundDetailPage() {
       {sortedSessions.length === 0 ? (
         <p className="text-muted-foreground">No session data available yet for this round.</p>
       ) : (
-        <div className="space-y-4">
-          {sortedSessions.map((session) => (
-            <SessionCard
-              key={session.session_type}
-              session={session}
-              weekendActive={weekendActive}
-            />
-          ))}
-        </div>
+        <>
+          <SessionRecapStrip sessions={data.sessions} />
+          <div className="space-y-4">
+            {sortedSessions.map((session) => (
+              <SessionCard
+                key={session.session_type}
+                session={session}
+                weekendActive={weekendActive}
+              />
+            ))}
+          </div>
+        </>
       )}
     </section>
   );
