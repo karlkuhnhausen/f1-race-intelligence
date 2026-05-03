@@ -41,6 +41,8 @@
         "golangci-lint": true,
         "git commit": true,
         "git push": true,
-        "az": true
+        "az": true,
+        "cp": true,
+        "gofmt": true
     }
 }

@@ -2,6 +2,7 @@ import { NavLink, Routes, Route, Navigate } from 'react-router-dom';
 import CalendarPage from './features/calendar/CalendarPage';
 import StandingsPage from './features/standings/StandingsPage';
 import RoundDetailPage from './features/rounds/RoundDetailPage';
+import AnalysisPage from './features/analysis/AnalysisPage';
 
 export default function App() {
   return (
@@ -44,6 +45,7 @@ export default function App() {
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/standings" element={<StandingsPage />} />
           <Route path="/rounds/:round" element={<RoundDetailPage />} />
+          <Route path="/rounds/:round/sessions/:sessionType/analysis" element={<AnalysisPage />} />
           <Route path="*" element={<Navigate to="/calendar" replace />} />
         </Routes>
       </div>

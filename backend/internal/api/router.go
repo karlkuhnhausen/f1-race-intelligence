@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
+	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/api/analysis"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/api/calendar"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/api/rounds"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/api/standings"
@@ -22,7 +23,7 @@ type healthResponse struct {
 	Timestamp string `json:"timestamp"`
 }
 
-func NewRouter(calendarRepo storage.CalendarRepository, standingsRepo storage.StandingsRepository, sessionRepo storage.SessionRepository, logger *slog.Logger) http.Handler {
+func NewRouter(calendarRepo storage.CalendarRepository, standingsRepo storage.StandingsRepository, sessionRepo storage.SessionRepository, analysisRepo storage.AnalysisRepository, logger *slog.Logger) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
@@ -59,11 +60,16 @@ func NewRouter(calendarRepo storage.CalendarRepository, standingsRepo storage.St
 	roundsSvc := rounds.NewServiceWithHydrator(sessionRepo, calendarRepo, rcHydrator, logger)
 	roundsHandler := rounds.NewHandler(roundsSvc, logger)
 
+	// Analysis API
+	analysisSvc := analysis.NewService(analysisRepo, logger)
+	analysisHandler := analysis.NewHandler(analysisSvc, logger)
+
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/calendar", calendarHandler.GetCalendar)
 		r.Get("/standings/drivers", standingsHandler.GetDrivers)
 		r.Get("/standings/constructors", standingsHandler.GetConstructors)
 		r.Get("/rounds/{round}", roundsHandler.GetRoundDetail)
+		r.Get("/rounds/{round}/sessions/{type}/analysis", analysisHandler.GetSessionAnalysis)
 	})
 
 	return r

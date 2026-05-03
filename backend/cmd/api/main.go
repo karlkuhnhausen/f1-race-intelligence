@@ -25,6 +25,7 @@ func main() {
 	var calendarRepo storage.CalendarRepository
 	var standingsRepo storage.StandingsRepository
 	var sessionRepo storage.SessionRepository
+	var analysisRepo storage.AnalysisRepository
 	if cosmosEndpoint != "" {
 		client, err := cosmos.NewClient(cosmosEndpoint)
 		if err != nil {
@@ -33,9 +34,10 @@ func main() {
 		calendarRepo = client
 		standingsRepo = client
 		sessionRepo = client
+		analysisRepo = client
 	}
 
-	router := api.NewRouter(calendarRepo, standingsRepo, sessionRepo, logger)
+	router := api.NewRouter(calendarRepo, standingsRepo, sessionRepo, analysisRepo, logger)
 
 	// Start data pollers if Cosmos is configured.
 	if calendarRepo != nil {

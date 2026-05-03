@@ -1,9 +1,11 @@
 // Command backfill populates RaceControlSummary for pre-existing finalized sessions
 // that are missing it. It is a one-shot CLI run after Feature 005 deployment.
+// With --analysis, it also backfills session analysis data (positions, intervals,
+// stints, pits, overtakes) for Race and Sprint sessions (Feature 006).
 //
 // Usage:
 //
-//	COSMOS_ACCOUNT_ENDPOINT=https://... backfill --season=2026 [--dry-run] [--rate-limit-ms=1000]
+//	COSMOS_ACCOUNT_ENDPOINT=https://... backfill --season=2026 [--dry-run] [--rate-limit-ms=1000] [--analysis]
 package main
 
 import (
@@ -17,6 +19,7 @@ import (
 
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/ingest"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/observability"
+	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/storage"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/storage/cosmos"
 )
 
@@ -24,6 +27,7 @@ func main() {
 	season := flag.Int("season", 0, "F1 season year to backfill (required)")
 	dryRun := flag.Bool("dry-run", false, "Log what would change without writing to Cosmos")
 	rateLimitMs := flag.Int("rate-limit-ms", 1000, "Delay between OpenF1 fetches in milliseconds")
+	analysisMode := flag.Bool("analysis", false, "Backfill session analysis data (positions, intervals, stints, pits, overtakes) for Race/Sprint sessions")
 	flag.Parse()
 
 	if *season == 0 {
@@ -133,5 +137,172 @@ func main() {
 		"skipped", skipped,
 		"failed", failed,
 		"dry_run", *dryRun,
+	)
+
+	// --- Analysis backfill (Feature 006) ---
+	if *analysisMode {
+		backfillAnalysis(ctx, client, client, sessions, httpClient, delay, *dryRun, logger)
+	}
+}
+
+func backfillAnalysis(
+	ctx context.Context,
+	sessionRepo *cosmos.Client,
+	analysisRepo *cosmos.Client,
+	sessions []storage.Session,
+	httpClient *http.Client,
+	delay time.Duration,
+	dryRun bool,
+	logger *slog.Logger,
+) {
+	// Filter to Race and Sprint sessions only
+	var analysisSessions []storage.Session
+	for _, sess := range sessions {
+		st := sess.SessionType
+		if st == "race" || st == "sprint" {
+			analysisSessions = append(analysisSessions, sess)
+		}
+	}
+
+	logger.Info("backfill-analysis: starting",
+		"total_race_sprint_sessions", len(analysisSessions),
+		"dry_run", dryRun,
+	)
+
+	aUpdated, aSkipped, aFailed := 0, 0, 0
+
+	for _, sess := range analysisSessions {
+		// Check if analysis data already exists (idempotent)
+		hasData, err := analysisRepo.HasAnalysisData(ctx, sess.Season, sess.Round, sess.SessionType)
+		if err != nil {
+			logger.Warn("backfill-analysis: HasAnalysisData check failed",
+				"session_key", sess.SessionKey,
+				"error", err.Error(),
+			)
+			aFailed++
+			time.Sleep(delay)
+			continue
+		}
+		if hasData {
+			logger.Info("backfill-analysis: skipped — already has analysis data",
+				"session_key", sess.SessionKey,
+				"round", sess.Round,
+				"session_type", sess.SessionType,
+				"outcome", "skipped",
+			)
+			aSkipped++
+			continue
+		}
+
+		// Build driver info map from existing session results
+		results, err := sessionRepo.GetSessionResultsByRound(ctx, sess.Season, sess.Round)
+		if err != nil {
+			logger.Warn("backfill-analysis: failed to get session results for drivers",
+				"session_key", sess.SessionKey,
+				"error", err.Error(),
+			)
+			aFailed++
+			time.Sleep(delay)
+			continue
+		}
+
+		drivers := make(map[int]ingest.DriverInfo)
+		for _, r := range results {
+			if r.SessionType == sess.SessionType {
+				drivers[r.DriverNumber] = ingest.DriverInfo{
+					DriverNumber:  r.DriverNumber,
+					DriverName:    r.DriverName,
+					DriverAcronym: r.DriverAcronym,
+					TeamName:      r.TeamName,
+				}
+			}
+		}
+
+		if len(drivers) == 0 {
+			logger.Warn("backfill-analysis: no driver data available, skipping",
+				"session_key", sess.SessionKey,
+				"outcome", "failed",
+			)
+			aFailed++
+			time.Sleep(delay)
+			continue
+		}
+
+		logger.Info("backfill-analysis: fetching analysis data",
+			"session_key", sess.SessionKey,
+			"round", sess.Round,
+			"session_type", sess.SessionType,
+			"drivers", len(drivers),
+		)
+
+		if dryRun {
+			logger.Info("backfill-analysis: dry-run — would fetch and store",
+				"session_key", sess.SessionKey,
+				"outcome", "would-update",
+			)
+			aUpdated++
+			time.Sleep(delay)
+			continue
+		}
+
+		fetchResult, err := ingest.FetchAllAnalysisData(ctx, httpClient, sess.SessionKey, drivers, logger)
+		if err != nil {
+			logger.Warn("backfill-analysis: fetch failed",
+				"session_key", sess.SessionKey,
+				"error", err.Error(),
+				"outcome", "failed",
+			)
+			aFailed++
+			time.Sleep(delay)
+			continue
+		}
+
+		// Persist each data type
+		if err := analysisRepo.UpsertSessionPositions(ctx, ingest.ToStoragePositions(sess.Season, sess.Round, sess.SessionType, fetchResult.Positions)); err != nil {
+			logger.Warn("backfill-analysis: upsert positions failed", "error", err.Error())
+			aFailed++
+			time.Sleep(delay)
+			continue
+		}
+		if len(fetchResult.Intervals) > 0 {
+			if err := analysisRepo.UpsertSessionIntervals(ctx, ingest.ToStorageIntervals(sess.Season, sess.Round, sess.SessionType, fetchResult.Intervals)); err != nil {
+				logger.Warn("backfill-analysis: upsert intervals failed", "error", err.Error())
+			}
+		}
+		if len(fetchResult.Stints) > 0 {
+			if err := analysisRepo.UpsertSessionStints(ctx, ingest.ToStorageStints(sess.Season, sess.Round, sess.SessionType, fetchResult.Stints)); err != nil {
+				logger.Warn("backfill-analysis: upsert stints failed", "error", err.Error())
+			}
+		}
+		if len(fetchResult.Pits) > 0 {
+			if err := analysisRepo.UpsertSessionPits(ctx, ingest.ToStoragePits(sess.Season, sess.Round, sess.SessionType, fetchResult.Pits)); err != nil {
+				logger.Warn("backfill-analysis: upsert pits failed", "error", err.Error())
+			}
+		}
+		if len(fetchResult.Overtakes) > 0 {
+			if err := analysisRepo.UpsertSessionOvertakes(ctx, ingest.ToStorageOvertakes(sess.Season, sess.Round, sess.SessionType, fetchResult.Overtakes)); err != nil {
+				logger.Warn("backfill-analysis: upsert overtakes failed", "error", err.Error())
+			}
+		}
+
+		logger.Info("backfill-analysis: updated",
+			"session_key", sess.SessionKey,
+			"round", sess.Round,
+			"session_type", sess.SessionType,
+			"positions", len(fetchResult.Positions),
+			"intervals", len(fetchResult.Intervals),
+			"stints", len(fetchResult.Stints),
+			"pits", len(fetchResult.Pits),
+			"overtakes", len(fetchResult.Overtakes),
+			"outcome", "updated",
+		)
+		aUpdated++
+		time.Sleep(delay)
+	}
+
+	logger.Info("backfill-analysis: complete",
+		"updated", aUpdated,
+		"skipped", aSkipped,
+		"failed", aFailed,
 	)
 }

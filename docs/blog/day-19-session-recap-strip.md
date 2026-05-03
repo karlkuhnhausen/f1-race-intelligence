@@ -30,6 +30,14 @@ Each session type gets its own card shape:
 
 Cards render left-to-right in descending date order: Race → Qualifying → Practice 2 → Practice 1. Sprint weekends interleave naturally because sorting is purely by timestamp.
 
+Here's the Australian Grand Prix — a traditional weekend with all five sessions. George Russell dominated, and you can immediately see the red flags in qualifying and FP3:
+
+![Session recap strip — Australian Grand Prix (Round 1)](images/session-recap-australian-gp.png)
+
+And the Miami Grand Prix — a sprint weekend. The layout adapts naturally: Qualifying, Sprint, Sprint Qualifying, and Practice 1. Lando Norris took the sprint win while Kimi Antonelli grabbed qualifying pole:
+
+![Session recap strip — Miami Grand Prix (Round 6)](images/session-recap-miami-gp.png)
+
 ---
 
 ## Race Control Ingestion
