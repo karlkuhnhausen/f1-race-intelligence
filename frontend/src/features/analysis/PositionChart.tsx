@@ -16,6 +16,46 @@ interface PositionChartProps {
   overtakes?: Overtake[];
 }
 
+interface TooltipEntry {
+  value?: number | null;
+  name?: string;
+  color?: string;
+  dataKey?: string | number;
+}
+
+/** Custom tooltip that lists drivers sorted by position (P1 first). */
+function PositionTooltip({ active, payload, label }: { active?: boolean; payload?: TooltipEntry[]; label?: string | number }) {
+  if (!active || !payload || payload.length === 0) return null;
+
+  const sorted = [...payload]
+    .filter((entry) => entry.value != null)
+    .sort((a, b) => (a.value as number) - (b.value as number));
+
+  return (
+    <div
+      style={{
+        backgroundColor: 'hsl(var(--surface))',
+        border: '1px solid hsl(var(--border))',
+        borderRadius: '6px',
+        padding: '8px 12px',
+        fontSize: '12px',
+      }}
+    >
+      <p style={{ color: 'hsl(var(--foreground))', marginBottom: 4, fontWeight: 600 }}>
+        Lap {label}
+      </p>
+      {sorted.map((entry) => (
+        <div key={entry.dataKey} style={{ display: 'flex', gap: 8, lineHeight: '1.5' }}>
+          <span style={{ color: 'hsl(var(--muted-foreground))', minWidth: 20, textAlign: 'right' }}>
+            P{entry.value}
+          </span>
+          <span style={{ color: entry.color }}>{entry.name}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /**
  * Position Battle Chart — lap-by-lap line chart showing all drivers.
  * Y-axis inverted (P1 at top, P20 at bottom). Each driver is a team-colored line.
@@ -69,14 +109,7 @@ export default function PositionChart({
             stroke="hsl(var(--muted-foreground))"
             tick={{ fontSize: 11 }}
           />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: 'hsl(var(--surface))',
-              border: '1px solid hsl(var(--border))',
-              borderRadius: '6px',
-            }}
-            labelStyle={{ color: 'hsl(var(--foreground))' }}
-          />
+          <Tooltip content={<PositionTooltip />} />
           <Legend
             wrapperStyle={{ fontSize: '11px' }}
           />
