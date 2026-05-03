@@ -108,6 +108,37 @@ func (c *Client) GetSessionResultsByRound(ctx context.Context, season, round int
 	return results, nil
 }
 
+// GetSessionResultsBySeason returns every cached session result for the
+// season (across all rounds and session types). The calendar service uses
+// this to compute running championship totals from race+sprint points.
+func (c *Client) GetSessionResultsBySeason(ctx context.Context, season int) ([]storage.SessionResult, error) {
+	pk := azcosmos.NewPartitionKeyNumber(float64(season))
+	query := "SELECT * FROM c WHERE c.season = @season AND c.type = 'session_result'"
+	queryOpts := &azcosmos.QueryOptions{
+		QueryParameters: []azcosmos.QueryParameter{
+			{Name: "@season", Value: season},
+		},
+	}
+
+	pager := c.sessions.NewQueryItemsPager(query, pk, queryOpts)
+	var results []storage.SessionResult
+
+	for pager.More() {
+		resp, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("cosmos: query season session results: %w", err)
+		}
+		for _, item := range resp.Items {
+			var r storage.SessionResult
+			if err := json.Unmarshal(item, &r); err != nil {
+				return nil, fmt.Errorf("cosmos: unmarshal session result: %w", err)
+			}
+			results = append(results, r)
+		}
+	}
+	return results, nil
+}
+
 // GetFinalizedSessionKeys returns a map of session_key → schema_version for
 // every cached session in the season where finalized=true. The poller uses
 // this to skip re-fetching results/drivers/laps for sessions that have

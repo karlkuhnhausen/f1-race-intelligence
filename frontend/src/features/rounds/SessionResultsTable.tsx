@@ -41,6 +41,26 @@ function podiumBorder(position: number, isRace: boolean): string {
   }
 }
 
+// formatRaceGap renders the gap-to-leader cell for race-type sessions.
+// Preference order:
+//   1. gap_to_leader from OpenF1 (e.g. "+3.122" or "+1 LAP")
+//   2. derived "+N lap(s)" when the driver completed fewer laps than the leader
+//   3. em dash
+function formatRaceGap(r: SessionResultEntry, leaderLaps?: number): string {
+  if (r.gap_to_leader) return r.gap_to_leader;
+  if (
+    typeof leaderLaps === 'number' &&
+    leaderLaps > 0 &&
+    typeof r.number_of_laps === 'number' &&
+    r.number_of_laps > 0 &&
+    r.number_of_laps < leaderLaps
+  ) {
+    const lapsDown = leaderLaps - r.number_of_laps;
+    return `+${lapsDown} lap${lapsDown === 1 ? '' : 's'}`;
+  }
+  return '—';
+}
+
 function TeamCell({ teamName }: { teamName: string }) {
   const color = getTeamColor(teamName);
   return (
@@ -74,6 +94,7 @@ interface RowProps {
   isQualifying: boolean;
   isPractice: boolean;
   nonClassified?: boolean;
+  leaderLaps?: number;
 }
 
 function ResultRow({
@@ -83,6 +104,7 @@ function ResultRow({
   isQualifying,
   isPractice,
   nonClassified,
+  leaderLaps,
 }: RowProps) {
   const baseTint = r.fastest_lap
     ? 'bg-accent-cyan/5'
@@ -110,7 +132,7 @@ function ResultRow({
             {r.finishing_status ?? '—'}
           </td>
           <td className={`${cellMonoRight} text-foreground`}>
-            {r.gap_to_leader ?? '—'}
+            {formatRaceGap(r, leaderLaps)}
           </td>
           <td className={`${cellMonoRight} text-foreground`}>{r.points ?? 0}</td>
         </>
@@ -165,6 +187,14 @@ export default function SessionResultsTable({ results, sessionType }: Props) {
   }
 
   const totalCols = isRace ? 7 : isQualifying ? 7 : isPractice ? 6 : 4;
+
+  // For race sessions, the leader's lap count is needed to derive
+  // "+N lap(s)" gaps when OpenF1 hasn't supplied gap_to_leader. The leader
+  // is whoever holds position 1 in the classified list.
+  const leaderLaps =
+    isRace
+      ? classified.find((r) => r.position === 1)?.number_of_laps
+      : undefined;
 
   return (
     <div className="overflow-x-auto rounded-md border border-border">
@@ -232,6 +262,7 @@ export default function SessionResultsTable({ results, sessionType }: Props) {
               isRace={isRace}
               isQualifying={isQualifying}
               isPractice={isPractice}
+              leaderLaps={leaderLaps}
             />
           ))}
           {isRace && nonClassified.length > 0 && (
@@ -253,6 +284,7 @@ export default function SessionResultsTable({ results, sessionType }: Props) {
                   isQualifying={isQualifying}
                   isPractice={isPractice}
                   nonClassified
+                  leaderLaps={leaderLaps}
                 />
               ))}
             </>

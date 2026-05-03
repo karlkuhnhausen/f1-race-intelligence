@@ -26,6 +26,9 @@ func (f *fakeSessionRepo) GetSessionsByRound(_ context.Context, _, _ int) ([]sto
 func (f *fakeSessionRepo) GetSessionResultsByRound(_ context.Context, _, _ int) ([]storage.SessionResult, error) {
 	return nil, nil
 }
+func (f *fakeSessionRepo) GetSessionResultsBySeason(_ context.Context, _ int) ([]storage.SessionResult, error) {
+	return nil, nil
+}
 func (f *fakeSessionRepo) GetFinalizedSessionKeys(_ context.Context, _ int) (map[int]int, error) {
 	return nil, nil
 }

@@ -66,6 +66,16 @@ func (r *inMemorySessionRepo) GetSessionResultsByRound(_ context.Context, season
 	return result, nil
 }
 
+func (r *inMemorySessionRepo) GetSessionResultsBySeason(_ context.Context, season int) ([]storage.SessionResult, error) {
+	var result []storage.SessionResult
+	for _, sr := range r.results {
+		if sr.Season == season {
+			result = append(result, sr)
+		}
+	}
+	return result, nil
+}
+
 func (r *inMemorySessionRepo) GetFinalizedSessionKeys(_ context.Context, season int) (map[int]int, error) {
 	out := make(map[int]int)
 	for _, s := range r.sessions {

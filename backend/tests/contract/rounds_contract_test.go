@@ -51,6 +51,16 @@ func (m *mockSessionRepo) GetSessionResultsByRound(_ context.Context, season, ro
 	return out, nil
 }
 
+func (m *mockSessionRepo) GetSessionResultsBySeason(_ context.Context, season int) ([]storage.SessionResult, error) {
+	var out []storage.SessionResult
+	for _, r := range m.results {
+		if r.Season == season {
+			out = append(out, r)
+		}
+	}
+	return out, nil
+}
+
 func (m *mockSessionRepo) GetFinalizedSessionKeys(_ context.Context, season int) (map[int]int, error) {
 	out := make(map[int]int)
 	for _, s := range m.sessions {

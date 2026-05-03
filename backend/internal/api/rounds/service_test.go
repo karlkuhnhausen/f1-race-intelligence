@@ -79,6 +79,9 @@ func (f *fakeSessionRepo) GetSessionsByRound(_ context.Context, _, _ int) ([]sto
 func (f *fakeSessionRepo) GetSessionResultsByRound(_ context.Context, _, _ int) ([]storage.SessionResult, error) {
 	return f.results, nil
 }
+func (f *fakeSessionRepo) GetSessionResultsBySeason(_ context.Context, _ int) ([]storage.SessionResult, error) {
+	return f.results, nil
+}
 func (f *fakeSessionRepo) GetFinalizedSessionKeys(_ context.Context, _ int) (map[int]int, error) {
 	return map[int]int{}, nil
 }
@@ -156,8 +159,9 @@ func TestGetRoundDetail_StatusOverridesStoredValue(t *testing.T) {
 }
 
 // TestGetRoundDetail_FiltersAndSortsResults verifies that session results
-// with position < 1 (DNS/DNF placeholders OpenF1 sometimes sends as 0) are
-// dropped and remaining rows are returned ascending by position.
+// are sorted ascending by position, with unclassified rows (position 0,
+// typically DNF/DNS/DSQ) sorted to the bottom rather than dropped — the
+// frontend renders them in a separate non-classified section.
 func TestGetRoundDetail_FiltersAndSortsResults(t *testing.T) {
 	now := time.Date(2026, 4, 27, 12, 0, 0, 0, time.UTC)
 
@@ -190,15 +194,21 @@ func TestGetRoundDetail_FiltersAndSortsResults(t *testing.T) {
 		t.Fatalf("expected 1 session, got %d", len(resp.Sessions))
 	}
 	results := resp.Sessions[0].Results
-	if len(results) != 3 {
-		t.Fatalf("expected 3 results (position 0 filtered), got %d", len(results))
+	if len(results) != 4 {
+		t.Fatalf("expected 4 results (DNF kept), got %d", len(results))
 	}
-	for i, r := range results {
-		if r.Position != i+1 {
-			t.Errorf("results[%d].Position = %d, want %d", i, r.Position, i+1)
+	// First three should be P1..P3 in order.
+	for i := 0; i < 3; i++ {
+		if results[i].Position != i+1 {
+			t.Errorf("results[%d].Position = %d, want %d", i, results[i].Position, i+1)
 		}
 	}
 	if results[0].DriverName != "Max Verstappen" {
 		t.Errorf("P1 = %q, want Max Verstappen", results[0].DriverName)
+	}
+	// Position-0 row sorted to the bottom.
+	if results[3].Position != 0 || results[3].DriverName != "Lance Stroll" {
+		t.Errorf("last row = pos=%d %q, want pos=0 Lance Stroll",
+			results[3].Position, results[3].DriverName)
 	}
 }
