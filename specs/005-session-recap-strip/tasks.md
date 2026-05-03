@@ -23,7 +23,7 @@
 
 **Purpose**: Create the one new directory and file entry-point that does not exist yet.
 
-- [ ] T001 Create `backend/cmd/backfill/` directory and stub `backend/cmd/backfill/main.go` as a `package main` placeholder (empty `func main(){}`)
+- [x] T001 Create `backend/cmd/backfill/` directory and stub `backend/cmd/backfill/main.go` as a `package main` placeholder (empty `func main(){}`)
 
 ---
 
@@ -33,10 +33,10 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T002 Add `RaceControlSummary` and `NotableEvent` storage structs; add `RaceControlSummary *RaceControlSummary` and `FastestLapTimeSeconds *float64` fields to `Session` struct; add `GetFinalizedSessions(ctx context.Context, season int) ([]Session, error)` method to `SessionRepository` interface in `backend/internal/storage/repository.go`
-- [ ] T003 Implement `GetFinalizedSessions` in `backend/internal/storage/cosmos/sessions.go` — query `SELECT * FROM c WHERE c.season = @season AND c.type = 'session' AND c.finalized = true` using the standard partition-key pager pattern already present in the file
-- [ ] T004 [P] Add `NotableEventDTO` and `SessionRecapDTO` structs (all fields `omitempty`; race/sprint, qualifying, and practice field groups per plan.md §1.1); add `RecapSummary *SessionRecapDTO` to `SessionDetailDTO` in `backend/internal/api/rounds/dto.go`
-- [ ] T005 [P] Extend `backend/tests/contract/rounds_contract_test.go` with three RED tests: `TestRoundDetail_RecapSummary_CompletedRace` (response includes `recap_summary` with winner fields), `TestRoundDetail_RecapSummary_UpcomingSession` (`recap_summary` absent), `TestRoundDetail_RecapSummary_NilHydrator_Degrades` (nil hydrator → recap omits events but returns winner) — confirm these fail before implementation
+- [x] T002 Add `RaceControlSummary` and `NotableEvent` storage structs; add `RaceControlSummary *RaceControlSummary` and `FastestLapTimeSeconds *float64` fields to `Session` struct; add `GetFinalizedSessions(ctx context.Context, season int) ([]Session, error)` method to `SessionRepository` interface in `backend/internal/storage/repository.go`
+- [x] T003 Implement `GetFinalizedSessions` in `backend/internal/storage/cosmos/sessions.go` — query `SELECT * FROM c WHERE c.season = @season AND c.type = 'session' AND c.finalized = true` using the standard partition-key pager pattern already present in the file
+- [x] T004 [P] Add `NotableEventDTO` and `SessionRecapDTO` structs (all fields `omitempty`; race/sprint, qualifying, and practice field groups per plan.md §1.1); add `RecapSummary *SessionRecapDTO` to `SessionDetailDTO` in `backend/internal/api/rounds/dto.go`
+- [x] T005 [P] Extend `backend/tests/contract/rounds_contract_test.go` with three RED tests: `TestRoundDetail_RecapSummary_CompletedRace` (response includes `recap_summary` with winner fields), `TestRoundDetail_RecapSummary_UpcomingSession` (`recap_summary` absent), `TestRoundDetail_RecapSummary_NilHydrator_Degrades` (nil hydrator → recap omits events but returns winner) — confirm these fail before implementation
 
 **Checkpoint**: Storage types compile; DTO compiles; contract tests are present and failing; all later phases can proceed.
 
@@ -52,17 +52,17 @@
 
 > **Write these first, run `go test ./...` and `npx vitest run` to confirm RED before implementing T010–T014.**
 
-- [ ] T006 [P] [US1] Write backend unit tests for `SummarizeRaceControl` in `backend/tests/unit/race_control_test.go` — cases: single RED flag, safety car deduplication (two messages same lap → count 1), safety car two distinct laps (count 2), VSC ignores ending messages, empty message slice returns zero-value summary, priority red flag over SC
-- [ ] T007 [P] [US1] Write backend unit tests for `deriveRecapSummary` race/sprint path in `backend/tests/unit/rounds_recap_test.go` — cases: P1 result maps to winner fields, no classified finishers omits winner gracefully, `FastestLap == true` result maps to fastest lap holder, `FastestLapTimeSeconds` propagated from `sess.FastestLapTimeSeconds`
-- [ ] T008 [P] [US1] Write frontend unit tests for `RaceRecapCard` in `frontend/tests/rounds/RecapCards.test.tsx` — cases: renders winner name and team, renders gap to P2, omits fastest lap row when absent, renders top_event safety car line, renders top_event red flag line
+- [x] T006 [P] [US1] Write backend unit tests for `SummarizeRaceControl` in `backend/tests/unit/race_control_test.go` — cases: single RED flag, safety car deduplication (two messages same lap → count 1), safety car two distinct laps (count 2), VSC ignores ending messages, empty message slice returns zero-value summary, priority red flag over SC
+- [x] T007 [P] [US1] Write backend unit tests for `deriveRecapSummary` race/sprint path in `backend/tests/unit/rounds_recap_test.go` — cases: P1 result maps to winner fields, no classified finishers omits winner gracefully, `FastestLap == true` result maps to fastest lap holder, `FastestLapTimeSeconds` propagated from `sess.FastestLapTimeSeconds`
+- [x] T008 [P] [US1] Write frontend unit tests for `RaceRecapCard` in `frontend/tests/rounds/RecapCards.test.tsx` — cases: renders winner name and team, renders gap to P2, omits fastest lap row when absent, renders top_event safety car line, renders top_event red flag line
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Create `backend/internal/ingest/race_control.go` — implement `FetchRaceControlMsgs(ctx, client, sessionKey)` calling `GET https://api.openf1.org/v1/race_control?session_key={key}`; implement `SummarizeRaceControl(msgs)` with deduplication by activation type + lap_number per plan.md §1.2 (red flag: flag=="RED"; safety car: message starts with "SAFETY CAR DEPLOYED"; VSC: "VIRTUAL SAFETY CAR DEPLOYED"; investigation: category=="Other" && message contains "UNDER INVESTIGATION"); define `RaceControlHydrator` struct with `NewRaceControlHydrator(repo, logger)` constructor and `Hydrate(ctx, sess)` method (fetch → summarize → upsert → return)
-- [ ] T010 [US1] Extend finalization block in `backend/internal/ingest/session_poller.go` — after `fetchAndUpsertResults` succeeds: (1) sleep 500ms, call `FetchRaceControlMsgs`, call `SummarizeRaceControl`, assign to `sess.RaceControlSummary`; (2) derive `FastestLapTimeSeconds` from the laps slice already in memory (find lap where driver == `DeriveFastestLap` result, minimum non-nil `LapDuration`); store both in the same `UpsertSession` call that sets `sess.Finalized = true`; do NOT bump `SessionSchemaVersion`
-- [ ] T011 [US1] Extend `backend/internal/api/rounds/service.go` — define `RaceControlHydrator` interface (`Hydrate(ctx, sess) (*storage.RaceControlSummary, error)`); add `rcHydrator RaceControlHydrator` and `logger *slog.Logger` fields to `Service` struct; add `NewServiceWithHydrator(sessionRepo, calendarRepo, hydrator, logger) *Service` constructor; add `deriveTopEvent` helper (priority: red_flag > safety_car > vsc > investigation; nil if no events); add `deriveRecapSummary(sess, results) *SessionRecapDTO` function implementing the race/sprint path per plan.md §1.2; call `deriveRecapSummary` inside the per-session loop when `status == statusCompleted`
-- [ ] T012 [P] [US1] Add `NotableEvent` and `SessionRecapSummary` TypeScript interfaces matching the contract in `contracts/rounds-recap-api.md`; add `recap_summary?: SessionRecapSummary` to the `SessionDetail` interface in `frontend/src/features/rounds/roundApi.ts`
-- [ ] T013 [P] [US1] Create `frontend/src/features/rounds/RaceRecapCard.tsx` — props: `{ session: SessionDetail }` (parent guarantees `recap_summary` non-null); render session label (`session.session_name`), winner row with team-color left border using `getTeamColor`, gap to P2 (omit row if absent), fastest lap row with `LapTimeDisplay` (omit if absent), `{total_laps} laps` (omit if 0), top event row using emoji labels per plan.md §1.3 (omit if no top_event)
+- [x] T009 [US1] Create `backend/internal/ingest/race_control.go` — implement `FetchRaceControlMsgs(ctx, client, sessionKey)` calling `GET https://api.openf1.org/v1/race_control?session_key={key}`; implement `SummarizeRaceControl(msgs)` with deduplication by activation type + lap_number per plan.md §1.2 (red flag: flag=="RED"; safety car: message starts with "SAFETY CAR DEPLOYED"; VSC: "VIRTUAL SAFETY CAR DEPLOYED"; investigation: category=="Other" && message contains "UNDER INVESTIGATION"); define `RaceControlHydrator` struct with `NewRaceControlHydrator(repo, logger)` constructor and `Hydrate(ctx, sess)` method (fetch → summarize → upsert → return)
+- [x] T010 [US1] Extend finalization block in `backend/internal/ingest/session_poller.go` — after `fetchAndUpsertResults` succeeds: (1) sleep 500ms, call `FetchRaceControlMsgs`, call `SummarizeRaceControl`, assign to `sess.RaceControlSummary`; (2) derive `FastestLapTimeSeconds` from the laps slice already in memory (find lap where driver == `DeriveFastestLap` result, minimum non-nil `LapDuration`); store both in the same `UpsertSession` call that sets `sess.Finalized = true`; do NOT bump `SessionSchemaVersion`
+- [x] T011 [US1] Extend `backend/internal/api/rounds/service.go` — define `RaceControlHydrator` interface (`Hydrate(ctx, sess) (*storage.RaceControlSummary, error)`); add `rcHydrator RaceControlHydrator` and `logger *slog.Logger` fields to `Service` struct; add `NewServiceWithHydrator(sessionRepo, calendarRepo, hydrator, logger) *Service` constructor; add `deriveTopEvent` helper (priority: red_flag > safety_car > vsc > investigation; nil if no events); add `deriveRecapSummary(sess, results) *SessionRecapDTO` function implementing the race/sprint path per plan.md §1.2; call `deriveRecapSummary` inside the per-session loop when `status == statusCompleted`
+- [x] T012 [P] [US1] Add `NotableEvent` and `SessionRecapSummary` TypeScript interfaces matching the contract in `contracts/rounds-recap-api.md`; add `recap_summary?: SessionRecapSummary` to the `SessionDetail` interface in `frontend/src/features/rounds/roundApi.ts`
+- [x] T013 [P] [US1] Create `frontend/src/features/rounds/RaceRecapCard.tsx` — props: `{ session: SessionDetail }` (parent guarantees `recap_summary` non-null); render session label (`session.session_name`), winner row with team-color left border using `getTeamColor`, gap to P2 (omit row if absent), fastest lap row with `LapTimeDisplay` (omit if absent), `{total_laps} laps` (omit if 0), top event row using emoji labels per plan.md §1.3 (omit if no top_event)
 
 **Checkpoint**: Backend compiles; `SummarizeRaceControl` and `deriveRecapSummary` race-path unit tests pass; `RaceRecapCard` renders correctly in isolation; contract tests still RED (hydrator not wired to main yet).
 
@@ -76,7 +76,7 @@
 
 ### Implementation for User Story 5
 
-- [ ] T014 [US5] Implement `backend/cmd/backfill/main.go` — flags: `--season` (required int), `--dry-run` (bool), `--rate-limit-ms` (default 1000); wiring: read `COSMOS_ENDPOINT` from env, create Cosmos client via same path as `backend/internal/config/`; call `repo.GetFinalizedSessions(ctx, season)`; loop: skip if `sess.RaceControlSummary != nil` (idempotent), call `FetchRaceControlMsgs`, if error/empty log WARN + continue, call `SummarizeRaceControl`, if not dry-run patch and `repo.UpsertSession`, sleep `rate-limit-ms`; emit `log/slog` structured JSON per session (`{"level":"INFO","msg":"backfill: updated","session_id":"...","outcome":"updated|skipped|failed"}`); emit summary line at end (`{"level":"INFO","msg":"backfill: complete","updated":N,"skipped":N,"failed":N}`)
+- [x] T014 [US5] Implement `backend/cmd/backfill/main.go` — flags: `--season` (required int), `--dry-run` (bool), `--rate-limit-ms` (default 1000); wiring: read `COSMOS_ENDPOINT` from env, create Cosmos client via same path as `backend/internal/config/`; call `repo.GetFinalizedSessions(ctx, season)`; loop: skip if `sess.RaceControlSummary != nil` (idempotent), call `FetchRaceControlMsgs`, if error/empty log WARN + continue, call `SummarizeRaceControl`, if not dry-run patch and `repo.UpsertSession`, sleep `rate-limit-ms`; emit `log/slog` structured JSON per session (`{"level":"INFO","msg":"backfill: updated","session_id":"...","outcome":"updated|skipped|failed"}`); emit summary line at end (`{"level":"INFO","msg":"backfill: complete","updated":N,"skipped":N,"failed":N}`)
 
 **Checkpoint**: Backfill binary compiles and runs with `--dry-run`; emits correct per-session and summary JSON log lines; skips sessions that already have `RaceControlSummary`.
 
@@ -90,13 +90,13 @@
 
 ### Tests for User Story 2
 
-- [ ] T015 [P] [US2] Extend `backend/tests/unit/rounds_recap_test.go` with qualifying/sprint qualifying tests — cases: pole and Q1/Q2 cutoff derivation (last P15 Q1 time, last P10 Q2 time), sprint qualifying format omits Q1/Q2 cutoffs, gap_to_p2 formatted as "+X.XXX"
-- [ ] T016 [P] [US2] Extend `frontend/tests/rounds/RecapCards.test.tsx` with `QualifyingRecapCard` tests — cases: renders pole sitter and pole time, renders Q1/Q2 cutoffs, omits cutoff rows when absent, renders red flag count, omits red flag row when zero
+- [x] T015 [P] [US2] Extend `backend/tests/unit/rounds_recap_test.go` with qualifying/sprint qualifying tests — cases: pole and Q1/Q2 cutoff derivation (last P15 Q1 time, last P10 Q2 time), sprint qualifying format omits Q1/Q2 cutoffs, gap_to_p2 formatted as "+X.XXX"
+- [x] T016 [P] [US2] Extend `frontend/tests/rounds/RecapCards.test.tsx` with `QualifyingRecapCard` tests — cases: renders pole sitter and pole time, renders Q1/Q2 cutoffs, omits cutoff rows when absent, renders red flag count, omits red flag row when zero
 
 ### Implementation for User Story 2
 
-- [ ] T017 [US2] Add qualifying/sprint qualifying branch to `deriveRecapSummary` in `backend/internal/api/rounds/service.go` — pole sitter from P1 result; pole time from Q3Time (fallback Q2Time, Q1Time); gap to P2 as formatted delta string; Q1 cutoff from last result with non-nil Q1Time and nil Q2Time; Q2 cutoff from last result with non-nil Q2Time and nil Q3Time; race-control fields from `sess.RaceControlSummary`
-- [ ] T018 [P] [US2] Create `frontend/src/features/rounds/QualifyingRecapCard.tsx` — props: `{ session: SessionDetail }`; render session label, pole sitter with team-color border, pole time via `LapTimeDisplay`, gap to P2, Q1 cutoff row (omit if nil), Q2 cutoff row (omit if nil), red flag count row (omit if 0 or absent)
+- [x] T017 [US2] Add qualifying/sprint qualifying branch to `deriveRecapSummary` in `backend/internal/api/rounds/service.go` — pole sitter from P1 result; pole time from Q3Time (fallback Q2Time, Q1Time); gap to P2 as formatted delta string; Q1 cutoff from last result with non-nil Q1Time and nil Q2Time; Q2 cutoff from last result with non-nil Q2Time and nil Q3Time; race-control fields from `sess.RaceControlSummary`
+- [x] T018 [P] [US2] Create `frontend/src/features/rounds/QualifyingRecapCard.tsx` — props: `{ session: SessionDetail }`; render session label, pole sitter with team-color border, pole time via `LapTimeDisplay`, gap to P2, Q1 cutoff row (omit if nil), Q2 cutoff row (omit if nil), red flag count row (omit if 0 or absent)
 
 **Checkpoint**: Qualifying unit tests pass; `QualifyingRecapCard` renders correctly in isolation; backend qualifying recap fields appear in API response for completed qualifying sessions.
 
@@ -110,12 +110,12 @@
 
 ### Tests for User Story 4
 
-- [ ] T019 [P] [US4] Create `frontend/tests/rounds/SessionRecapStrip.test.tsx` — cases: renders null when no completed sessions, renders one card per completed session with recap_summary, cards are in chronological order by `date_start_utc`, dispatches correct card type per `session_type` (race/sprint → RaceRecapCard, qualifying/sprint_qualifying → QualifyingRecapCard, practice* → PracticeRecapCard)
+- [x] T019 [P] [US4] Create `frontend/tests/rounds/SessionRecapStrip.test.tsx` — cases: renders null when no completed sessions, renders one card per completed session with recap_summary, cards are in chronological order by `date_start_utc`, dispatches correct card type per `session_type` (race/sprint → RaceRecapCard, qualifying/sprint_qualifying → QualifyingRecapCard, practice* → PracticeRecapCard)
 
 ### Implementation for User Story 4
 
-- [ ] T020 [US4] Create `frontend/src/features/rounds/SessionRecapStrip.tsx` — props: `{ sessions: SessionDetail[] }`; filter to sessions where `status === 'completed' && recap_summary != null`; sort ascending by `date_start_utc`; render strip container with responsive CSS (`flex flex-col md:flex-row md:overflow-x-auto`; cards full-width on mobile, fixed ~280px width on desktop); dispatch per session type per plan.md §1.3; return null if filtered list is empty
-- [ ] T021 [US4] Insert `<SessionRecapStrip sessions={data.sessions} />` between the round header section and the session cards list in `frontend/src/features/rounds/RoundDetailPage.tsx`
+- [x] T020 [US4] Create `frontend/src/features/rounds/SessionRecapStrip.tsx` — props: `{ sessions: SessionDetail[] }`; filter to sessions where `status === 'completed' && recap_summary != null`; sort ascending by `date_start_utc`; render strip container with responsive CSS (`flex flex-col md:flex-row md:overflow-x-auto`; cards full-width on mobile, fixed ~280px width on desktop); dispatch per session type per plan.md §1.3; return null if filtered list is empty
+- [x] T021 [US4] Insert `<SessionRecapStrip sessions={data.sessions} />` between the round header section and the session cards list in `frontend/src/features/rounds/RoundDetailPage.tsx`
 
 **Checkpoint**: Strip renders all card types in correct order; responsive layout verified at target breakpoints; no strip rendered when no completed sessions.
 
@@ -129,13 +129,13 @@
 
 ### Tests for User Story 3
 
-- [ ] T022 [P] [US3] Extend `backend/tests/unit/rounds_recap_test.go` with practice tests — cases: P1 result maps to best driver and best lap time, total laps is sum of `NumberOfLaps` across all results, red flag count propagated from `RaceControlSummary`, no red flag row when count is zero
-- [ ] T023 [P] [US3] Extend `frontend/tests/rounds/RecapCards.test.tsx` with `PracticeRecapCard` tests — cases: renders session label, renders best driver and team, renders best lap time, renders total laps, omits red flag row when zero
+- [x] T022 [P] [US3] Extend `backend/tests/unit/rounds_recap_test.go` with practice tests — cases: P1 result maps to best driver and best lap time, total laps is sum of `NumberOfLaps` across all results, red flag count propagated from `RaceControlSummary`, no red flag row when count is zero
+- [x] T023 [P] [US3] Extend `frontend/tests/rounds/RecapCards.test.tsx` with `PracticeRecapCard` tests — cases: renders session label, renders best driver and team, renders best lap time, renders total laps, omits red flag row when zero
 
 ### Implementation for User Story 3
 
-- [ ] T024 [US3] Add practice branch to `deriveRecapSummary` in `backend/internal/api/rounds/service.go` — best driver from P1 result (lowest BestLapTime, already sorted); best lap time from P1 result; total laps as `sum(r.NumberOfLaps for r in results)`; red flag count from `sess.RaceControlSummary`
-- [ ] T025 [P] [US3] Create `frontend/src/features/rounds/PracticeRecapCard.tsx` — props: `{ session: SessionDetail }`; render session label, best driver with team-color left border, best lap time via `LapTimeDisplay`, `{total_laps} laps`, red flag count row (omit if 0 or absent)
+- [x] T024 [US3] Add practice branch to `deriveRecapSummary` in `backend/internal/api/rounds/service.go` — best driver from P1 result (lowest BestLapTime, already sorted); best lap time from P1 result; total laps as `sum(r.NumberOfLaps for r in results)`; red flag count from `sess.RaceControlSummary`
+- [x] T025 [P] [US3] Create `frontend/src/features/rounds/PracticeRecapCard.tsx` — props: `{ session: SessionDetail }`; render session label, best driver with team-color left border, best lap time via `LapTimeDisplay`, `{total_laps} laps`, red flag count row (omit if 0 or absent)
 
 **Checkpoint**: Practice unit tests pass; `PracticeRecapCard` renders correctly; all three card types visible in the strip for a round with all sessions completed.
 
@@ -149,8 +149,8 @@
 
 ### Implementation for User Story 6
 
-- [ ] T026 [US6] Add lazy fill block in `GetRoundDetail` per-session loop in `backend/internal/api/rounds/service.go` — before calling `deriveRecapSummary`, if `status == statusCompleted && sess.RaceControlSummary == nil && s.rcHydrator != nil`: call `s.rcHydrator.Hydrate(ctx, sess)`; on success set `sess.RaceControlSummary = summary`; on error log `s.logger.Warn("lazy race control fill failed — recap rendered without events", "session_id", sess.ID, "error", err)` and continue (graceful degradation)
-- [ ] T027 [US6] Wire `NewServiceWithHydrator` with a real `*ingest.RaceControlHydrator` in `backend/cmd/api/main.go`, replacing the existing `NewService` call; inject the Cosmos session repository and the `slog` logger already present in main
+- [x] T026 [US6] Add lazy fill block in `GetRoundDetail` per-session loop in `backend/internal/api/rounds/service.go` — before calling `deriveRecapSummary`, if `status == statusCompleted && sess.RaceControlSummary == nil && s.rcHydrator != nil`: call `s.rcHydrator.Hydrate(ctx, sess)`; on success set `sess.RaceControlSummary = summary`; on error log `s.logger.Warn("lazy race control fill failed — recap rendered without events", "session_id", sess.ID, "error", err)` and continue (graceful degradation)
+- [x] T027 [US6] Wire `NewServiceWithHydrator` with a real `*ingest.RaceControlHydrator` in `backend/cmd/api/main.go`, replacing the existing `NewService` call; inject the Cosmos session repository and the `slog` logger already present in main
 
 **Checkpoint**: Contract tests pass GREEN (hydrator wired); lazy fill hydrates missing summaries on read and persists them; failure path returns partial response without error; `go test ./...` passes.
 
@@ -160,11 +160,11 @@
 
 **Purpose**: Verify all tests green, lint clean, backfill operational, and `omitempty` behaviour confirmed end-to-end.
 
-- [ ] T028 [P] Verify all backend tests pass: `cd backend && go test ./...` — confirm contract, unit, and any integration tests all green
-- [ ] T029 [P] Verify all frontend tests pass: `cd frontend && npx vitest run` — confirm `SessionRecapStrip`, `RecapCards`, and `RoundDetailPage` tests all green
+- [x] T028 [P] Verify all backend tests pass: `cd backend && go test ./...` — confirm contract, unit, and any integration tests all green
+- [x] T029 [P] Verify all frontend tests pass: `cd frontend && npx vitest run` — confirm `SessionRecapStrip`, `RecapCards`, and `RoundDetailPage` tests all green
 - [ ] T030 [P] Run `export PATH="$HOME/go/bin:$PATH" && cd backend && golangci-lint run ./...` and resolve any lint issues in new or modified files
-- [ ] T031 Validate `omitempty` behaviour end-to-end: call `GET /api/v1/rounds/{round}?year=2026` for a completed round and confirm zero-value race-control fields (`red_flag_count: 0`, `top_event: null`) are absent from the JSON response body
-- [ ] T032 Run post-deploy backfill dry-run: `./backfill --season=2026 --dry-run --rate-limit-ms=1000` and confirm one structured JSON log line per finalized session plus the summary line; then run without `--dry-run` in production and spot-check at least 3 completed round detail pages for correct recap cards (SC-001)
+- [x] T031 Validate `omitempty` behaviour end-to-end: call `GET /api/v1/rounds/{round}?year=2026` for a completed round and confirm zero-value race-control fields (`red_flag_count: 0`, `top_event: null`) are absent from the JSON response body
+- [x] T032 Run post-deploy backfill dry-run: `./backfill --season=2026 --dry-run --rate-limit-ms=1000` and confirm one structured JSON log line per finalized session plus the summary line; then run without `--dry-run` in production and spot-check at least 3 completed round detail pages for correct recap cards (SC-001)
 
 ---
 
