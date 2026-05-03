@@ -28,6 +28,7 @@ func main() {
 	dryRun := flag.Bool("dry-run", false, "Log what would change without writing to Cosmos")
 	rateLimitMs := flag.Int("rate-limit-ms", 1000, "Delay between OpenF1 fetches in milliseconds")
 	analysisMode := flag.Bool("analysis", false, "Backfill session analysis data (positions, intervals, stints, pits, overtakes) for Race/Sprint sessions")
+	analysisOnly := flag.Bool("analysis-only", false, "Run only analysis backfill, skip race control backfill")
 	flag.Parse()
 
 	if *season == 0 {
@@ -63,84 +64,86 @@ func main() {
 	httpClient := &http.Client{Timeout: 30 * time.Second}
 	delay := time.Duration(*rateLimitMs) * time.Millisecond
 
-	updated, skipped, failed := 0, 0, 0
+	if !*analysisOnly {
+		updated, skipped, failed := 0, 0, 0
 
-	for _, sess := range sessions {
-		if sess.RaceControlSummary != nil {
-			logger.Info("backfill: skipped — already has race control data",
-				"session_id", sess.ID,
-				"session_key", sess.SessionKey,
-				"outcome", "skipped",
-			)
-			skipped++
-			continue
-		}
-
-		logger.Info("backfill: fetching race control",
-			"session_id", sess.ID,
-			"session_key", sess.SessionKey,
-		)
-
-		msgs, fetchErr := ingest.FetchRaceControlMsgs(ctx, httpClient, sess.SessionKey)
-		if fetchErr != nil {
-			logger.Warn("backfill: fetch failed — skipping session",
-				"session_id", sess.ID,
-				"session_key", sess.SessionKey,
-				"error", fetchErr.Error(),
-				"outcome", "failed",
-			)
-			failed++
-			time.Sleep(delay)
-			continue
-		}
-
-		summary := ingest.SummarizeRaceControl(msgs)
-		sess.RaceControlSummary = &summary
-
-		if *dryRun {
-			logger.Info("backfill: dry-run — would update",
-				"session_id", sess.ID,
-				"session_key", sess.SessionKey,
-				"red_flags", summary.RedFlagCount,
-				"safety_cars", summary.SafetyCarCount,
-				"vscs", summary.VSCCount,
-				"outcome", "would-update",
-			)
-		} else {
-			if upsertErr := client.UpsertSession(ctx, sess); upsertErr != nil {
-				logger.Warn("backfill: upsert failed — skipping session",
+		for _, sess := range sessions {
+			if sess.RaceControlSummary != nil {
+				logger.Info("backfill: skipped — already has race control data",
 					"session_id", sess.ID,
 					"session_key", sess.SessionKey,
-					"error", upsertErr.Error(),
+					"outcome", "skipped",
+				)
+				skipped++
+				continue
+			}
+
+			logger.Info("backfill: fetching race control",
+				"session_id", sess.ID,
+				"session_key", sess.SessionKey,
+			)
+
+			msgs, fetchErr := ingest.FetchRaceControlMsgs(ctx, httpClient, sess.SessionKey)
+			if fetchErr != nil {
+				logger.Warn("backfill: fetch failed — skipping session",
+					"session_id", sess.ID,
+					"session_key", sess.SessionKey,
+					"error", fetchErr.Error(),
 					"outcome", "failed",
 				)
 				failed++
 				time.Sleep(delay)
 				continue
 			}
-			logger.Info("backfill: updated",
-				"session_id", sess.ID,
-				"session_key", sess.SessionKey,
-				"red_flags", summary.RedFlagCount,
-				"safety_cars", summary.SafetyCarCount,
-				"vscs", summary.VSCCount,
-				"outcome", "updated",
-			)
+
+			summary := ingest.SummarizeRaceControl(msgs)
+			sess.RaceControlSummary = &summary
+
+			if *dryRun {
+				logger.Info("backfill: dry-run — would update",
+					"session_id", sess.ID,
+					"session_key", sess.SessionKey,
+					"red_flags", summary.RedFlagCount,
+					"safety_cars", summary.SafetyCarCount,
+					"vscs", summary.VSCCount,
+					"outcome", "would-update",
+				)
+			} else {
+				if upsertErr := client.UpsertSession(ctx, sess); upsertErr != nil {
+					logger.Warn("backfill: upsert failed — skipping session",
+						"session_id", sess.ID,
+						"session_key", sess.SessionKey,
+						"error", upsertErr.Error(),
+						"outcome", "failed",
+					)
+					failed++
+					time.Sleep(delay)
+					continue
+				}
+				logger.Info("backfill: updated",
+					"session_id", sess.ID,
+					"session_key", sess.SessionKey,
+					"red_flags", summary.RedFlagCount,
+					"safety_cars", summary.SafetyCarCount,
+					"vscs", summary.VSCCount,
+					"outcome", "updated",
+				)
+			}
+			updated++
+			time.Sleep(delay)
 		}
-		updated++
-		time.Sleep(delay)
+
+		logger.Info("backfill: complete",
+			"season", *season,
+			"updated", updated,
+			"skipped", skipped,
+			"failed", failed,
+			"dry_run", *dryRun,
+		)
 	}
 
-	logger.Info("backfill: complete",
-		"season", *season,
-		"updated", updated,
-		"skipped", skipped,
-		"failed", failed,
-		"dry_run", *dryRun,
-	)
-
 	// --- Analysis backfill (Feature 006) ---
-	if *analysisMode {
+	if *analysisMode || *analysisOnly {
 		backfillAnalysis(ctx, client, client, sessions, httpClient, delay, *dryRun, logger)
 	}
 }
