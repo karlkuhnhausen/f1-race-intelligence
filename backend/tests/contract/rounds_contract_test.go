@@ -76,6 +76,9 @@ func (m *mockSessionRepo) DeleteSession(_ context.Context, _ int, _ string) erro
 func (m *mockSessionRepo) DeleteSessionResultsBySessionType(_ context.Context, _, _ int, _ string) error {
 	return nil
 }
+func (m *mockSessionRepo) GetFinalizedSessions(_ context.Context, _ int) ([]storage.Session, error) {
+	return nil, nil
+}
 
 func seedSessions() (*mockSessionRepo, *mockCalendarRepo) {
 	now := time.Now().UTC()

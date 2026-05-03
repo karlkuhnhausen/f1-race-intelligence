@@ -19,6 +19,39 @@ export interface SessionResultEntry {
   gap_to_fastest?: number;
 }
 
+export interface NotableEvent {
+  event_type: 'red_flag' | 'safety_car' | 'vsc' | 'investigation';
+  lap_number: number;
+  count: number;
+}
+
+export interface SessionRecapSummary {
+  // Race / Sprint
+  winner_name?: string;
+  winner_team?: string;
+  gap_to_p2?: string;
+  fastest_lap_holder?: string;
+  fastest_lap_team?: string;
+  fastest_lap_time_seconds?: number;
+  total_laps?: number;
+  // Qualifying / Sprint Qualifying
+  pole_sitter_name?: string;
+  pole_sitter_team?: string;
+  pole_time?: number;
+  gap_to_p2_qualifying?: string;
+  q1_cutoff_time?: number;
+  q2_cutoff_time?: number;
+  // Practice
+  best_driver_name?: string;
+  best_driver_team?: string;
+  best_lap_time?: number;
+  // All sessions
+  red_flag_count?: number;
+  safety_car_count?: number;
+  vsc_count?: number;
+  top_event?: NotableEvent;
+}
+
 export interface SessionDetail {
   session_name: string;
   session_type: string;
@@ -26,6 +59,7 @@ export interface SessionDetail {
   date_start_utc: string;
   date_end_utc: string;
   results: SessionResultEntry[];
+  recap_summary?: SessionRecapSummary;
 }
 
 export interface RoundDetailResponse {

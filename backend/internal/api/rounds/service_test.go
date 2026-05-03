@@ -91,6 +91,9 @@ func (f *fakeSessionRepo) DeleteSession(_ context.Context, _ int, _ string) erro
 func (f *fakeSessionRepo) DeleteSessionResultsBySessionType(_ context.Context, _, _ int, _ string) error {
 	return nil
 }
+func (f *fakeSessionRepo) GetFinalizedSessions(_ context.Context, _ int) ([]storage.Session, error) {
+	return nil, nil
+}
 
 // fakeCalendarRepo implements storage.CalendarRepository with the minimum
 // surface needed by GetRoundDetail.

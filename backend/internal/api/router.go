@@ -12,6 +12,7 @@ import (
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/api/calendar"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/api/rounds"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/api/standings"
+	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/ingest"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/storage"
 )
 
@@ -50,8 +51,12 @@ func NewRouter(calendarRepo storage.CalendarRepository, standingsRepo storage.St
 	standingsSvc := standings.NewService(standingsRepo)
 	standingsHandler := standings.NewHandler(standingsSvc, logger)
 
-	// Rounds API
-	roundsSvc := rounds.NewService(sessionRepo, calendarRepo)
+	// Rounds API — wire a real RaceControlHydrator for lazy-on-read gap fill.
+	var rcHydrator rounds.RaceControlHydrator
+	if sessionRepo != nil {
+		rcHydrator = ingest.NewRaceControlHydrator(sessionRepo, logger)
+	}
+	roundsSvc := rounds.NewServiceWithHydrator(sessionRepo, calendarRepo, rcHydrator, logger)
 	roundsHandler := rounds.NewHandler(roundsSvc, logger)
 
 	r.Route("/api/v1", func(r chi.Router) {

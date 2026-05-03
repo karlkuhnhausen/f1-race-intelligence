@@ -64,6 +64,27 @@ type StandingsRepository interface {
 	GetConstructorStandings(ctx context.Context, season int) ([]ConstructorStandingRow, error)
 }
 
+// RaceControlSummary is the aggregated race-control state for a single session.
+// Stored as a nested object within the session document in Cosmos DB.
+type RaceControlSummary struct {
+	RedFlagCount   int            `json:"red_flag_count"`
+	SafetyCarCount int            `json:"safety_car_count"`
+	VSCCount       int            `json:"vsc_count"`
+	NotableEvents  []NotableEvent `json:"notable_events"`
+	FetchedAtUTC   time.Time      `json:"fetched_at_utc"`
+}
+
+// NotableEvent is a single race-control activation within a session.
+type NotableEvent struct {
+	// EventType is one of: "red_flag", "safety_car", "vsc", "investigation"
+	EventType string `json:"event_type"`
+	// LapNumber is the lap on which the first (or only) activation occurred.
+	// May be 0 for pre-race events.
+	LapNumber int `json:"lap_number"`
+	// Count is the number of distinct activations of this event type.
+	Count int `json:"count"`
+}
+
 // Session represents one session within a race weekend stored in Cosmos DB.
 type Session struct {
 	ID           string    `json:"id"`
@@ -90,6 +111,13 @@ type Session struct {
 	// current schema version is newer than the cached value, the
 	// finalized flag is treated as stale and the session is re-fetched.
 	SchemaVersion int `json:"schema_version,omitempty"`
+
+	// Feature 005: race-control summary populated at finalization and by the
+	// backfill tool. Nil for sessions finalized before Feature 005 shipped.
+	RaceControlSummary *RaceControlSummary `json:"race_control_summary,omitempty"`
+	// Feature 005: fastest lap duration in seconds, derived from the laps
+	// fetched at finalization. Nil for sessions finalized before Feature 005.
+	FastestLapTimeSeconds *float64 `json:"fastest_lap_time_seconds,omitempty"`
 }
 
 // SessionResult represents one driver's result within a session stored in Cosmos DB.
@@ -142,6 +170,10 @@ type SessionRepository interface {
 	// as a skip-list so it does not re-fetch results/drivers/laps for sessions
 	// that already finished and were fully cached.
 	GetFinalizedSessionKeys(ctx context.Context, season int) (map[int]int, error)
+	// GetFinalizedSessions returns all session documents for the season where
+	// finalized=true. Used by the backfill CLI to identify sessions that need
+	// race-control summary population.
+	GetFinalizedSessions(ctx context.Context, season int) ([]Session, error)
 	// DeleteSession removes a session document by its ID.
 	DeleteSession(ctx context.Context, season int, id string) error
 	// DeleteSessionResultsBySessionType removes all session_result documents
