@@ -224,31 +224,50 @@ func (s *Service) enrichPodiums(ctx context.Context, season int, rounds []RoundD
 		return
 	}
 
-	// One query for the whole season; fold race+sprint points into a
-	// running total keyed by driver_number.
-	pointsByDriver := map[int]float64{}
+	// One query for the whole season.
 	allResults, err := s.sessionRepo.GetSessionResultsBySeason(ctx, season)
-	if err == nil {
-		for _, sr := range allResults {
-			if sr.Points == nil {
-				continue
-			}
-			if sr.SessionType != "race" && sr.SessionType != "sprint" {
-				continue
-			}
-			pointsByDriver[sr.DriverNumber] += *sr.Points
-		}
+	if err != nil {
+		return
 	}
 
-	// Group results-by-round once so we can attach top-3 per completed
-	// race without an extra query per round.
+	// Group race+sprint points by (round, driver_number) so we can
+	// accumulate a running total as we iterate rounds in order.
+	type roundDriverKey struct {
+		round  int
+		driver int
+	}
+	pointsByRoundDriver := map[roundDriverKey]float64{}
+	for _, sr := range allResults {
+		if sr.Points == nil {
+			continue
+		}
+		if sr.SessionType != "race" && sr.SessionType != "sprint" {
+			continue
+		}
+		pointsByRoundDriver[roundDriverKey{sr.Round, sr.DriverNumber}] += *sr.Points
+	}
+
+	// Group all results by round for podium extraction.
 	resultsByRound := map[int][]storage.SessionResult{}
 	for _, sr := range allResults {
 		resultsByRound[sr.Round] = append(resultsByRound[sr.Round], sr)
 	}
 
+	// Iterate rounds in order (they come sorted by round number from the
+	// calendar query), accumulating a running championship total.
+	runningTotal := map[int]float64{} // driver_number -> cumulative season points
+
 	for i := range rounds {
 		r := &rounds[i]
+
+		// Accumulate points earned in this round (race + sprint) into the
+		// running total, regardless of whether we display a podium.
+		for key, pts := range pointsByRoundDriver {
+			if key.round == r.Round {
+				runningTotal[key.driver] += pts
+			}
+		}
+
 		if r.IsCancelled || r.Status != string(domain.StatusCompleted) {
 			continue
 		}
@@ -283,7 +302,7 @@ func (s *Service) enrichPodiums(ctx context.Context, season int, rounds []RoundD
 				DriverAcronym: sr.DriverAcronym,
 				DriverName:    sr.DriverName,
 				TeamName:      sr.TeamName,
-				SeasonPoints:  pointsByDriver[sr.DriverNumber],
+				SeasonPoints:  runningTotal[sr.DriverNumber],
 			})
 		}
 		r.Podium = podium

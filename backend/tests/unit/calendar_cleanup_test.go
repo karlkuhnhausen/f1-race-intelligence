@@ -152,8 +152,8 @@ func TestGetCalendar_PodiumEnrichment(t *testing.T) {
 	}
 
 	pts := func(v float64) *float64 { return &v }
-	// Round 1 race results, plus a sprint round (round 2) so we exercise the
-	// race+sprint cumulative sum.
+	// Round 1 has both a race and a sprint (sprint weekends share the same
+	// round number), so cumulative points at Round 1 includes both.
 	results := map[int][]storage.SessionResult{
 		1: {
 			// Out of order + a position-0 row.
@@ -164,11 +164,9 @@ func TestGetCalendar_PodiumEnrichment(t *testing.T) {
 			{Round: 1, SessionType: "race", Position: 4, DriverNumber: 4, DriverName: "Lando Norris", DriverAcronym: "NOR", TeamName: "McLaren", Points: pts(12)},
 			// Qualifying must NOT contribute to season points.
 			{Round: 1, SessionType: "qualifying", Position: 1, DriverNumber: 16, DriverName: "Charles Leclerc", DriverAcronym: "LEC", TeamName: "Ferrari"},
-		},
-		2: {
-			// Sprint contributions — VER wins sprint (8), HAM 2nd (7).
-			{Round: 2, SessionType: "sprint", Position: 1, DriverNumber: 1, DriverName: "Max Verstappen", DriverAcronym: "VER", TeamName: "Red Bull Racing", Points: pts(8)},
-			{Round: 2, SessionType: "sprint", Position: 2, DriverNumber: 44, DriverName: "Lewis Hamilton", DriverAcronym: "HAM", TeamName: "Ferrari", Points: pts(7)},
+			// Sprint (same round — sprint weekends share the GP round number).
+			{Round: 1, SessionType: "sprint", Position: 1, DriverNumber: 1, DriverName: "Max Verstappen", DriverAcronym: "VER", TeamName: "Red Bull Racing", Points: pts(8)},
+			{Round: 1, SessionType: "sprint", Position: 2, DriverNumber: 44, DriverName: "Lewis Hamilton", DriverAcronym: "HAM", TeamName: "Ferrari", Points: pts(7)},
 		},
 	}
 
@@ -234,5 +232,80 @@ func TestGetCalendar_PodiumEnrichment(t *testing.T) {
 	}
 	if miami == nil {
 		t.Fatal("Miami GP missing from response")
+	}
+}
+
+// TestGetCalendar_PodiumRunningTotal verifies that the podium's SeasonPoints
+// is a running cumulative total: Round 2's podium includes points from Rounds 1+2.
+func TestGetCalendar_PodiumRunningTotal(t *testing.T) {
+	now := time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC)
+
+	meetings := []storage.RaceMeeting{
+		{
+			ID: "2026-01", Season: 2026, Round: 1,
+			RaceName:         "Australian Grand Prix",
+			StartDatetimeUTC: time.Date(2026, 3, 13, 5, 0, 0, 0, time.UTC),
+			EndDatetimeUTC:   time.Date(2026, 3, 16, 5, 0, 0, 0, time.UTC),
+		},
+		{
+			ID: "2026-02", Season: 2026, Round: 2,
+			RaceName:         "Chinese Grand Prix",
+			StartDatetimeUTC: time.Date(2026, 3, 20, 5, 0, 0, 0, time.UTC),
+			EndDatetimeUTC:   time.Date(2026, 3, 23, 9, 0, 0, 0, time.UTC),
+		},
+	}
+
+	pts := func(v float64) *float64 { return &v }
+	results := map[int][]storage.SessionResult{
+		1: {
+			{Round: 1, SessionType: "race", Position: 1, DriverNumber: 1, DriverAcronym: "VER", DriverName: "Max Verstappen", TeamName: "Red Bull Racing", Points: pts(25)},
+			{Round: 1, SessionType: "race", Position: 2, DriverNumber: 44, DriverAcronym: "HAM", DriverName: "Lewis Hamilton", TeamName: "Ferrari", Points: pts(18)},
+			{Round: 1, SessionType: "race", Position: 3, DriverNumber: 63, DriverAcronym: "RUS", DriverName: "George Russell", TeamName: "Mercedes", Points: pts(15)},
+		},
+		2: {
+			{Round: 2, SessionType: "race", Position: 1, DriverNumber: 44, DriverAcronym: "HAM", DriverName: "Lewis Hamilton", TeamName: "Ferrari", Points: pts(25)},
+			{Round: 2, SessionType: "race", Position: 2, DriverNumber: 1, DriverAcronym: "VER", DriverName: "Max Verstappen", TeamName: "Red Bull Racing", Points: pts(18)},
+			{Round: 2, SessionType: "race", Position: 3, DriverNumber: 4, DriverAcronym: "NOR", DriverName: "Lando Norris", TeamName: "McLaren", Points: pts(15)},
+		},
+	}
+
+	calRepo := &fakeCalendarRepo{meetings: meetings}
+	sessRepo := &fakeSessionRepoWithResults{resultsByRound: results}
+	svc := calendar.NewServiceWithSessionsAndClock(calRepo, sessRepo, func() time.Time { return now })
+
+	resp, err := svc.GetCalendar(context.Background(), 2026)
+	if err != nil {
+		t.Fatalf("GetCalendar returned error: %v", err)
+	}
+
+	if len(resp.Rounds) != 2 {
+		t.Fatalf("expected 2 rounds, got %d", len(resp.Rounds))
+	}
+
+	// Round 1: VER=25, HAM=18, RUS=15 (only Round 1 race points).
+	r1 := resp.Rounds[0]
+	if len(r1.Podium) != 3 {
+		t.Fatalf("Round 1 podium len = %d, want 3", len(r1.Podium))
+	}
+	if r1.Podium[0].DriverAcronym != "VER" || r1.Podium[0].SeasonPoints != 25 {
+		t.Errorf("Round 1 P1: got %s %.0fpts, want VER 25pts", r1.Podium[0].DriverAcronym, r1.Podium[0].SeasonPoints)
+	}
+	if r1.Podium[1].DriverAcronym != "HAM" || r1.Podium[1].SeasonPoints != 18 {
+		t.Errorf("Round 1 P2: got %s %.0fpts, want HAM 18pts", r1.Podium[1].DriverAcronym, r1.Podium[1].SeasonPoints)
+	}
+
+	// Round 2: HAM cumulative = 18 + 25 = 43, VER cumulative = 25 + 18 = 43, NOR = 15.
+	r2 := resp.Rounds[1]
+	if len(r2.Podium) != 3 {
+		t.Fatalf("Round 2 podium len = %d, want 3", len(r2.Podium))
+	}
+	if r2.Podium[0].DriverAcronym != "HAM" || r2.Podium[0].SeasonPoints != 43 {
+		t.Errorf("Round 2 P1: got %s %.0fpts, want HAM 43pts", r2.Podium[0].DriverAcronym, r2.Podium[0].SeasonPoints)
+	}
+	if r2.Podium[1].DriverAcronym != "VER" || r2.Podium[1].SeasonPoints != 43 {
+		t.Errorf("Round 2 P2: got %s %.0fpts, want VER 43pts", r2.Podium[1].DriverAcronym, r2.Podium[1].SeasonPoints)
+	}
+	if r2.Podium[2].DriverAcronym != "NOR" || r2.Podium[2].SeasonPoints != 15 {
+		t.Errorf("Round 2 P3: got %s %.0fpts, want NOR 15pts", r2.Podium[2].DriverAcronym, r2.Podium[2].SeasonPoints)
 	}
 }
