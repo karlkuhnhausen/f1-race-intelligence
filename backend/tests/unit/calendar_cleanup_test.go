@@ -28,24 +28,14 @@ func (f *fakeSessionRepoWithResults) GetSessionsByRound(_ context.Context, _, _ 
 func (f *fakeSessionRepoWithResults) GetSessionResultsByRound(_ context.Context, _, round int) ([]storage.SessionResult, error) {
 	return f.resultsByRound[round], nil
 }
+func (f *fakeSessionRepoWithResults) GetSessionResultsBySeason(_ context.Context, _ int) ([]storage.SessionResult, error) {
+	var all []storage.SessionResult
+	for _, rs := range f.resultsByRound {
+		all = append(all, rs...)
+	}
+	return all, nil
+}
 func (f *fakeSessionRepoWithResults) GetFinalizedSessionKeys(_ context.Context, _ int) (map[int]int, error) {
-	return nil, nil
-}
-
-type fakeStandingsRepo struct {
-	rows []storage.DriverStandingRow
-}
-
-func (f *fakeStandingsRepo) UpsertDriverStandings(_ context.Context, _ []storage.DriverStandingRow) error {
-	return nil
-}
-func (f *fakeStandingsRepo) GetDriverStandings(_ context.Context, _ int) ([]storage.DriverStandingRow, error) {
-	return f.rows, nil
-}
-func (f *fakeStandingsRepo) UpsertConstructorStandings(_ context.Context, _ []storage.ConstructorStandingRow) error {
-	return nil
-}
-func (f *fakeStandingsRepo) GetConstructorStandings(_ context.Context, _ int) ([]storage.ConstructorStandingRow, error) {
 	return nil, nil
 }
 
@@ -141,8 +131,8 @@ func TestNormalizeMeetings_SkipsTestingForRoundNumbering(t *testing.T) {
 }
 
 // TestGetCalendar_PodiumEnrichment verifies that completed races are
-// enriched with top-3 race finishers + current-season points, while
-// upcoming races are not.
+// enriched with top-3 race finishers + cumulative season points (summed
+// from race + sprint session results), while upcoming races are not.
 func TestGetCalendar_PodiumEnrichment(t *testing.T) {
 	now := time.Date(2026, 4, 28, 12, 0, 0, 0, time.UTC)
 
@@ -161,31 +151,31 @@ func TestGetCalendar_PodiumEnrichment(t *testing.T) {
 		},
 	}
 
+	pts := func(v float64) *float64 { return &v }
+	// Round 1 race results, plus a sprint round (round 2) so we exercise the
+	// race+sprint cumulative sum.
 	results := map[int][]storage.SessionResult{
 		1: {
-			// Out of order + a position-0 row that should be ignored.
-			{SessionType: "race", Position: 0, DriverNumber: 18, DriverName: "Lance Stroll", DriverAcronym: "STR", TeamName: "Aston Martin"},
-			{SessionType: "race", Position: 3, DriverNumber: 63, DriverName: "George Russell", DriverAcronym: "RUS", TeamName: "Mercedes"},
-			{SessionType: "race", Position: 1, DriverNumber: 1, DriverName: "Max Verstappen", DriverAcronym: "VER", TeamName: "Red Bull Racing"},
-			{SessionType: "race", Position: 2, DriverNumber: 44, DriverName: "Lewis Hamilton", DriverAcronym: "HAM", TeamName: "Ferrari"},
-			{SessionType: "race", Position: 4, DriverNumber: 4, DriverName: "Lando Norris", DriverAcronym: "NOR", TeamName: "McLaren"},
-			// Different session type — must be ignored.
-			{SessionType: "qualifying", Position: 1, DriverNumber: 16, DriverName: "Charles Leclerc", DriverAcronym: "LEC", TeamName: "Ferrari"},
+			// Out of order + a position-0 row.
+			{Round: 1, SessionType: "race", Position: 0, DriverNumber: 18, DriverName: "Lance Stroll", DriverAcronym: "STR", TeamName: "Aston Martin"},
+			{Round: 1, SessionType: "race", Position: 3, DriverNumber: 63, DriverName: "George Russell", DriverAcronym: "RUS", TeamName: "Mercedes", Points: pts(15)},
+			{Round: 1, SessionType: "race", Position: 1, DriverNumber: 1, DriverName: "Max Verstappen", DriverAcronym: "VER", TeamName: "Red Bull Racing", Points: pts(25)},
+			{Round: 1, SessionType: "race", Position: 2, DriverNumber: 44, DriverName: "Lewis Hamilton", DriverAcronym: "HAM", TeamName: "Ferrari", Points: pts(18)},
+			{Round: 1, SessionType: "race", Position: 4, DriverNumber: 4, DriverName: "Lando Norris", DriverAcronym: "NOR", TeamName: "McLaren", Points: pts(12)},
+			// Qualifying must NOT contribute to season points.
+			{Round: 1, SessionType: "qualifying", Position: 1, DriverNumber: 16, DriverName: "Charles Leclerc", DriverAcronym: "LEC", TeamName: "Ferrari"},
 		},
-	}
-
-	standings := []storage.DriverStandingRow{
-		{Season: 2026, Position: 1, DriverName: "Max Verstappen", Points: 340},
-		{Season: 2026, Position: 2, DriverName: "Lewis Hamilton", Points: 285},
-		{Season: 2026, Position: 3, DriverName: "George Russell", Points: 210},
+		2: {
+			// Sprint contributions — VER wins sprint (8), HAM 2nd (7).
+			{Round: 2, SessionType: "sprint", Position: 1, DriverNumber: 1, DriverName: "Max Verstappen", DriverAcronym: "VER", TeamName: "Red Bull Racing", Points: pts(8)},
+			{Round: 2, SessionType: "sprint", Position: 2, DriverNumber: 44, DriverName: "Lewis Hamilton", DriverAcronym: "HAM", TeamName: "Ferrari", Points: pts(7)},
+		},
 	}
 
 	calRepo := &fakeCalendarRepo{meetings: meetings}
 	sessRepo := &fakeSessionRepoWithResults{resultsByRound: results}
-	stRepo := &fakeStandingsRepo{rows: standings}
 
-	svc := calendar.NewServiceWithSessionsAndClock(calRepo, sessRepo, func() time.Time { return now }).
-		WithStandings(stRepo)
+	svc := calendar.NewServiceWithSessionsAndClock(calRepo, sessRepo, func() time.Time { return now })
 
 	resp, err := svc.GetCalendar(context.Background(), 2026)
 	if err != nil {
@@ -214,11 +204,16 @@ func TestGetCalendar_PodiumEnrichment(t *testing.T) {
 			if r.Podium[0].Position != 1 || r.Podium[0].DriverAcronym != "VER" {
 				t.Errorf("P1 = %+v, want VER pos=1", r.Podium[0])
 			}
-			if r.Podium[0].SeasonPoints != 340 {
-				t.Errorf("VER season points = %v, want 340", r.Podium[0].SeasonPoints)
+			// VER cumulative = 25 (race) + 8 (sprint) = 33
+			if r.Podium[0].SeasonPoints != 33 {
+				t.Errorf("VER season points = %v, want 33 (25 race + 8 sprint)", r.Podium[0].SeasonPoints)
 			}
 			if r.Podium[1].Position != 2 || r.Podium[1].DriverAcronym != "HAM" {
 				t.Errorf("P2 = %+v, want HAM pos=2", r.Podium[1])
+			}
+			// HAM cumulative = 18 + 7 = 25
+			if r.Podium[1].SeasonPoints != 25 {
+				t.Errorf("HAM season points = %v, want 25 (18 race + 7 sprint)", r.Podium[1].SeasonPoints)
 			}
 			if r.Podium[2].Position != 3 || r.Podium[2].DriverAcronym != "RUS" {
 				t.Errorf("P3 = %+v, want RUS pos=3", r.Podium[2])

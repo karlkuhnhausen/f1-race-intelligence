@@ -132,6 +132,11 @@ type SessionRepository interface {
 	UpsertSessionResult(ctx context.Context, r SessionResult) error
 	GetSessionsByRound(ctx context.Context, season, round int) ([]Session, error)
 	GetSessionResultsByRound(ctx context.Context, season, round int) ([]SessionResult, error)
+	// GetSessionResultsBySeason returns every cached SessionResult for the
+	// given season across all rounds. Used to compute running championship
+	// totals from OpenF1 race + sprint points without depending on a
+	// separate standings provider.
+	GetSessionResultsBySeason(ctx context.Context, season int) ([]SessionResult, error)
 	// GetFinalizedSessionKeys returns the set of session_key values for the
 	// season whose cached document has Finalized=true. The poller uses this
 	// as a skip-list so it does not re-fetch results/drivers/laps for sessions

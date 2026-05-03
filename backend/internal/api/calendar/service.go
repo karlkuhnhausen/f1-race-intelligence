@@ -208,27 +208,43 @@ func findMeeting(meetings []domain.RaceMeeting, round int) (domain.RaceMeeting, 
 	return domain.RaceMeeting{}, false
 }
 
-// enrichPodiums attaches top-3 race finishers (with current-season points)
-// to every completed round in `rounds`. Mutates rounds in-place. Silently
-// skips rounds where the session repo is unwired, results aren't yet
-// available, or queries fail — podium is a best-effort enhancement.
+// enrichPodiums attaches top-3 race finishers (with running season points)
+// to every completed round in `rounds`. Mutates rounds in-place.
+//
+// Season points are computed from cached OpenF1 session results — summing
+// `points` across all race + sprint sessions for the season, keyed by
+// driver_number. This is the same source the standings page would use,
+// just aggregated server-side, so we don't depend on a separate standings
+// provider for podium enrichment.
+//
+// Best-effort: if the session repo isn't wired or queries fail, podiums
+// are skipped silently.
 func (s *Service) enrichPodiums(ctx context.Context, season int, rounds []RoundDTO) {
 	if s.sessionRepo == nil {
 		return
 	}
 
-	// Fetch standings once for the season and index by driver name. Driver
-	// name is the only stable join key — DriverStandingRow has no
-	// driver_number. If standings aren't available, season points fall
-	// back to 0.
-	pointsByDriver := map[string]float64{}
-	if s.standingsRepo != nil {
-		standings, err := s.standingsRepo.GetDriverStandings(ctx, season)
-		if err == nil {
-			for _, row := range standings {
-				pointsByDriver[row.DriverName] = row.Points
+	// One query for the whole season; fold race+sprint points into a
+	// running total keyed by driver_number.
+	pointsByDriver := map[int]float64{}
+	allResults, err := s.sessionRepo.GetSessionResultsBySeason(ctx, season)
+	if err == nil {
+		for _, sr := range allResults {
+			if sr.Points == nil {
+				continue
 			}
+			if sr.SessionType != "race" && sr.SessionType != "sprint" {
+				continue
+			}
+			pointsByDriver[sr.DriverNumber] += *sr.Points
 		}
+	}
+
+	// Group results-by-round once so we can attach top-3 per completed
+	// race without an extra query per round.
+	resultsByRound := map[int][]storage.SessionResult{}
+	for _, sr := range allResults {
+		resultsByRound[sr.Round] = append(resultsByRound[sr.Round], sr)
 	}
 
 	for i := range rounds {
@@ -237,14 +253,9 @@ func (s *Service) enrichPodiums(ctx context.Context, season int, rounds []RoundD
 			continue
 		}
 
-		results, err := s.sessionRepo.GetSessionResultsByRound(ctx, season, r.Round)
-		if err != nil || len(results) == 0 {
-			continue
-		}
-
-		// Filter to race-type results (race, sprint), then take top 3 by
-		// position. Prefer the main "race" session over sprint when both
-		// exist for a weekend.
+		results := resultsByRound[r.Round]
+		// Filter to race-type results (race only — sprint has its own
+		// sessionType but the calendar podium reflects the GP winner).
 		raceResults := make([]storage.SessionResult, 0, len(results))
 		for _, sr := range results {
 			if sr.SessionType == "race" && sr.Position >= 1 {
@@ -272,7 +283,7 @@ func (s *Service) enrichPodiums(ctx context.Context, season int, rounds []RoundD
 				DriverAcronym: sr.DriverAcronym,
 				DriverName:    sr.DriverName,
 				TeamName:      sr.TeamName,
-				SeasonPoints:  pointsByDriver[sr.DriverName],
+				SeasonPoints:  pointsByDriver[sr.DriverNumber],
 			})
 		}
 		r.Podium = podium

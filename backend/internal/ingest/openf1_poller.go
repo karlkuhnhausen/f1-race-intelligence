@@ -129,30 +129,10 @@ func (p *OpenF1Poller) fetchMeetings(ctx context.Context, season int) ([]storage
 		return nil, fmt.Errorf("openf1: decode: %w", err)
 	}
 
-	now := time.Now().UTC()
-	meetings := make([]storage.RaceMeeting, 0, len(raw))
-	for i, r := range raw {
-		startUTC, _ := time.Parse(time.RFC3339, r.DateStart)
-
-		m := storage.RaceMeeting{
-			ID:               fmt.Sprintf("%d-%02d", season, i+1),
-			Season:           season,
-			Round:            i + 1,
-			RaceName:         r.MeetingName,
-			CircuitName:      r.CircuitName,
-			CountryName:      r.CountryName,
-			StartDatetimeUTC: startUTC,
-			EndDatetimeUTC:   startUTC.Add(3 * 24 * time.Hour), // Approximate race weekend span.
-			Status:           "scheduled",
-			IsCancelled:      false,
-			Source:           "openf1",
-			DataAsOfUTC:      now,
-			SourceHash:       fmt.Sprintf("%d", r.MeetingKey),
-		}
-		meetings = append(meetings, m)
-	}
-
-	return meetings, nil
+	// Delegate normalization (pre-season testing filter + sequential round
+	// numbering) to NormalizeMeetings so the ingest write path and tests
+	// share one implementation. Round 1 is the first non-testing meeting.
+	return NormalizeMeetings(raw, season), nil
 }
 
 // LastPoll returns the time of the last successful poll and any error from the most recent attempt.
