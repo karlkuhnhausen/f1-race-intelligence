@@ -43,7 +43,7 @@ func NewRouter(calendarRepo storage.CalendarRepository, standingsRepo storage.St
 	})
 
 	// Calendar API
-	calendarSvc := calendar.NewServiceWithSessions(calendarRepo, sessionRepo)
+	calendarSvc := calendar.NewServiceWithSessions(calendarRepo, sessionRepo).WithStandings(standingsRepo)
 	calendarHandler := calendar.NewHandler(calendarSvc, logger)
 
 	// Standings API

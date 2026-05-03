@@ -154,3 +154,51 @@ func TestGetRoundDetail_StatusOverridesStoredValue(t *testing.T) {
 		t.Errorf("race status = %q, want %q", gotByType["race"], statusCompleted)
 	}
 }
+
+// TestGetRoundDetail_FiltersAndSortsResults verifies that session results
+// with position < 1 (DNS/DNF placeholders OpenF1 sometimes sends as 0) are
+// dropped and remaining rows are returned ascending by position.
+func TestGetRoundDetail_FiltersAndSortsResults(t *testing.T) {
+	now := time.Date(2026, 4, 27, 12, 0, 0, 0, time.UTC)
+
+	sessRepo := &fakeSessionRepo{
+		sessions: []storage.Session{
+			{
+				ID: "2026-03-race", Season: 2026, Round: 3,
+				SessionName: "Race", SessionType: "race",
+				DateStartUTC: now.Add(-50 * time.Hour),
+				DateEndUTC:   now.Add(-48 * time.Hour),
+			},
+		},
+		results: []storage.SessionResult{
+			{SessionType: "race", Position: 0, DriverNumber: 18, DriverName: "Lance Stroll"},
+			{SessionType: "race", Position: 3, DriverNumber: 63, DriverName: "George Russell"},
+			{SessionType: "race", Position: 1, DriverNumber: 1, DriverName: "Max Verstappen"},
+			{SessionType: "race", Position: 2, DriverNumber: 44, DriverName: "Lewis Hamilton"},
+		},
+	}
+	calRepo := &fakeCalendarRepo{
+		meetings: []storage.RaceMeeting{{Season: 2026, Round: 3, RaceName: "Australian GP"}},
+	}
+
+	svc := NewServiceWithClock(sessRepo, calRepo, func() time.Time { return now })
+	resp, err := svc.GetRoundDetail(context.Background(), 2026, 3)
+	if err != nil {
+		t.Fatalf("GetRoundDetail: %v", err)
+	}
+	if len(resp.Sessions) != 1 {
+		t.Fatalf("expected 1 session, got %d", len(resp.Sessions))
+	}
+	results := resp.Sessions[0].Results
+	if len(results) != 3 {
+		t.Fatalf("expected 3 results (position 0 filtered), got %d", len(results))
+	}
+	for i, r := range results {
+		if r.Position != i+1 {
+			t.Errorf("results[%d].Position = %d, want %d", i, r.Position, i+1)
+		}
+	}
+	if results[0].DriverName != "Max Verstappen" {
+		t.Errorf("P1 = %q, want Max Verstappen", results[0].DriverName)
+	}
+}

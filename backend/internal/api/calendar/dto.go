@@ -15,6 +15,22 @@ type RoundDTO struct {
 	IsCancelled      bool      `json:"is_cancelled"`
 	CancelledLabel   string    `json:"cancelled_label,omitempty"`
 	CancelledReason  string    `json:"cancelled_reason,omitempty"`
+	// Podium lists the top 3 finishers for completed races (P1/P2/P3),
+	// joined with current-season championship points. Empty/nil for
+	// upcoming or in-progress races.
+	Podium []PodiumEntryDTO `json:"podium,omitempty"`
+}
+
+// PodiumEntryDTO describes a single podium finisher for a completed race.
+// SeasonPoints reflects the driver's CURRENT championship total — the same
+// number is used across all completed-race rows for a given driver.
+type PodiumEntryDTO struct {
+	Position      int     `json:"position"`
+	DriverNumber  int     `json:"driver_number"`
+	DriverAcronym string  `json:"driver_acronym"`
+	DriverName    string  `json:"driver_name"`
+	TeamName      string  `json:"team_name"`
+	SeasonPoints  float64 `json:"season_points"`
 }
 
 // ActiveSessionDTO describes the session currently in focus during an

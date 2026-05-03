@@ -7,6 +7,28 @@ import (
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/storage"
 )
 
+// OpenF1MeetingForTest mirrors the unexported openF1Meeting fields used by
+// NormalizeMeetings. Exposed so tests in other packages can construct
+// fixtures without depending on the unexported type.
+type OpenF1MeetingForTest struct {
+	MeetingName string
+	DateStart   string
+	MeetingKey  int
+}
+
+// NormalizeMeetingsForTest wraps NormalizeMeetings for external test access.
+func NormalizeMeetingsForTest(raw []OpenF1MeetingForTest, season int) []storage.RaceMeeting {
+	internal := make([]openF1Meeting, len(raw))
+	for i, r := range raw {
+		internal[i] = openF1Meeting{
+			MeetingName: r.MeetingName,
+			DateStart:   r.DateStart,
+			MeetingKey:  r.MeetingKey,
+		}
+	}
+	return NormalizeMeetings(internal, season)
+}
+
 // TestTransformSession wraps TransformSession for external test access.
 func TestTransformSession(sessionKey int, sessionName string, meetingKey int, dateStart, dateEnd string, year, season, round int) storage.Session {
 	raw := openF1Session{

@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -222,9 +223,22 @@ func (p *SessionPoller) buildMeetingRoundMap(sessions []openF1Session) map[int]i
 		key       int
 		dateStart string
 	}
+	// Collect candidate meeting keys (excluding any whose sessions look like
+	// pre-season testing — e.g., session_name "Day 1/2/3"). Round 1 must be
+	// the first real race, not a testing meeting.
+	testingMeetings := map[int]bool{}
+	for _, s := range sessions {
+		if isTestingSessionName(s.SessionName) {
+			testingMeetings[s.MeetingKey] = true
+		}
+	}
+
 	seen := map[int]bool{}
 	var meetings []meetingInfo
 	for _, s := range sessions {
+		if testingMeetings[s.MeetingKey] {
+			continue
+		}
 		if !seen[s.MeetingKey] {
 			seen[s.MeetingKey] = true
 			meetings = append(meetings, meetingInfo{key: s.MeetingKey, dateStart: s.DateStart})
@@ -392,6 +406,21 @@ func (p *SessionPoller) LastPoll() (time.Time, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.lastPoll, p.lastErr
+}
+
+// isTestingSessionName reports whether a session_name from OpenF1 looks like
+// a pre-season testing session (e.g., "Day 1", "Day 2", "Day 3"). Real race
+// weekends use session names like "Practice 1", "Qualifying", "Sprint",
+// "Race". Used to exclude testing meetings from the round numbering so
+// Round 1 is the first race of the season.
+func isTestingSessionName(name string) bool {
+	n := strings.ToLower(strings.TrimSpace(name))
+	return strings.HasPrefix(n, "day 1") ||
+		strings.HasPrefix(n, "day 2") ||
+		strings.HasPrefix(n, "day 3") ||
+		strings.HasPrefix(n, "day-1") ||
+		strings.HasPrefix(n, "day-2") ||
+		strings.HasPrefix(n, "day-3")
 }
 
 // isFutureSession reports whether a raw OpenF1 session is scheduled in the

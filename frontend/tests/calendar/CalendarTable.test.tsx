@@ -19,6 +19,32 @@ const mockCalendar: CalendarResponse = {
       end_datetime_utc: '2026-03-18T05:00:00Z',
       status: 'completed',
       is_cancelled: false,
+      podium: [
+        {
+          position: 1,
+          driver_number: 1,
+          driver_acronym: 'VER',
+          driver_name: 'Max Verstappen',
+          team_name: 'Red Bull Racing',
+          season_points: 340,
+        },
+        {
+          position: 2,
+          driver_number: 44,
+          driver_acronym: 'HAM',
+          driver_name: 'Lewis Hamilton',
+          team_name: 'Ferrari',
+          season_points: 285,
+        },
+        {
+          position: 3,
+          driver_number: 63,
+          driver_acronym: 'RUS',
+          driver_name: 'George Russell',
+          team_name: 'Mercedes',
+          season_points: 210,
+        },
+      ],
     },
     {
       round: 4,
@@ -83,5 +109,20 @@ describe('CalendarPage', () => {
 
     const freshness = await screen.findByText(/Data as of:/);
     expect(freshness).toBeDefined();
+  });
+
+  it('renders the podium column for completed races', async () => {
+    render(<MemoryRouter><CalendarPage /></MemoryRouter>);
+    await screen.findByText('Australian Grand Prix');
+    expect(screen.getByText('VER')).toBeDefined();
+    expect(screen.getByText('HAM')).toBeDefined();
+    expect(screen.getByText('RUS')).toBeDefined();
+  });
+
+  it('does not render a podium for upcoming races', async () => {
+    render(<MemoryRouter><CalendarPage /></MemoryRouter>);
+    await screen.findByText('Australian Grand Prix');
+    // Only the Australian GP (completed) row should have a podium.
+    expect(screen.getAllByTestId('podium-chips')).toHaveLength(1);
   });
 });
