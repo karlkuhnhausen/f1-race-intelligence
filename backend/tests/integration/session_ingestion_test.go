@@ -85,6 +85,26 @@ func (r *inMemorySessionRepo) GetFinalizedSessionKeys(_ context.Context, season 
 	}
 	return out, nil
 }
+func (r *inMemorySessionRepo) DeleteSession(_ context.Context, _ int, id string) error {
+	for i, s := range r.sessions {
+		if s.ID == id {
+			r.sessions = append(r.sessions[:i], r.sessions[i+1:]...)
+			return nil
+		}
+	}
+	return nil
+}
+func (r *inMemorySessionRepo) DeleteSessionResultsBySessionType(_ context.Context, season, round int, sessionType string) error {
+	var kept []storage.SessionResult
+	for _, res := range r.results {
+		if res.Season == season && res.Round == round && res.SessionType == sessionType {
+			continue
+		}
+		kept = append(kept, res)
+	}
+	r.results = kept
+	return nil
+}
 
 // TestSessionIngestionRoundTrip verifies the poll → transform → upsert → query → API response flow.
 func TestSessionIngestionRoundTrip(t *testing.T) {

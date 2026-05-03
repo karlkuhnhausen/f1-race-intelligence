@@ -142,4 +142,9 @@ type SessionRepository interface {
 	// as a skip-list so it does not re-fetch results/drivers/laps for sessions
 	// that already finished and were fully cached.
 	GetFinalizedSessionKeys(ctx context.Context, season int) (map[int]int, error)
+	// DeleteSession removes a session document by its ID.
+	DeleteSession(ctx context.Context, season int, id string) error
+	// DeleteSessionResultsBySessionType removes all session_result documents
+	// for a given season, round, and session_type.
+	DeleteSessionResultsBySessionType(ctx context.Context, season, round int, sessionType string) error
 }
