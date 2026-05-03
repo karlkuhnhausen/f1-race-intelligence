@@ -6,6 +6,8 @@ import SessionTicker from './SessionTicker';
 import SessionRecapStrip from './SessionRecapStrip';
 import { formatLocalDateTime, isWithinWeekendWindow } from './sessionTime';
 
+const ANALYSIS_SESSION_TYPES = new Set(['race', 'sprint']);
+
 export default function RoundDetailPage() {
   const { round } = useParams<{ round: string }>();
   const [searchParams] = useSearchParams();
@@ -93,6 +95,7 @@ export default function RoundDetailPage() {
                 key={session.session_type}
                 session={session}
                 weekendActive={weekendActive}
+                round={roundNum}
               />
             ))}
           </div>
@@ -105,9 +108,11 @@ export default function RoundDetailPage() {
 function SessionCard({
   session,
   weekendActive,
+  round,
 }: {
   session: SessionDetail;
   weekendActive: boolean;
+  round: number;
 }) {
   const statusColor =
     session.status === 'completed'
@@ -196,6 +201,17 @@ function SessionCard({
           <p className="text-muted-foreground">No results available.</p>
         )}
       </div>
+
+      {session.status === 'completed' && ANALYSIS_SESSION_TYPES.has(session.session_type) && (
+        <div className="mt-4">
+          <Link
+            to={`/rounds/${round}/sessions/${session.session_type}/analysis`}
+            className="inline-flex items-center gap-2 rounded-md bg-accent-cyan/10 border border-accent-cyan/30 px-4 py-2 text-sm font-display font-bold text-accent-cyan hover:bg-accent-cyan/20 transition-colors"
+          >
+            View Analysis →
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

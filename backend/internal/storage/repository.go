@@ -180,3 +180,114 @@ type SessionRepository interface {
 	// for a given season, round, and session_type.
 	DeleteSessionResultsBySessionType(ctx context.Context, season, round int, sessionType string) error
 }
+
+// --- Analysis data types ---
+
+// SessionAnalysisPosition stores aggregated position data for one driver in one session.
+type SessionAnalysisPosition struct {
+	ID            string        `json:"id"`            // analysis_position_{round}_{sessiontype}_{drivernum}
+	Type          string        `json:"type"`          // "analysis_position"
+	Season        int           `json:"season"`        // partition key
+	Round         int           `json:"round"`
+	SessionType   string        `json:"session_type"`
+	DriverNumber  int           `json:"driver_number"`
+	DriverName    string        `json:"driver_name"`
+	DriverAcronym string        `json:"driver_acronym"`
+	TeamName      string        `json:"team_name"`
+	TeamColour    string        `json:"team_colour"`
+	Laps          []PositionLap `json:"laps"`
+}
+
+// PositionLap is a single lap's position for a driver.
+type PositionLap struct {
+	LapNumber int `json:"lap_number"`
+	Position  int `json:"position"`
+}
+
+// SessionAnalysisInterval stores gap-to-leader data for one driver in one session.
+type SessionAnalysisInterval struct {
+	ID            string        `json:"id"`
+	Type          string        `json:"type"` // "analysis_interval"
+	Season        int           `json:"season"`
+	Round         int           `json:"round"`
+	SessionType   string        `json:"session_type"`
+	DriverNumber  int           `json:"driver_number"`
+	DriverAcronym string        `json:"driver_acronym"`
+	TeamName      string        `json:"team_name"`
+	TeamColour    string        `json:"team_colour"`
+	Laps          []IntervalLap `json:"laps"`
+}
+
+// IntervalLap is a single lap's gap data for a driver.
+type IntervalLap struct {
+	LapNumber   int     `json:"lap_number"`
+	GapToLeader float64 `json:"gap_to_leader"`
+	Interval    float64 `json:"interval"`
+}
+
+// SessionAnalysisStint stores one tire stint for one driver.
+type SessionAnalysisStint struct {
+	ID             string `json:"id"`
+	Type           string `json:"type"` // "analysis_stint"
+	Season         int    `json:"season"`
+	Round          int    `json:"round"`
+	SessionType    string `json:"session_type"`
+	DriverNumber   int    `json:"driver_number"`
+	DriverAcronym  string `json:"driver_acronym"`
+	TeamName       string `json:"team_name"`
+	StintNumber    int    `json:"stint_number"`
+	Compound       string `json:"compound"`
+	LapStart       int    `json:"lap_start"`
+	LapEnd         int    `json:"lap_end"`
+	TyreAgeAtStart int    `json:"tyre_age_at_start"`
+}
+
+// SessionAnalysisPit stores one pit stop event for one driver.
+type SessionAnalysisPit struct {
+	ID            string  `json:"id"`
+	Type          string  `json:"type"` // "analysis_pit"
+	Season        int     `json:"season"`
+	Round         int     `json:"round"`
+	SessionType   string  `json:"session_type"`
+	DriverNumber  int     `json:"driver_number"`
+	DriverAcronym string  `json:"driver_acronym"`
+	TeamName      string  `json:"team_name"`
+	LapNumber     int     `json:"lap_number"`
+	PitDuration   float64 `json:"pit_duration"`
+	StopDuration  float64 `json:"stop_duration"`
+}
+
+// SessionAnalysisOvertake stores one overtake event.
+type SessionAnalysisOvertake struct {
+	ID                     string `json:"id"`
+	Type                   string `json:"type"` // "analysis_overtake"
+	Season                 int    `json:"season"`
+	Round                  int    `json:"round"`
+	SessionType            string `json:"session_type"`
+	OvertakingDriverNumber int    `json:"overtaking_driver_number"`
+	OvertakingDriverName   string `json:"overtaking_driver_name"`
+	OvertakenDriverNumber  int    `json:"overtaken_driver_number"`
+	OvertakenDriverName    string `json:"overtaken_driver_name"`
+	LapNumber              int    `json:"lap_number"`
+	Position               int    `json:"position"`
+}
+
+// SessionAnalysisData is the combined query result for all analysis data in a session.
+type SessionAnalysisData struct {
+	Positions []SessionAnalysisPosition
+	Intervals []SessionAnalysisInterval
+	Stints    []SessionAnalysisStint
+	Pits      []SessionAnalysisPit
+	Overtakes []SessionAnalysisOvertake
+}
+
+// AnalysisRepository defines read/write operations for session analysis data.
+type AnalysisRepository interface {
+	UpsertSessionPositions(ctx context.Context, positions []SessionAnalysisPosition) error
+	UpsertSessionIntervals(ctx context.Context, intervals []SessionAnalysisInterval) error
+	UpsertSessionStints(ctx context.Context, stints []SessionAnalysisStint) error
+	UpsertSessionPits(ctx context.Context, pits []SessionAnalysisPit) error
+	UpsertSessionOvertakes(ctx context.Context, overtakes []SessionAnalysisOvertake) error
+	GetSessionAnalysis(ctx context.Context, season, round int, sessionType string) (*SessionAnalysisData, error)
+	HasAnalysisData(ctx context.Context, season, round int, sessionType string) (bool, error)
+}
