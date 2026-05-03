@@ -13,9 +13,9 @@ import (
 // Service provides calendar business logic and response shaping.
 type Service struct {
 	repo          storage.CalendarRepository
-	sessionRepo   storage.SessionRepository  // optional; nil disables weekend-active-session enrichment + podium
+	sessionRepo   storage.SessionRepository   // optional; nil disables weekend-active-session enrichment + podium
 	standingsRepo storage.StandingsRepository // optional; nil disables podium season-points join
-	now           func() time.Time           // injectable clock for testing
+	now           func() time.Time            // injectable clock for testing
 }
 
 // NewService creates a new calendar service.
