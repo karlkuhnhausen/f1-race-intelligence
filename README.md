@@ -58,6 +58,10 @@ This project is being built in public, with architecture decisions and progress 
 - [Day 14: Three Bugs, One Cause — When Stale Cached State Becomes a UX Smell](docs/blog/day-14-design-polish.md)
 - [Day 16: The Countdown Was Lying — Race Weekend Status](docs/blog/day-16-race-weekend-countdown.md)
 
+### Feature 5: Session Recap Strip
+
+- [Day 19: The Session Recap Strip — Summarizing a Weekend at a Glance](docs/blog/day-19-session-recap-strip.md)
+
 ## Architecture Direction
 
 - Go backend with Chi router
@@ -86,11 +90,13 @@ This project is being built in public, with architecture decisions and progress 
 
 **Design Polish (April 29, 2026):** Three bugs with one shared root cause — derived state cached as fact. (1) Past races (Australian, Chinese, Japanese GPs) kept showing "Scheduled" because meeting status was written once at ingest and never updated; fixed by deriving status at read time in the calendar service from start/end dates plus the wall clock, mirroring the Day 12 session-level pattern. (2) Round detail page listed sessions chronologically even after the round was over, burying the race result at the bottom; fixed by sorting by `date_start_utc` descending when every session is `completed`, naturally handling sprint weekends. (3) Session results tables were squished and had drifted across three near-duplicate components (`RaceResults`, `QualifyingResults`, `PracticeResults`); consolidated onto a single `SessionResultsTable` with `table-fixed` + `<colgroup>` widths, right-aligned `font-mono tabular-nums` for numeric/time columns, team color swatches via `getTeamColor()`, podium border accents on race sessions, and an absorbed "Not Classified" divider for DNFs. The three legacy components and their test files were deleted. PR [#27](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/27).
 
+**Feature 5 — Session Recap Strip (May 2, 2026):** Complete. All 32 tasks done. A horizontal strip of recap cards on the round detail page — one per completed session, showing winner, gap to P2, fastest lap, race-control events. Backend ingests `/v1/race_control` at session finalization, deduplicates events, and caches a `RaceControlSummary` in Cosmos. Rounds API derives recap DTOs at read time with lazy hydration for pre-existing sessions. Frontend renders `RaceRecapCard`, `QualifyingRecapCard`, and `PracticeRecapCard` in descending date order (race first). Calendar shows "Race Weekend" badge during active weekends. Backfill CLI at `cmd/backfill` populates historical sessions. PRs [#46](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/46), [#47](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/47).
+
 - **Frontend**: http://f1raceintel.westus3.cloudapp.azure.com/
 - **API**: http://f1raceintel.westus3.cloudapp.azure.com/api/v1/calendar?year=2026
 - **Round Detail**: http://f1raceintel.westus3.cloudapp.azure.com/rounds/3?year=2026
 - **Pipeline**: Fully green — lint → test → build → push → deploy
-- **Tests**: 70 passing (22 backend + 48 frontend)
+- **Tests**: 149 passing (35 backend + 114 frontend)
 
 ## Why Spec-Driven Development
 

@@ -122,4 +122,4 @@ Cache-only architectures need reconciliation, not just upsert. If you only ever 
 
 ---
 
-[← Day 17: A Real CVE Lands on a Real Cluster](day-17-cve-aks-5753-patching.md)
+[← Day 17: A Real CVE Lands on a Real Cluster](day-17-cve-aks-5753-patching.md) · [Day 19: The Session Recap Strip →](day-19-session-recap-strip.md)
