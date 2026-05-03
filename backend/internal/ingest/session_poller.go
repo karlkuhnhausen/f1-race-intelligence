@@ -21,6 +21,12 @@ import (
 // run, or test session). It is treated as a benign skip rather than an error.
 var errNoResultsYet = errors.New("openf1: no results yet (404)")
 
+// errNoDriverData is returned by fetchAndUpsertResults when driver enrichment
+// fails and all results are skipped to avoid overwriting good data with empty
+// fields. The session should NOT be finalized when this occurs so it retries
+// on the next poll cycle.
+var errNoDriverData = errors.New("openf1: driver data unavailable, results skipped")
+
 // SessionSchemaVersion is the current layout version of cached storage.Session
 // documents. Bump this whenever new fields are added to the session or
 // session_result documents that should trigger a re-fetch from OpenF1.
@@ -32,7 +38,9 @@ var errNoResultsYet = errors.New("openf1: no results yet (404)")
 //	1 — initial schema.
 //	2 — round numbers recalculated after pre-season testing exclusion.
 //	    All previously-finalized sessions must re-fetch to fix round mapping.
-const SessionSchemaVersion = 2
+//	3 — fix: sessions finalized without results due to driver-fetch failure
+//	    are re-polled to acquire results.
+const SessionSchemaVersion = 3
 
 // finalizationBuffer is how long after a session's DateEndUTC we wait
 // before marking it finalized in the cache. This gives OpenF1 time to
@@ -143,16 +151,21 @@ func (p *SessionPoller) poll(ctx context.Context, season int) {
 			continue
 		}
 
-		// Skip sessions that haven't ended yet — no results to fetch and
-		// hitting /session_result for future sessions just earns 404s and
-		// rate-limit pressure.
-		//
-		// We check date_end first, falling back to date_start when date_end
-		// is missing/unparseable (OpenF1 occasionally returns null date_end
-		// for not-yet-scheduled sessions). Treating an unparseable date as
-		// "ended in the past" caused future sessions to be written with
-		// stale "completed" status — see fix/session-status-badge.
-		if isFutureSession(raw, now, p.logger) {
+		future := isFutureSession(raw, now, p.logger)
+
+		// Always upsert session metadata so that upcoming/in-progress
+		// sessions appear in the round detail UI. Only the results fetch
+		// is gated on the session having ended.
+		sess := TransformSession(raw, season, round)
+		if err := p.repo.UpsertSession(ctx, sess); err != nil {
+			p.logger.Error("session upsert failed", "session_id", sess.ID, "error", err)
+			continue
+		}
+
+		// Skip results fetch for sessions that haven't ended yet — no
+		// results to fetch and hitting /session_result for future sessions
+		// just earns 404s and rate-limit pressure.
+		if future {
 			skippedFuture++
 			continue
 		}
@@ -174,12 +187,6 @@ func (p *SessionPoller) poll(ctx context.Context, season int) {
 		}
 		processed++
 
-		sess := TransformSession(raw, season, round)
-		if err := p.repo.UpsertSession(ctx, sess); err != nil {
-			p.logger.Error("session upsert failed", "session_id", sess.ID, "error", err)
-			continue
-		}
-
 		sessionType := domain.MapOpenF1SessionType(raw.SessionName)
 		if err := p.fetchAndUpsertResults(ctx, raw, sessionType, season, round); err != nil {
 			if errors.Is(err, errNoResultsYet) {
@@ -187,6 +194,12 @@ func (p *SessionPoller) poll(ctx context.Context, season int) {
 				// /session_result yet. Will retry on the next poll cycle.
 				skippedNoResults++
 				p.logger.Debug("session results not yet published", "session_key", raw.SessionKey)
+				continue
+			}
+			if errors.Is(err, errNoDriverData) {
+				// Driver enrichment unavailable — results were skipped to
+				// avoid overwriting good data. Do NOT finalize; retry next cycle.
+				p.logger.Warn("session results skipped: driver data unavailable", "session_key", raw.SessionKey)
 				continue
 			}
 			p.logger.Error("session results failed", "session_key", raw.SessionKey, "error", err)
@@ -325,6 +338,13 @@ func (p *SessionPoller) fetchAndUpsertResults(ctx context.Context, raw openF1Ses
 		if err := p.repo.UpsertSessionResult(ctx, result); err != nil {
 			p.logger.Error("session result upsert failed", "result_id", result.ID, "error", err)
 		}
+	}
+
+	// If we had results from OpenF1 but skipped ALL of them due to missing
+	// driver data, return an error so the session is not finalized. It will
+	// be retried on the next poll cycle when drivers may be available.
+	if len(rawResults) > 0 && len(driverMap) == 0 {
+		return errNoDriverData
 	}
 
 	return nil
