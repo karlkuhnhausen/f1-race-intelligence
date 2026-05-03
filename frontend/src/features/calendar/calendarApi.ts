@@ -1,5 +1,19 @@
 import { apiClient } from '../../services/apiClient';
 
+/**
+ * One podium finisher (P1/P2/P3) for a completed race.
+ * `season_points` is the driver's CURRENT season total — same value across
+ * every completed-race row for a given driver.
+ */
+export interface PodiumEntryDTO {
+  position: number;
+  driver_number: number;
+  driver_acronym: string;
+  driver_name: string;
+  team_name: string;
+  season_points: number;
+}
+
 export interface RaceMeetingDTO {
   round: number;
   race_name: string;
@@ -11,6 +25,8 @@ export interface RaceMeetingDTO {
   is_cancelled: boolean;
   cancelled_label?: string;
   cancelled_reason?: string;
+  /** Top-3 finishers for completed races; absent/empty otherwise. */
+  podium?: PodiumEntryDTO[];
 }
 
 export interface ActiveSessionDTO {

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { fetchCalendar, type CalendarResponse, type RaceMeetingDTO } from './calendarApi';
 import NextRaceCard from './NextRaceCard';
 import RaceWeekendCard from './RaceWeekendCard';
+import PodiumChips from './PodiumChips';
 
 export default function CalendarPage() {
   const [calendar, setCalendar] = useState<CalendarResponse | null>(null);
@@ -59,6 +60,7 @@ export default function CalendarPage() {
               <th className="px-4 py-3 text-left font-display text-xs uppercase tracking-wider text-muted-foreground">Country</th>
               <th className="px-4 py-3 text-left font-display text-xs uppercase tracking-wider text-muted-foreground">Date</th>
               <th className="px-4 py-3 text-left font-display text-xs uppercase tracking-wider text-muted-foreground">Status</th>
+              <th className="px-4 py-3 text-left font-display text-xs uppercase tracking-wider text-muted-foreground">Podium</th>
             </tr>
           </thead>
           <tbody>
@@ -115,6 +117,13 @@ function RaceRow({ round, isNext }: { round: RaceMeetingDTO; isNext: boolean }) 
           >
             {round.status}
           </span>
+        )}
+      </td>
+      <td className="px-4 py-3">
+        {round.is_cancelled ? (
+          <span className="text-muted-foreground" aria-hidden>—</span>
+        ) : (
+          <PodiumChips entries={round.podium} />
         )}
       </td>
     </tr>

@@ -2,6 +2,7 @@ package rounds
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/storage"
@@ -113,8 +114,17 @@ func (s *Service) GetRoundDetail(ctx context.Context, season, round int) (*Round
 		}
 
 		sessResults := resultsByType[sess.SessionType]
+		// Filter out unclassified rows (position < 1) and sort ascending by
+		// position. OpenF1 occasionally returns position 0 as a placeholder
+		// for non-classified entries; per spec, results start at P1.
+		sort.SliceStable(sessResults, func(i, j int) bool {
+			return sessResults[i].Position < sessResults[j].Position
+		})
 		resultDTOs := make([]SessionResultDTO, 0, len(sessResults))
 		for _, r := range sessResults {
+			if r.Position < 1 {
+				continue
+			}
 			resultDTOs = append(resultDTOs, SessionResultDTO{
 				Position:        r.Position,
 				DriverNumber:    r.DriverNumber,
