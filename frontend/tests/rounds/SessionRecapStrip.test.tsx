@@ -63,7 +63,7 @@ describe('SessionRecapStrip', () => {
     expect(screen.getByText('Charles Leclerc')).toBeDefined();
   });
 
-  it('renders cards in chronological order by date_start_utc', () => {
+  it('renders cards in descending date order (most recent first)', () => {
     const sessions = [
       makeSession('race', 'Race', 'completed', '2026-04-06T13:00:00Z', raceRecap),
       makeSession('practice1', 'Practice 1', 'completed', '2026-04-04T11:00:00Z', practiceRecap),
@@ -71,9 +71,9 @@ describe('SessionRecapStrip', () => {
     render(<SessionRecapStrip sessions={sessions} />);
     const practiceLabel = screen.getByText('Practice 1');
     const raceLabel = screen.getByText('Race');
-    // Practice should appear before Race in the DOM
+    // Race (later date) should appear before Practice (earlier date) in the DOM
     expect(
-      practiceLabel.compareDocumentPosition(raceLabel) & Node.DOCUMENT_POSITION_FOLLOWING,
+      raceLabel.compareDocumentPosition(practiceLabel) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
 

@@ -7,7 +7,7 @@ export default function PracticeRecapCard({ session }: { session: SessionDetail 
   const driverColor = getTeamColor(recap.best_driver_team ?? '');
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-4 min-w-[260px] w-full md:w-[280px] shrink-0">
+    <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-4 w-full sm:w-[280px]">
       <p className="font-display text-xs uppercase tracking-wider text-muted-foreground">
         {session.session_name}
       </p>

@@ -65,7 +65,12 @@ export default function CalendarPage() {
           </thead>
           <tbody>
             {calendar.rounds.map((round) => (
-              <RaceRow key={round.round} round={round} isNext={round.round === calendar.next_round} />
+              <RaceRow
+              key={round.round}
+              round={round}
+              isNext={round.round === calendar.next_round}
+              isWeekend={round.round === calendar.next_round && (calendar.weekend_in_progress ?? false)}
+            />
             ))}
           </tbody>
         </table>
@@ -74,7 +79,7 @@ export default function CalendarPage() {
   );
 }
 
-function RaceRow({ round, isNext }: { round: RaceMeetingDTO; isNext: boolean }) {
+function RaceRow({ round, isNext, isWeekend }: { round: RaceMeetingDTO; isNext: boolean; isWeekend: boolean }) {
   const baseRow = 'border-b border-border last:border-0 transition-colors';
   const stateClass = round.is_cancelled
     ? 'opacity-50 line-through'
@@ -109,13 +114,15 @@ function RaceRow({ round, isNext }: { round: RaceMeetingDTO; isNext: boolean }) 
           </span>
         ) : (
           <span
-            className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-display font-bold uppercase tracking-wider ${round.status} ${
-              round.status === 'scheduled'
-                ? 'bg-surface text-muted-foreground border border-border'
-                : 'bg-positive/20 text-positive'
+            className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-display font-bold uppercase tracking-wider ${
+              isWeekend
+                ? 'bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/30'
+                : round.status === 'scheduled'
+                  ? 'bg-surface text-muted-foreground border border-border'
+                  : 'bg-positive/20 text-positive'
             }`}
           >
-            {round.status}
+            {isWeekend ? 'Race Weekend' : round.status}
           </span>
         )}
       </td>

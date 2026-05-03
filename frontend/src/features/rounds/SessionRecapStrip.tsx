@@ -12,14 +12,14 @@ export default function SessionRecapStrip({ sessions }: SessionRecapStripProps) 
     .filter((s) => s.status === 'completed' && s.recap_summary != null)
     .sort(
       (a, b) =>
-        new Date(a.date_start_utc).getTime() - new Date(b.date_start_utc).getTime(),
+        new Date(b.date_start_utc).getTime() - new Date(a.date_start_utc).getTime(),
     );
 
   if (completedWithRecap.length === 0) return null;
 
   return (
     <div
-      className="flex flex-col gap-3 md:flex-row md:overflow-x-auto md:gap-3 pb-1"
+      className="flex flex-wrap gap-3"
       aria-label="Session recap"
     >
       {completedWithRecap.map((session) => {
