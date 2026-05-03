@@ -109,7 +109,7 @@ func deriveTopEvent(rc *storage.RaceControlSummary) *NotableEventDTO {
 }
 
 // deriveRecapSummary computes the session recap payload from stored session data
-// and result DTOs. Returns nil if the session type is unrecognised or results empty.
+// and result DTOs. Returns nil if the session type is unrecognized or results empty.
 // Handles nil RaceControlSummary gracefully — event fields are omitted.
 func deriveRecapSummary(sess storage.Session, results []SessionResultDTO) *SessionRecapDTO {
 	st := domain.SessionType(sess.SessionType)

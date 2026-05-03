@@ -43,13 +43,13 @@ type NotableEventDTO struct {
 // Fields present depend on session type. Absent fields are omitted from JSON.
 type SessionRecapDTO struct {
 	// --- Race / Sprint ---
-	WinnerName           string   `json:"winner_name,omitempty"`
-	WinnerTeam           string   `json:"winner_team,omitempty"`
-	GapToP2              string   `json:"gap_to_p2,omitempty"`
-	FastestLapHolder     string   `json:"fastest_lap_holder,omitempty"`
-	FastestLapTeam       string   `json:"fastest_lap_team,omitempty"`
+	WinnerName            string   `json:"winner_name,omitempty"`
+	WinnerTeam            string   `json:"winner_team,omitempty"`
+	GapToP2               string   `json:"gap_to_p2,omitempty"`
+	FastestLapHolder      string   `json:"fastest_lap_holder,omitempty"`
+	FastestLapTeam        string   `json:"fastest_lap_team,omitempty"`
 	FastestLapTimeSeconds *float64 `json:"fastest_lap_time_seconds,omitempty"`
-	TotalLaps            int      `json:"total_laps,omitempty"`
+	TotalLaps             int      `json:"total_laps,omitempty"`
 
 	// --- Qualifying / Sprint Qualifying ---
 	PoleSitterName string   `json:"pole_sitter_name,omitempty"`

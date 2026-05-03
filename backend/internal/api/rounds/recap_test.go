@@ -9,9 +9,9 @@ import (
 
 // helpers
 
-func boolPtr(b bool) *bool    { return &b }
+func boolPtr(b bool) *bool      { return &b }
 func f64Ptr(f float64) *float64 { return &f }
-func strPtr(s string) *string  { return &s }
+func strPtr(s string) *string   { return &s }
 
 func completedSess(sessionType string) storage.Session {
 	now := time.Now().UTC()
