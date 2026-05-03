@@ -44,6 +44,7 @@ This project is being built in public, with architecture decisions and progress 
 - [Day 8: The Security Alert I Got at 5 AM — And What I Did About It](docs/blog/day-8-ops-security-lockdown.md)
 - [Day 9: The Struggle Bus to a Private Cosmos DB](docs/blog/day-9-cosmos-private-endpoint.md)
 - [Day 17: A Real CVE Lands on a Real Cluster](docs/blog/day-17-cve-aks-5753-patching.md) — runbook: [`docs/security/cve-aks-5753.md`](docs/security/cve-aks-5753.md)
+- [Day 18: The Race Weekend That Showed Nothing](docs/blog/day-18-live-race-data-bugs.md)
 
 ### Feature 4: Design System & Brand Identity
 
