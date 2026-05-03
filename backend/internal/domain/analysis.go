@@ -6,7 +6,7 @@ type AnalysisPosition struct {
 	DriverName    string
 	DriverAcronym string
 	TeamName      string
-	TeamColour    string
+	TeamColor     string
 	Laps          []PositionLap
 }
 
@@ -21,7 +21,7 @@ type AnalysisInterval struct {
 	DriverNumber  int
 	DriverAcronym string
 	TeamName      string
-	TeamColour    string
+	TeamColor     string
 	Laps          []IntervalLap
 }
 
@@ -41,7 +41,7 @@ type AnalysisStint struct {
 	Compound       string // SOFT, MEDIUM, HARD, INTERMEDIATE, WET
 	LapStart       int
 	LapEnd         int
-	TyreAgeAtStart int
+	TireAgeAtStart int
 }
 
 // AnalysisPit is the domain representation of one pit stop.

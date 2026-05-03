@@ -46,7 +46,7 @@ func (s *Service) GetSessionAnalysis(ctx context.Context, season, round int, ses
 			DriverName:    p.DriverName,
 			DriverAcronym: p.DriverAcronym,
 			TeamName:      p.TeamName,
-			TeamColour:    p.TeamColour,
+			TeamColor:     p.TeamColor,
 			Laps:          laps,
 		})
 		// Track max laps for total_laps field
@@ -67,7 +67,7 @@ func (s *Service) GetSessionAnalysis(ctx context.Context, season, round int, ses
 			DriverNumber:  iv.DriverNumber,
 			DriverAcronym: iv.DriverAcronym,
 			TeamName:      iv.TeamName,
-			TeamColour:    iv.TeamColour,
+			TeamColor:     iv.TeamColor,
 			Laps:          laps,
 		})
 	}
@@ -82,7 +82,7 @@ func (s *Service) GetSessionAnalysis(ctx context.Context, season, round int, ses
 			Compound:       s.Compound,
 			LapStart:       s.LapStart,
 			LapEnd:         s.LapEnd,
-			TyreAgeAtStart: s.TyreAgeAtStart,
+			TireAgeAtStart: s.TireAgeAtStart,
 		})
 	}
 

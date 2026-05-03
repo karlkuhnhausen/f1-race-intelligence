@@ -20,7 +20,7 @@ type DriverInfo struct {
 	DriverName    string
 	DriverAcronym string
 	TeamName      string
-	TeamColour    string
+	TeamColor     string
 }
 
 // --- Raw OpenF1 response structs ---
@@ -50,7 +50,7 @@ type rawStint struct {
 	MeetingKey     int    `json:"meeting_key"`
 	SessionKey     int    `json:"session_key"`
 	StintNumber    int    `json:"stint_number"`
-	TyreAgeAtStart int    `json:"tyre_age_at_start"`
+	TireAgeAtStart int    `json:"tyre_age_at_start"` //nolint:misspell // OpenF1 API field name
 }
 
 type rawPit struct {
@@ -287,7 +287,7 @@ func AggregatePositions(raw []rawPosition, drivers map[int]DriverInfo) []domain.
 			DriverName:    info.DriverName,
 			DriverAcronym: info.DriverAcronym,
 			TeamName:      info.TeamName,
-			TeamColour:    info.TeamColour,
+			TeamColor:     info.TeamColor,
 			Laps:          laps,
 		})
 	}
@@ -376,7 +376,7 @@ func AggregateIntervals(raw []rawInterval, drivers map[int]DriverInfo) []domain.
 			DriverNumber:  driverNum,
 			DriverAcronym: info.DriverAcronym,
 			TeamName:      info.TeamName,
-			TeamColour:    info.TeamColour,
+			TeamColor:     info.TeamColor,
 			Laps:          laps,
 		})
 	}
@@ -404,7 +404,7 @@ func MapStints(raw []rawStint, drivers map[int]DriverInfo) []domain.AnalysisStin
 			Compound:       strings.ToUpper(s.Compound),
 			LapStart:       s.LapStart,
 			LapEnd:         s.LapEnd,
-			TyreAgeAtStart: s.TyreAgeAtStart,
+			TireAgeAtStart: s.TireAgeAtStart,
 		})
 	}
 	return result
@@ -580,7 +580,7 @@ func ToStoragePositions(season, round int, sessionType string, positions []domai
 			DriverName:    p.DriverName,
 			DriverAcronym: p.DriverAcronym,
 			TeamName:      p.TeamName,
-			TeamColour:    p.TeamColour,
+			TeamColor:     p.TeamColor,
 			Laps:          laps,
 		})
 	}
@@ -604,7 +604,7 @@ func ToStorageIntervals(season, round int, sessionType string, intervals []domai
 			DriverNumber:  iv.DriverNumber,
 			DriverAcronym: iv.DriverAcronym,
 			TeamName:      iv.TeamName,
-			TeamColour:    iv.TeamColour,
+			TeamColor:     iv.TeamColor,
 			Laps:          laps,
 		})
 	}
@@ -628,7 +628,7 @@ func ToStorageStints(season, round int, sessionType string, stints []domain.Anal
 			Compound:       s.Compound,
 			LapStart:       s.LapStart,
 			LapEnd:         s.LapEnd,
-			TyreAgeAtStart: s.TyreAgeAtStart,
+			TireAgeAtStart: s.TireAgeAtStart,
 		})
 	}
 	return docs

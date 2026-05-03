@@ -42,6 +42,7 @@
         "git commit": true,
         "git push": true,
         "az": true,
-        "cp": true
+        "cp": true,
+        "gofmt": true
     }
 }

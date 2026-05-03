@@ -19,7 +19,7 @@ type PositionDriverDTO struct {
 	DriverName    string           `json:"driver_name"`
 	DriverAcronym string           `json:"driver_acronym"`
 	TeamName      string           `json:"team_name"`
-	TeamColour    string           `json:"team_colour"`
+	TeamColor     string           `json:"team_colour"` //nolint:misspell // OpenF1 API field name
 	Laps          []PositionLapDTO `json:"laps"`
 }
 
@@ -34,7 +34,7 @@ type IntervalDriverDTO struct {
 	DriverNumber  int              `json:"driver_number"`
 	DriverAcronym string           `json:"driver_acronym"`
 	TeamName      string           `json:"team_name"`
-	TeamColour    string           `json:"team_colour"`
+	TeamColor     string           `json:"team_colour"` //nolint:misspell // OpenF1 API field name
 	Laps          []IntervalLapDTO `json:"laps"`
 }
 
@@ -54,7 +54,7 @@ type StintDTO struct {
 	Compound       string `json:"compound"`
 	LapStart       int    `json:"lap_start"`
 	LapEnd         int    `json:"lap_end"`
-	TyreAgeAtStart int    `json:"tyre_age_at_start"`
+	TireAgeAtStart int    `json:"tyre_age_at_start"` //nolint:misspell // OpenF1 API field name
 }
 
 // PitDTO is one pit stop for one driver.

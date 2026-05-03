@@ -185,16 +185,16 @@ type SessionRepository interface {
 
 // SessionAnalysisPosition stores aggregated position data for one driver in one session.
 type SessionAnalysisPosition struct {
-	ID            string        `json:"id"`            // analysis_position_{round}_{sessiontype}_{drivernum}
-	Type          string        `json:"type"`          // "analysis_position"
-	Season        int           `json:"season"`        // partition key
+	ID            string        `json:"id"`     // analysis_position_{round}_{sessiontype}_{drivernum}
+	Type          string        `json:"type"`   // "analysis_position"
+	Season        int           `json:"season"` // partition key
 	Round         int           `json:"round"`
 	SessionType   string        `json:"session_type"`
 	DriverNumber  int           `json:"driver_number"`
 	DriverName    string        `json:"driver_name"`
 	DriverAcronym string        `json:"driver_acronym"`
 	TeamName      string        `json:"team_name"`
-	TeamColour    string        `json:"team_colour"`
+	TeamColor     string        `json:"team_colour"` //nolint:misspell // OpenF1 API field name
 	Laps          []PositionLap `json:"laps"`
 }
 
@@ -214,7 +214,7 @@ type SessionAnalysisInterval struct {
 	DriverNumber  int           `json:"driver_number"`
 	DriverAcronym string        `json:"driver_acronym"`
 	TeamName      string        `json:"team_name"`
-	TeamColour    string        `json:"team_colour"`
+	TeamColor     string        `json:"team_colour"` //nolint:misspell // OpenF1 API field name
 	Laps          []IntervalLap `json:"laps"`
 }
 
@@ -239,7 +239,7 @@ type SessionAnalysisStint struct {
 	Compound       string `json:"compound"`
 	LapStart       int    `json:"lap_start"`
 	LapEnd         int    `json:"lap_end"`
-	TyreAgeAtStart int    `json:"tyre_age_at_start"`
+	TireAgeAtStart int    `json:"tyre_age_at_start"` //nolint:misspell // OpenF1 API field name
 }
 
 // SessionAnalysisPit stores one pit stop event for one driver.
