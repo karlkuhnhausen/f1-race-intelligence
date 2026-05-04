@@ -52,7 +52,7 @@ describe('StandingsPage', () => {
     // Team is conveyed via color accent border, not as a text column,
     // so we only assert the data columns now present in StandingsTable.
     expect(screen.getByText('119')).toBeDefined();
-    expect(screen.getByText('4')).toBeDefined();
+    expect(screen.getAllByText('4').length).toBeGreaterThan(0);
   });
 
   it('switches to constructors tab', async () => {
@@ -81,5 +81,18 @@ describe('StandingsPage', () => {
     const rows = screen.getAllByTestId('standings-row');
     // First row should have Red Bull's team color as border
     expect(rows[0].style.borderLeft).toContain('rgb(54, 113, 198)');
+  });
+
+  it('renders zero stats as "0" not blank', async () => {
+    render(<StandingsPage />);
+
+    await screen.findByText('Max Verstappen');
+
+    // Verstappen has 0 DNFs — should render as "0" in the DNFs column
+    const rows = screen.getAllByTestId('standings-row');
+    const firstRowCells = rows[0].querySelectorAll('td');
+    // Columns: Pos, Name, Points, Wins, Podiums, DNFs, Poles
+    // Index 5 = DNFs column
+    expect(firstRowCells[5].textContent).toBe('0');
   });
 });

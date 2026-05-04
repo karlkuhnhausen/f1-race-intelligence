@@ -18,6 +18,9 @@ function driversToRows(drivers: DriverStandingDTO[]): StandingsRow[] {
     constructorId: d.team_name,
     points: d.points,
     wins: d.wins,
+    podiums: d.podiums,
+    dnfs: d.dnfs,
+    poles: d.poles,
     teamColor: d.team_color || undefined,
   }));
 }
@@ -31,6 +34,8 @@ function constructorsToRows(
     constructorId: c.team_name,
     points: c.points,
     wins: c.wins,
+    podiums: c.podiums,
+    dnfs: c.dnfs,
     teamColor: c.team_color || undefined,
   }));
 }
@@ -95,13 +100,14 @@ export default function StandingsPage() {
           title="Drivers Championship"
           nameLabel="Driver"
           rows={driversToRows(drivers)}
-          columns={["wins"]}
+          columns={["wins", "podiums", "dnfs", "poles"]}
         />
       ) : (
         <StandingsTable
           title="Constructors Championship"
           nameLabel="Team"
           rows={constructorsToRows(constructors)}
+          columns={["wins", "podiums", "dnfs"]}
         />
       )}
     </section>
