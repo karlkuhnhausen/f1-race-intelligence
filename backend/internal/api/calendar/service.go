@@ -268,7 +268,7 @@ func (s *Service) enrichPodiums(ctx context.Context, season int, rounds []RoundD
 			}
 		}
 
-		if r.IsCancelled || r.Status != string(domain.StatusCompleted) {
+		if r.IsCancelled {
 			continue
 		}
 
