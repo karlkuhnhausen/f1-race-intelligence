@@ -19,6 +19,7 @@ import StandingsTable, {
 import ProgressionChart, { type ProgressionEntry } from './ProgressionChart';
 import YearPicker from './YearPicker';
 import ComparisonPanel from './ComparisonPanel';
+import ConstructorBreakdown from './ConstructorBreakdown';
 
 type Tab = 'drivers' | 'constructors';
 type ViewMode = 'table' | 'chart';
@@ -66,6 +67,7 @@ export default function StandingsPage() {
   const [compareLoading, setCompareLoading] = useState(false);
   const [selectedDrivers, setSelectedDrivers] = useState<number[]>([]);
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
+  const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
 
   useEffect(() => {
     setComparison(null);
@@ -188,12 +190,34 @@ export default function StandingsPage() {
             columns={["wins", "podiums", "dnfs", "poles"]}
           />
         ) : (
-          <StandingsTable
-            title="Constructors Championship"
-            nameLabel="Team"
-            rows={constructorsToRows(constructors)}
-            columns={["wins", "podiums", "dnfs"]}
-          />
+          <>
+            <StandingsTable
+              title="Constructors Championship"
+              nameLabel="Team"
+              rows={constructorsToRows(constructors)}
+              columns={["wins", "podiums", "dnfs"]}
+            />
+            <div className="mt-2 space-y-1">
+              <p className="text-xs text-muted-foreground">Click a team to see driver breakdown:</p>
+              <div className="flex flex-wrap gap-1">
+                {constructors.map((c) => (
+                  <button
+                    key={c.team_name}
+                    type="button"
+                    onClick={() => setExpandedTeam(expandedTeam === c.team_name ? null : c.team_name)}
+                    className={`text-xs px-2 py-1 rounded border ${
+                      expandedTeam === c.team_name
+                        ? 'border-accent-red bg-accent-red/10 text-foreground'
+                        : 'border-border text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {c.team_name}
+                  </button>
+                ))}
+              </div>
+              {expandedTeam && <ConstructorBreakdown teamName={expandedTeam} year={year} />}
+            </div>
+          </>
         )
       ) : (
         tab === 'drivers' && driverProgression ? (

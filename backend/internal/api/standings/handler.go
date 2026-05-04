@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/go-chi/chi/v5"
 )
 
 // Handler serves championship standings endpoints.
@@ -171,5 +173,32 @@ func (h *Handler) GetConstructorsCompare(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		h.logger.Error("constructor comparison encode error", "error", err)
+	}
+}
+
+// GetConstructorDrivers handles GET /api/v1/standings/constructors/{team}/drivers?year=YYYY.
+func (h *Handler) GetConstructorDrivers(w http.ResponseWriter, r *http.Request) {
+	year, ok := parseYear(r)
+	if !ok {
+		http.Error(w, `{"error":"year must be between 2023 and the current year"}`, http.StatusBadRequest)
+		return
+	}
+
+	team := chi.URLParam(r, "team")
+	if team == "" {
+		http.Error(w, `{"error":"team parameter is required"}`, http.StatusBadRequest)
+		return
+	}
+
+	resp, err := h.service.GetConstructorDriverBreakdown(r.Context(), year, team)
+	if err != nil {
+		h.logger.Error("constructor breakdown error", "error", err, "year", year, "team", team)
+		http.Error(w, `{"error":"internal server error"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		h.logger.Error("constructor breakdown encode error", "error", err)
 	}
 }

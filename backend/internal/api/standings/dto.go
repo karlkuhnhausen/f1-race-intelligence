@@ -124,3 +124,22 @@ type ConstructorComparisonResponse struct {
 	Team1Points []int               `json:"team1_points"`
 	Team2Points []int               `json:"team2_points"`
 }
+
+// ConstructorDriverEntry represents one driver within a constructor breakdown.
+type ConstructorDriverEntry struct {
+	DriverNumber     int     `json:"driver_number"`
+	DriverName       string  `json:"driver_name"`
+	Position         int     `json:"position"`
+	Points           int     `json:"points"`
+	Wins             int     `json:"wins"`
+	Podiums          int     `json:"podiums"`
+	PointsPercentage float64 `json:"points_percentage"`
+}
+
+// ConstructorBreakdownResponse is the response for GET /standings/constructors/{team}/drivers.
+type ConstructorBreakdownResponse struct {
+	Year       int                      `json:"year"`
+	TeamName   string                   `json:"team_name"`
+	TeamPoints int                      `json:"team_points"`
+	Drivers    []ConstructorDriverEntry `json:"drivers"`
+}

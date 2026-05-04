@@ -460,3 +460,77 @@ func (s *Service) GetConstructorComparison(ctx context.Context, season int, team
 		Team2Points: t2Points,
 	}, nil
 }
+
+// GetConstructorDriverBreakdown returns the point breakdown for a team's drivers.
+func (s *Service) GetConstructorDriverBreakdown(ctx context.Context, season int, teamName string) (*ConstructorBreakdownResponse, error) {
+	snapshots, err := s.championshipRepo.GetDriverChampionshipSnapshots(ctx, season)
+	if err != nil {
+		return nil, err
+	}
+
+	identities, err := s.resolveDriverIdentities(ctx, season)
+	if err != nil {
+		return nil, err
+	}
+
+	driverStats, err := s.statsAggregator.GetDriverStats(ctx, season)
+	if err != nil {
+		return nil, err
+	}
+
+	// Find drivers belonging to this team.
+	teamDrivers := make(map[int]struct{})
+	for driverNum, id := range identities {
+		if id.TeamName == teamName {
+			teamDrivers[driverNum] = struct{}{}
+		}
+	}
+
+	// Get latest snapshot per driver (for this team only).
+	latestByDriver := make(map[int]storage.DriverChampionshipSnapshot)
+	for _, snap := range snapshots {
+		if _, ok := teamDrivers[snap.DriverNumber]; !ok {
+			continue
+		}
+		existing, exists := latestByDriver[snap.DriverNumber]
+		if !exists || snap.SessionKey > existing.SessionKey {
+			latestByDriver[snap.DriverNumber] = snap
+		}
+	}
+
+	// Calculate team total points.
+	var teamPoints int
+	for _, snap := range latestByDriver {
+		teamPoints += int(snap.PointsCurrent)
+	}
+
+	// Build entries.
+	entries := make([]ConstructorDriverEntry, 0, len(latestByDriver))
+	for driverNum, snap := range latestByDriver {
+		id := identities[driverNum]
+		stats := driverStats[driverNum]
+		pct := 0.0
+		if teamPoints > 0 {
+			pct = float64(int(snap.PointsCurrent)) / float64(teamPoints) * 100
+		}
+		entries = append(entries, ConstructorDriverEntry{
+			DriverNumber:     driverNum,
+			DriverName:       id.DriverName,
+			Position:         snap.PositionCurrent,
+			Points:           int(snap.PointsCurrent),
+			Wins:             stats.Wins,
+			Podiums:          stats.Podiums,
+			PointsPercentage: pct,
+		})
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].Points > entries[j].Points
+	})
+
+	return &ConstructorBreakdownResponse{
+		Year:       season,
+		TeamName:   teamName,
+		TeamPoints: teamPoints,
+		Drivers:    entries,
+	}, nil
+}

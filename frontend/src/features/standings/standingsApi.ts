@@ -133,3 +133,24 @@ export async function fetchDriverComparison(year: number, driver1: number, drive
 export async function fetchConstructorComparison(year: number, team1: string, team2: string): Promise<ConstructorComparisonResponse> {
   return apiClient.get<ConstructorComparisonResponse>(`/standings/constructors/compare?year=${year}&team1=${encodeURIComponent(team1)}&team2=${encodeURIComponent(team2)}`);
 }
+
+export interface ConstructorDriverEntry {
+  driver_number: number;
+  driver_name: string;
+  position: number;
+  points: number;
+  wins: number;
+  podiums: number;
+  points_percentage: number;
+}
+
+export interface ConstructorBreakdownResponse {
+  year: number;
+  team_name: string;
+  team_points: number;
+  drivers: ConstructorDriverEntry[];
+}
+
+export async function fetchConstructorDriverBreakdown(year: number, teamName: string): Promise<ConstructorBreakdownResponse> {
+  return apiClient.get<ConstructorBreakdownResponse>(`/standings/constructors/${encodeURIComponent(teamName)}/drivers?year=${year}`);
+}
