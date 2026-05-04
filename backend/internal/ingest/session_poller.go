@@ -40,7 +40,9 @@ var errNoDriverData = errors.New("openf1: driver data unavailable, results skipp
 //	    All previously-finalized sessions must re-fetch to fix round mapping.
 //	3 — fix: sessions finalized without results due to driver-fetch failure
 //	    are re-polled to acquire results.
-const SessionSchemaVersion = 3
+//	4 — championship ingestion hook added; re-poll to trigger championship
+//	    data ingestion for all Race/Sprint sessions.
+const SessionSchemaVersion = 4
 
 // finalizationBuffer is how long after a session's DateEndUTC we wait
 // before marking it finalized in the cache. This gives OpenF1 time to
