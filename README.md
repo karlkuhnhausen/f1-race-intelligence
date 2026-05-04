@@ -65,6 +65,7 @@ This project is being built in public, with architecture decisions and progress 
 ### Feature 6: Session Deep Dive
 
 - [Day 20: The Session Deep Dive — Telling the Story of a Race in Four Charts](docs/blog/day-20-session-deep-dive.md)
+- [Day 21: Analysis UX Polish — Making Four Charts Tell a Clearer Story](docs/blog/day-21-analysis-ux-polish.md)
 
 ## Architecture Direction
 

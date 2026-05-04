@@ -119,4 +119,4 @@ Tooltips on the Position Battle chart sort drivers by position (P1 first), and o
 
 ---
 
-[← Day 19: The Session Recap Strip — Summarizing a Weekend at a Glance](day-19-session-recap-strip.md)
+[← Day 19: The Session Recap Strip — Summarizing a Weekend at a Glance](day-19-session-recap-strip.md) · [Day 21: Analysis UX Polish →](day-21-analysis-ux-polish.md)
