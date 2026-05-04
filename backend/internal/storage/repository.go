@@ -291,3 +291,87 @@ type AnalysisRepository interface {
 	GetSessionAnalysis(ctx context.Context, season, round int, sessionType string) (*SessionAnalysisData, error)
 	HasAnalysisData(ctx context.Context, season, round int, sessionType string) (bool, error)
 }
+
+// --- Championship data types (Feature 007) ---
+
+// DriverChampionshipSnapshot is a point-in-time record of a driver's championship
+// standing after a specific Race or Sprint session.
+type DriverChampionshipSnapshot struct {
+	ID              string    `json:"id"`   // {season}-champ-driver-{session_key}-{driver_number}
+	Type            string    `json:"type"` // "championship_driver"
+	Season          int       `json:"season"`
+	SessionKey      int       `json:"session_key"`
+	MeetingKey      int       `json:"meeting_key"`
+	DriverNumber    int       `json:"driver_number"`
+	PositionStart   *int      `json:"position_start"` // nil for first race of season
+	PositionCurrent int       `json:"position_current"`
+	PointsStart     *float64  `json:"points_start"` // nil for first race of season
+	PointsCurrent   float64   `json:"points_current"`
+	DataAsOfUTC     time.Time `json:"data_as_of_utc"`
+	Source          string    `json:"source"` // "openf1"
+}
+
+// TeamChampionshipSnapshot is a point-in-time record of a constructor team's
+// championship standing after a specific Race or Sprint session.
+type TeamChampionshipSnapshot struct {
+	ID              string    `json:"id"`   // {season}-champ-team-{session_key}-{team_slug}
+	Type            string    `json:"type"` // "championship_team"
+	Season          int       `json:"season"`
+	SessionKey      int       `json:"session_key"`
+	MeetingKey      int       `json:"meeting_key"`
+	TeamName        string    `json:"team_name"`
+	TeamSlug        string    `json:"team_slug"`
+	PositionStart   *int      `json:"position_start"`
+	PositionCurrent int       `json:"position_current"`
+	PointsStart     *float64  `json:"points_start"`
+	PointsCurrent   float64   `json:"points_current"`
+	DataAsOfUTC     time.Time `json:"data_as_of_utc"`
+	Source          string    `json:"source"` // "openf1"
+}
+
+// ChampionshipSessionResult represents one driver's result in a completed Race
+// or Sprint session. Used to derive wins, podiums, and DNFs.
+type ChampionshipSessionResult struct {
+	ID           string    `json:"id"`   // {season}-result-{session_key}-{driver_number}
+	Type         string    `json:"type"` // "championship_result"
+	Season       int       `json:"season"`
+	SessionKey   int       `json:"session_key"`
+	MeetingKey   int       `json:"meeting_key"`
+	DriverNumber int       `json:"driver_number"`
+	Position     int       `json:"position"`
+	Points       float64   `json:"points"`
+	DNF          bool      `json:"dnf"`
+	DNS          bool      `json:"dns"`
+	DSQ          bool      `json:"dsq"`
+	NumberOfLaps int       `json:"number_of_laps"`
+	GapToLeader  string    `json:"gap_to_leader"`
+	Duration     float64   `json:"duration"`
+	DataAsOfUTC  time.Time `json:"data_as_of_utc"`
+	Source       string    `json:"source"` // "openf1"
+}
+
+// StartingGridEntry represents a driver's starting position for a race meeting.
+// Used to derive pole positions.
+type StartingGridEntry struct {
+	ID           string    `json:"id"`   // {season}-grid-{meeting_key}-{driver_number}
+	Type         string    `json:"type"` // "starting_grid"
+	Season       int       `json:"season"`
+	MeetingKey   int       `json:"meeting_key"`
+	DriverNumber int       `json:"driver_number"`
+	Position     int       `json:"position"`
+	LapDuration  float64   `json:"lap_duration"`
+	DataAsOfUTC  time.Time `json:"data_as_of_utc"`
+	Source       string    `json:"source"` // "openf1"
+}
+
+// ChampionshipRepository defines read/write operations for championship standings data.
+type ChampionshipRepository interface {
+	UpsertDriverChampionshipSnapshots(ctx context.Context, snapshots []DriverChampionshipSnapshot) error
+	GetDriverChampionshipSnapshots(ctx context.Context, season int) ([]DriverChampionshipSnapshot, error)
+	UpsertTeamChampionshipSnapshots(ctx context.Context, snapshots []TeamChampionshipSnapshot) error
+	GetTeamChampionshipSnapshots(ctx context.Context, season int) ([]TeamChampionshipSnapshot, error)
+	UpsertChampionshipSessionResults(ctx context.Context, results []ChampionshipSessionResult) error
+	GetChampionshipSessionResults(ctx context.Context, season int) ([]ChampionshipSessionResult, error)
+	UpsertStartingGridEntries(ctx context.Context, entries []StartingGridEntry) error
+	GetStartingGridEntries(ctx context.Context, season int) ([]StartingGridEntry, error)
+}

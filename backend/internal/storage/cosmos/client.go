@@ -149,7 +149,7 @@ func (c *Client) UpsertDriverStandings(ctx context.Context, rows []storage.Drive
 
 func (c *Client) GetDriverStandings(ctx context.Context, season int) ([]storage.DriverStandingRow, error) {
 	pk := azcosmos.NewPartitionKeyNumber(float64(season))
-	query := "SELECT * FROM c WHERE c.season = @season AND c.source = 'hyprace' AND IS_DEFINED(c.driver_name) ORDER BY c.position"
+	query := "SELECT * FROM c WHERE c.season = @season AND IS_DEFINED(c.driver_name) AND IS_DEFINED(c.wins) AND NOT IS_DEFINED(c.session_key) ORDER BY c.position"
 	queryOpts := &azcosmos.QueryOptions{
 		QueryParameters: []azcosmos.QueryParameter{
 			{Name: "@season", Value: season},
@@ -191,7 +191,7 @@ func (c *Client) UpsertConstructorStandings(ctx context.Context, rows []storage.
 
 func (c *Client) GetConstructorStandings(ctx context.Context, season int) ([]storage.ConstructorStandingRow, error) {
 	pk := azcosmos.NewPartitionKeyNumber(float64(season))
-	query := "SELECT * FROM c WHERE c.season = @season AND c.source = 'hyprace' AND IS_DEFINED(c.team_name) AND NOT IS_DEFINED(c.driver_name) ORDER BY c.position"
+	query := "SELECT * FROM c WHERE c.season = @season AND IS_DEFINED(c.team_name) AND NOT IS_DEFINED(c.driver_name) AND NOT IS_DEFINED(c.session_key) ORDER BY c.position"
 	queryOpts := &azcosmos.QueryOptions{
 		QueryParameters: []azcosmos.QueryParameter{
 			{Name: "@season", Value: season},
@@ -224,4 +224,174 @@ func isNotFound(err error) bool {
 		return respErr.StatusCode == http.StatusNotFound
 	}
 	return false
+}
+
+// --- ChampionshipRepository ---
+
+func (c *Client) UpsertDriverChampionshipSnapshots(ctx context.Context, snapshots []storage.DriverChampionshipSnapshot) error {
+	for _, s := range snapshots {
+		data, err := json.Marshal(s)
+		if err != nil {
+			return fmt.Errorf("cosmos: marshal driver championship snapshot: %w", err)
+		}
+		pk := azcosmos.NewPartitionKeyNumber(float64(s.Season))
+		if _, err = c.standings.UpsertItem(ctx, pk, data, nil); err != nil {
+			return fmt.Errorf("cosmos: upsert driver championship snapshot %s: %w", s.ID, err)
+		}
+	}
+	return nil
+}
+
+func (c *Client) GetDriverChampionshipSnapshots(ctx context.Context, season int) ([]storage.DriverChampionshipSnapshot, error) {
+	pk := azcosmos.NewPartitionKeyNumber(float64(season))
+	query := "SELECT * FROM c WHERE c.season = @season AND c.type = 'championship_driver' ORDER BY c.session_key"
+	queryOpts := &azcosmos.QueryOptions{
+		QueryParameters: []azcosmos.QueryParameter{
+			{Name: "@season", Value: season},
+		},
+	}
+
+	pager := c.standings.NewQueryItemsPager(query, pk, queryOpts)
+	var snapshots []storage.DriverChampionshipSnapshot
+
+	for pager.More() {
+		resp, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("cosmos: query driver championship snapshots: %w", err)
+		}
+		for _, item := range resp.Items {
+			var s storage.DriverChampionshipSnapshot
+			if err := json.Unmarshal(item, &s); err != nil {
+				return nil, fmt.Errorf("cosmos: unmarshal driver championship snapshot: %w", err)
+			}
+			snapshots = append(snapshots, s)
+		}
+	}
+	return snapshots, nil
+}
+
+func (c *Client) UpsertTeamChampionshipSnapshots(ctx context.Context, snapshots []storage.TeamChampionshipSnapshot) error {
+	for _, s := range snapshots {
+		data, err := json.Marshal(s)
+		if err != nil {
+			return fmt.Errorf("cosmos: marshal team championship snapshot: %w", err)
+		}
+		pk := azcosmos.NewPartitionKeyNumber(float64(s.Season))
+		if _, err = c.standings.UpsertItem(ctx, pk, data, nil); err != nil {
+			return fmt.Errorf("cosmos: upsert team championship snapshot %s: %w", s.ID, err)
+		}
+	}
+	return nil
+}
+
+func (c *Client) GetTeamChampionshipSnapshots(ctx context.Context, season int) ([]storage.TeamChampionshipSnapshot, error) {
+	pk := azcosmos.NewPartitionKeyNumber(float64(season))
+	query := "SELECT * FROM c WHERE c.season = @season AND c.type = 'championship_team' ORDER BY c.session_key"
+	queryOpts := &azcosmos.QueryOptions{
+		QueryParameters: []azcosmos.QueryParameter{
+			{Name: "@season", Value: season},
+		},
+	}
+
+	pager := c.standings.NewQueryItemsPager(query, pk, queryOpts)
+	var snapshots []storage.TeamChampionshipSnapshot
+
+	for pager.More() {
+		resp, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("cosmos: query team championship snapshots: %w", err)
+		}
+		for _, item := range resp.Items {
+			var s storage.TeamChampionshipSnapshot
+			if err := json.Unmarshal(item, &s); err != nil {
+				return nil, fmt.Errorf("cosmos: unmarshal team championship snapshot: %w", err)
+			}
+			snapshots = append(snapshots, s)
+		}
+	}
+	return snapshots, nil
+}
+
+func (c *Client) UpsertChampionshipSessionResults(ctx context.Context, results []storage.ChampionshipSessionResult) error {
+	for _, r := range results {
+		data, err := json.Marshal(r)
+		if err != nil {
+			return fmt.Errorf("cosmos: marshal championship session result: %w", err)
+		}
+		pk := azcosmos.NewPartitionKeyNumber(float64(r.Season))
+		if _, err = c.standings.UpsertItem(ctx, pk, data, nil); err != nil {
+			return fmt.Errorf("cosmos: upsert championship session result %s: %w", r.ID, err)
+		}
+	}
+	return nil
+}
+
+func (c *Client) GetChampionshipSessionResults(ctx context.Context, season int) ([]storage.ChampionshipSessionResult, error) {
+	pk := azcosmos.NewPartitionKeyNumber(float64(season))
+	query := "SELECT * FROM c WHERE c.season = @season AND c.type = 'championship_result' ORDER BY c.session_key"
+	queryOpts := &azcosmos.QueryOptions{
+		QueryParameters: []azcosmos.QueryParameter{
+			{Name: "@season", Value: season},
+		},
+	}
+
+	pager := c.standings.NewQueryItemsPager(query, pk, queryOpts)
+	var results []storage.ChampionshipSessionResult
+
+	for pager.More() {
+		resp, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("cosmos: query championship session results: %w", err)
+		}
+		for _, item := range resp.Items {
+			var r storage.ChampionshipSessionResult
+			if err := json.Unmarshal(item, &r); err != nil {
+				return nil, fmt.Errorf("cosmos: unmarshal championship session result: %w", err)
+			}
+			results = append(results, r)
+		}
+	}
+	return results, nil
+}
+
+func (c *Client) UpsertStartingGridEntries(ctx context.Context, entries []storage.StartingGridEntry) error {
+	for _, e := range entries {
+		data, err := json.Marshal(e)
+		if err != nil {
+			return fmt.Errorf("cosmos: marshal starting grid entry: %w", err)
+		}
+		pk := azcosmos.NewPartitionKeyNumber(float64(e.Season))
+		if _, err = c.standings.UpsertItem(ctx, pk, data, nil); err != nil {
+			return fmt.Errorf("cosmos: upsert starting grid entry %s: %w", e.ID, err)
+		}
+	}
+	return nil
+}
+
+func (c *Client) GetStartingGridEntries(ctx context.Context, season int) ([]storage.StartingGridEntry, error) {
+	pk := azcosmos.NewPartitionKeyNumber(float64(season))
+	query := "SELECT * FROM c WHERE c.season = @season AND c.type = 'starting_grid' ORDER BY c.meeting_key"
+	queryOpts := &azcosmos.QueryOptions{
+		QueryParameters: []azcosmos.QueryParameter{
+			{Name: "@season", Value: season},
+		},
+	}
+
+	pager := c.standings.NewQueryItemsPager(query, pk, queryOpts)
+	var entries []storage.StartingGridEntry
+
+	for pager.More() {
+		resp, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("cosmos: query starting grid entries: %w", err)
+		}
+		for _, item := range resp.Items {
+			var e storage.StartingGridEntry
+			if err := json.Unmarshal(item, &e); err != nil {
+				return nil, fmt.Errorf("cosmos: unmarshal starting grid entry: %w", err)
+			}
+			entries = append(entries, e)
+		}
+	}
+	return entries, nil
 }
