@@ -11,6 +11,7 @@ import (
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/api"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/ingest"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/observability"
+	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/standings"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/storage"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/storage/cosmos"
 )
@@ -25,6 +26,7 @@ func main() {
 	var standingsRepo storage.StandingsRepository
 	var sessionRepo storage.SessionRepository
 	var analysisRepo storage.AnalysisRepository
+	var championshipRepo storage.ChampionshipRepository
 	if cosmosEndpoint != "" {
 		client, err := cosmos.NewClient(cosmosEndpoint)
 		if err != nil {
@@ -34,6 +36,7 @@ func main() {
 		standingsRepo = client
 		sessionRepo = client
 		analysisRepo = client
+		championshipRepo = client
 	}
 
 	router := api.NewRouter(calendarRepo, standingsRepo, sessionRepo, analysisRepo, logger)
@@ -47,6 +50,10 @@ func main() {
 		go calendarPoller.Start(ctx, season)
 
 		sessionPoller := ingest.NewSessionPoller(sessionRepo, logger)
+		if championshipRepo != nil {
+			champIngester := standings.NewChampionshipIngester(championshipRepo, logger)
+			sessionPoller.SetChampionshipHook(champIngester)
+		}
 		go sessionPoller.Start(ctx, season)
 
 		analysisScheduler := ingest.NewAnalysisScheduler(sessionRepo, analysisRepo, logger)
