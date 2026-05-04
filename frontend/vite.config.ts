@@ -13,7 +13,10 @@ export default defineConfig({
     }
   },
   server: {
-    port: 5173
+    port: 5173,
+    proxy: process.env.VITE_BACKEND_PROXY
+      ? { '/api': { target: process.env.VITE_BACKEND_PROXY, changeOrigin: true } }
+      : undefined,
   },
   test: {
     environment: "jsdom",
