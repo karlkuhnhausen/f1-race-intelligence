@@ -308,3 +308,155 @@ func (s *Service) GetConstructorProgression(ctx context.Context, season int) (*C
 		Teams:  entries,
 	}, nil
 }
+
+// GetDriverComparison compares two drivers' season stats and progression.
+func (s *Service) GetDriverComparison(ctx context.Context, season, driver1, driver2 int) (*DriverComparisonResponse, error) {
+	snapshots, err := s.championshipRepo.GetDriverChampionshipSnapshots(ctx, season)
+	if err != nil {
+		return nil, err
+	}
+
+	identities, err := s.resolveDriverIdentities(ctx, season)
+	if err != nil {
+		return nil, err
+	}
+
+	driverStats, err := s.statsAggregator.GetDriverStats(ctx, season)
+	if err != nil {
+		return nil, err
+	}
+
+	// Collect session keys and build per-driver progression.
+	sessionKeySet := make(map[int]struct{})
+	pointsByDriver := map[int]map[int]int{driver1: {}, driver2: {}}
+	var latestPoints [2]int
+
+	for _, snap := range snapshots {
+		sessionKeySet[snap.SessionKey] = struct{}{}
+		if snap.DriverNumber == driver1 || snap.DriverNumber == driver2 {
+			if _, ok := pointsByDriver[snap.DriverNumber]; ok {
+				pointsByDriver[snap.DriverNumber][snap.SessionKey] = int(snap.PointsCurrent)
+			}
+		}
+	}
+
+	sessionKeys := make([]int, 0, len(sessionKeySet))
+	for sk := range sessionKeySet {
+		sessionKeys = append(sessionKeys, sk)
+	}
+	sort.Ints(sessionKeys)
+
+	rounds := make([]string, len(sessionKeys))
+	d1Points := make([]int, len(sessionKeys))
+	d2Points := make([]int, len(sessionKeys))
+	for i, sk := range sessionKeys {
+		rounds[i] = fmt.Sprintf("Round %d", i+1)
+		d1Points[i] = pointsByDriver[driver1][sk]
+		d2Points[i] = pointsByDriver[driver2][sk]
+	}
+	if len(sessionKeys) > 0 {
+		lastSK := sessionKeys[len(sessionKeys)-1]
+		latestPoints[0] = pointsByDriver[driver1][lastSK]
+		latestPoints[1] = pointsByDriver[driver2][lastSK]
+	}
+
+	id1 := identities[driver1]
+	id2 := identities[driver2]
+	s1 := driverStats[driver1]
+	s2 := driverStats[driver2]
+
+	return &DriverComparisonResponse{
+		Year: season,
+		Driver1: ComparisonDriverStats{
+			DriverNumber: driver1, DriverName: id1.DriverName, TeamName: id1.TeamName, TeamColor: id1.TeamColor,
+			Points: latestPoints[0], Wins: s1.Wins, Podiums: s1.Podiums, DNFs: s1.DNFs, Poles: s1.Poles,
+		},
+		Driver2: ComparisonDriverStats{
+			DriverNumber: driver2, DriverName: id2.DriverName, TeamName: id2.TeamName, TeamColor: id2.TeamColor,
+			Points: latestPoints[1], Wins: s2.Wins, Podiums: s2.Podiums, DNFs: s2.DNFs, Poles: s2.Poles,
+		},
+		Deltas: ComparisonDeltas{
+			Points: latestPoints[0] - latestPoints[1], Wins: s1.Wins - s2.Wins,
+			Podiums: s1.Podiums - s2.Podiums, DNFs: s1.DNFs - s2.DNFs, Poles: s1.Poles - s2.Poles,
+		},
+		Rounds:        rounds,
+		Driver1Points: d1Points,
+		Driver2Points: d2Points,
+	}, nil
+}
+
+// GetConstructorComparison compares two teams' season stats and progression.
+func (s *Service) GetConstructorComparison(ctx context.Context, season int, team1, team2 string) (*ConstructorComparisonResponse, error) {
+	snapshots, err := s.championshipRepo.GetTeamChampionshipSnapshots(ctx, season)
+	if err != nil {
+		return nil, err
+	}
+
+	identities, err := s.resolveDriverIdentities(ctx, season)
+	if err != nil {
+		return nil, err
+	}
+	driverTeams := make(map[int]string)
+	for dn, id := range identities {
+		driverTeams[dn] = id.TeamName
+	}
+	teamStats, err := s.statsAggregator.GetTeamStats(ctx, season, driverTeams)
+	if err != nil {
+		return nil, err
+	}
+
+	sessionKeySet := make(map[int]struct{})
+	pointsByTeam := map[string]map[int]int{team1: {}, team2: {}}
+
+	for _, snap := range snapshots {
+		sessionKeySet[snap.SessionKey] = struct{}{}
+		if snap.TeamName == team1 || snap.TeamName == team2 {
+			if _, ok := pointsByTeam[snap.TeamName]; ok {
+				pointsByTeam[snap.TeamName][snap.SessionKey] = int(snap.PointsCurrent)
+			}
+		}
+	}
+
+	sessionKeys := make([]int, 0, len(sessionKeySet))
+	for sk := range sessionKeySet {
+		sessionKeys = append(sessionKeys, sk)
+	}
+	sort.Ints(sessionKeys)
+
+	rounds := make([]string, len(sessionKeys))
+	t1Points := make([]int, len(sessionKeys))
+	t2Points := make([]int, len(sessionKeys))
+	var latestPoints [2]int
+	for i, sk := range sessionKeys {
+		rounds[i] = fmt.Sprintf("Round %d", i+1)
+		t1Points[i] = pointsByTeam[team1][sk]
+		t2Points[i] = pointsByTeam[team2][sk]
+	}
+	if len(sessionKeys) > 0 {
+		lastSK := sessionKeys[len(sessionKeys)-1]
+		latestPoints[0] = pointsByTeam[team1][lastSK]
+		latestPoints[1] = pointsByTeam[team2][lastSK]
+	}
+
+	ts1 := teamStats[team1]
+	ts2 := teamStats[team2]
+
+	return &ConstructorComparisonResponse{
+		Year: season,
+		Team1: ComparisonTeamStats{
+			TeamName: team1, TeamColor: "", Points: latestPoints[0],
+			Wins: ts1.Wins, Podiums: ts1.Podiums, DNFs: ts1.DNFs,
+		},
+		Team2: ComparisonTeamStats{
+			TeamName: team2, TeamColor: "", Points: latestPoints[1],
+			Wins: ts2.Wins, Podiums: ts2.Podiums, DNFs: ts2.DNFs,
+		},
+		Deltas: ComparisonDeltas{
+			Points: latestPoints[0] - latestPoints[1], Wins: ts1.Wins - ts2.Wins,
+			Podiums: ts1.Podiums - ts2.Podiums, DNFs: ts1.DNFs - ts2.DNFs,
+		},
+		Rounds:      rounds,
+		Team1Points: t1Points,
+		Team2Points: t2Points,
+	}, nil
+}

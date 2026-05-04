@@ -4,16 +4,21 @@ import {
   fetchConstructorStandings,
   fetchDriverProgression,
   fetchConstructorProgression,
+  fetchDriverComparison,
+  fetchConstructorComparison,
   type DriverStandingDTO,
   type ConstructorStandingDTO,
   type DriversProgressionResponse,
   type ConstructorsProgressionResponse,
+  type DriverComparisonResponse,
+  type ConstructorComparisonResponse,
 } from './standingsApi';
 import StandingsTable, {
   type StandingsRow,
 } from '../design-system/StandingsTable';
 import ProgressionChart, { type ProgressionEntry } from './ProgressionChart';
 import YearPicker from './YearPicker';
+import ComparisonPanel from './ComparisonPanel';
 
 type Tab = 'drivers' | 'constructors';
 type ViewMode = 'table' | 'chart';
@@ -57,6 +62,50 @@ export default function StandingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [year, setYear] = useState(new Date().getFullYear());
+  const [comparison, setComparison] = useState<DriverComparisonResponse | ConstructorComparisonResponse | null>(null);
+  const [compareLoading, setCompareLoading] = useState(false);
+  const [selectedDrivers, setSelectedDrivers] = useState<number[]>([]);
+  const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
+
+  useEffect(() => {
+    setComparison(null);
+    setSelectedDrivers([]);
+    setSelectedTeams([]);
+  }, [year]);
+
+  useEffect(() => {
+    if (selectedDrivers.length === 2) {
+      setCompareLoading(true);
+      fetchDriverComparison(year, selectedDrivers[0], selectedDrivers[1])
+        .then(setComparison)
+        .catch(() => setComparison(null))
+        .finally(() => setCompareLoading(false));
+    } else if (selectedTeams.length === 2) {
+      setCompareLoading(true);
+      fetchConstructorComparison(year, selectedTeams[0], selectedTeams[1])
+        .then(setComparison)
+        .catch(() => setComparison(null))
+        .finally(() => setCompareLoading(false));
+    } else {
+      setComparison(null);
+    }
+  }, [selectedDrivers, selectedTeams, year]);
+
+  function toggleDriverSelect(driverNumber: number) {
+    setSelectedDrivers((prev) => {
+      if (prev.includes(driverNumber)) return prev.filter((d) => d !== driverNumber);
+      if (prev.length >= 2) return [prev[1], driverNumber];
+      return [...prev, driverNumber];
+    });
+  }
+
+  function toggleTeamSelect(teamName: string) {
+    setSelectedTeams((prev) => {
+      if (prev.includes(teamName)) return prev.filter((t) => t !== teamName);
+      if (prev.length >= 2) return [prev[1], teamName];
+      return [...prev, teamName];
+    });
+  }
 
   useEffect(() => {
     setLoading(true);
@@ -166,6 +215,48 @@ export default function StandingsPage() {
             }))}
           />
         ) : null
+      )}
+
+      {viewMode === 'table' && (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">
+            {tab === 'drivers'
+              ? `Click two drivers to compare${selectedDrivers.length > 0 ? ` (${selectedDrivers.length}/2 selected)` : ''}`
+              : `Click two teams to compare${selectedTeams.length > 0 ? ` (${selectedTeams.length}/2 selected)` : ''}`}
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {tab === 'drivers'
+              ? drivers.map((d) => (
+                  <button
+                    key={d.driver_number}
+                    type="button"
+                    onClick={() => toggleDriverSelect(d.driver_number)}
+                    className={`text-xs px-2 py-1 rounded border ${
+                      selectedDrivers.includes(d.driver_number)
+                        ? 'border-accent-red bg-accent-red/10 text-foreground'
+                        : 'border-border text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {d.driver_name}
+                  </button>
+                ))
+              : constructors.map((c) => (
+                  <button
+                    key={c.team_name}
+                    type="button"
+                    onClick={() => toggleTeamSelect(c.team_name)}
+                    className={`text-xs px-2 py-1 rounded border ${
+                      selectedTeams.includes(c.team_name)
+                        ? 'border-accent-red bg-accent-red/10 text-foreground'
+                        : 'border-border text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {c.team_name}
+                  </button>
+                ))}
+          </div>
+          <ComparisonPanel data={comparison} loading={compareLoading} />
+        </div>
       )}
     </section>
   );

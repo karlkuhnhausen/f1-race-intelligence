@@ -41,15 +41,15 @@ describe('StandingsPage', () => {
   it('renders driver standings by default', async () => {
     render(<StandingsPage />);
 
-    expect(await screen.findByText('Max Verstappen')).toBeDefined();
-    expect(screen.getByText('Lando Norris')).toBeDefined();
-    expect(screen.getByText('Charles Leclerc')).toBeDefined();
+    expect(await screen.findAllByText('Max Verstappen')).toBeDefined();
+    expect(screen.getAllByText('Lando Norris').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Charles Leclerc').length).toBeGreaterThan(0);
   });
 
   it('renders driver position, points, and wins', async () => {
     render(<StandingsPage />);
 
-    await screen.findByText('Max Verstappen');
+    await screen.findAllByText('Max Verstappen');
 
     // Team is conveyed via color accent border, not as a text column,
     // so we only assert the data columns now present in StandingsTable.
@@ -60,13 +60,13 @@ describe('StandingsPage', () => {
   it('switches to constructors tab', async () => {
     render(<StandingsPage />);
 
-    await screen.findByText('Max Verstappen');
+    await screen.findAllByText('Max Verstappen');
 
     fireEvent.click(screen.getByText('Constructors'));
 
-    expect(screen.getByText('Red Bull Racing')).toBeDefined();
+    expect(screen.getAllByText('Red Bull Racing').length).toBeGreaterThan(0);
     expect(screen.getByText('198')).toBeDefined();
-    expect(screen.getByText('McLaren')).toBeDefined();
+    expect(screen.getAllByText('McLaren').length).toBeGreaterThan(0);
     expect(screen.getByText('165')).toBeDefined();
   });
 
@@ -78,7 +78,7 @@ describe('StandingsPage', () => {
   it('renders team color as left border accent', async () => {
     render(<StandingsPage />);
 
-    await screen.findByText('Max Verstappen');
+    await screen.findAllByText('Max Verstappen');
 
     const rows = screen.getAllByTestId('standings-row');
     // First row should have Red Bull's team color as border
@@ -88,7 +88,7 @@ describe('StandingsPage', () => {
   it('renders zero stats as "0" not blank', async () => {
     render(<StandingsPage />);
 
-    await screen.findByText('Max Verstappen');
+    await screen.findAllByText('Max Verstappen');
 
     // Verstappen has 0 DNFs — should render as "0" in the DNFs column
     const rows = screen.getAllByTestId('standings-row');
@@ -101,7 +101,7 @@ describe('StandingsPage', () => {
   it('renders year picker with current year selected', async () => {
     render(<StandingsPage />);
 
-    await screen.findByText('Max Verstappen');
+    await screen.findAllByText('Max Verstappen');
 
     const picker = screen.getByTestId('year-picker') as HTMLSelectElement;
     expect(picker.value).toBe(String(new Date().getFullYear()));

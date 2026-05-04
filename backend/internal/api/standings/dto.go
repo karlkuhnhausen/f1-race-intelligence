@@ -70,3 +70,57 @@ type ConstructorsProgressionResponse struct {
 	Rounds []string               `json:"rounds"`
 	Teams  []TeamProgressionEntry `json:"teams"`
 }
+
+// ComparisonDriverStats holds one driver's stats for comparison.
+type ComparisonDriverStats struct {
+	DriverNumber int    `json:"driver_number"`
+	DriverName   string `json:"driver_name"`
+	TeamName     string `json:"team_name"`
+	TeamColor    string `json:"team_color"`
+	Points       int    `json:"points"`
+	Wins         int    `json:"wins"`
+	Podiums      int    `json:"podiums"`
+	DNFs         int    `json:"dnfs"`
+	Poles        int    `json:"poles"`
+}
+
+// ComparisonDeltas holds the stat differences (driver1 - driver2).
+type ComparisonDeltas struct {
+	Points  int `json:"points"`
+	Wins    int `json:"wins"`
+	Podiums int `json:"podiums"`
+	DNFs    int `json:"dnfs"`
+	Poles   int `json:"poles"`
+}
+
+// DriverComparisonResponse is the response for GET /standings/drivers/compare.
+type DriverComparisonResponse struct {
+	Year          int                   `json:"year"`
+	Driver1       ComparisonDriverStats `json:"driver1"`
+	Driver2       ComparisonDriverStats `json:"driver2"`
+	Deltas        ComparisonDeltas      `json:"deltas"`
+	Rounds        []string              `json:"rounds"`
+	Driver1Points []int                 `json:"driver1_points"`
+	Driver2Points []int                 `json:"driver2_points"`
+}
+
+// ComparisonTeamStats holds one team's stats for comparison.
+type ComparisonTeamStats struct {
+	TeamName  string `json:"team_name"`
+	TeamColor string `json:"team_color"`
+	Points    int    `json:"points"`
+	Wins      int    `json:"wins"`
+	Podiums   int    `json:"podiums"`
+	DNFs      int    `json:"dnfs"`
+}
+
+// ConstructorComparisonResponse is the response for GET /standings/constructors/compare.
+type ConstructorComparisonResponse struct {
+	Year        int                 `json:"year"`
+	Team1       ComparisonTeamStats `json:"team1"`
+	Team2       ComparisonTeamStats `json:"team2"`
+	Deltas      ComparisonDeltas    `json:"deltas"`
+	Rounds      []string            `json:"rounds"`
+	Team1Points []int               `json:"team1_points"`
+	Team2Points []int               `json:"team2_points"`
+}

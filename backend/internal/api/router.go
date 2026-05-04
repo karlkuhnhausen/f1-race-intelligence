@@ -70,6 +70,8 @@ func NewRouter(calendarRepo storage.CalendarRepository, standingsRepo storage.St
 		r.Get("/standings/constructors", standingsHandler.GetConstructors)
 		r.Get("/standings/drivers/progression", standingsHandler.GetDriversProgression)
 		r.Get("/standings/constructors/progression", standingsHandler.GetConstructorsProgression)
+		r.Get("/standings/drivers/compare", standingsHandler.GetDriversCompare)
+		r.Get("/standings/constructors/compare", standingsHandler.GetConstructorsCompare)
 		r.Get("/rounds/{round}", roundsHandler.GetRoundDetail)
 		r.Get("/rounds/{round}/sessions/{type}/analysis", analysisHandler.GetSessionAnalysis)
 	})
