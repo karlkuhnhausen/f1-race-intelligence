@@ -18,6 +18,7 @@ function driversToRows(drivers: DriverStandingDTO[]): StandingsRow[] {
     constructorId: d.team_name,
     points: d.points,
     wins: d.wins,
+    teamColor: d.team_color || undefined,
   }));
 }
 
@@ -29,6 +30,8 @@ function constructorsToRows(
     name: c.team_name,
     constructorId: c.team_name,
     points: c.points,
+    wins: c.wins,
+    teamColor: c.team_color || undefined,
   }));
 }
 

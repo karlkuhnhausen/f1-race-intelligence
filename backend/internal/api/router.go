@@ -23,7 +23,7 @@ type healthResponse struct {
 	Timestamp string `json:"timestamp"`
 }
 
-func NewRouter(calendarRepo storage.CalendarRepository, standingsRepo storage.StandingsRepository, sessionRepo storage.SessionRepository, analysisRepo storage.AnalysisRepository, logger *slog.Logger) http.Handler {
+func NewRouter(calendarRepo storage.CalendarRepository, standingsRepo storage.StandingsRepository, sessionRepo storage.SessionRepository, analysisRepo storage.AnalysisRepository, championshipRepo storage.ChampionshipRepository, logger *slog.Logger) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
@@ -49,7 +49,7 @@ func NewRouter(calendarRepo storage.CalendarRepository, standingsRepo storage.St
 	calendarHandler := calendar.NewHandler(calendarSvc, logger)
 
 	// Standings API
-	standingsSvc := standings.NewService(standingsRepo)
+	standingsSvc := standings.NewService(standingsRepo, championshipRepo, sessionRepo)
 	standingsHandler := standings.NewHandler(standingsSvc, logger)
 
 	// Rounds API — wire a real RaceControlHydrator for lazy-on-read gap fill.

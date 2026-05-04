@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 // Handler serves championship standings endpoints.
@@ -21,10 +22,11 @@ func NewHandler(service *Service, logger *slog.Logger) *Handler {
 func parseYear(r *http.Request) (int, bool) {
 	yearStr := r.URL.Query().Get("year")
 	if yearStr == "" {
-		return 0, false
+		// Default to current year.
+		return time.Now().Year(), true
 	}
 	year, err := strconv.Atoi(yearStr)
-	if err != nil || year < 1950 || year > 2100 {
+	if err != nil || year < 2023 || year > time.Now().Year() {
 		return 0, false
 	}
 	return year, true
@@ -34,7 +36,7 @@ func parseYear(r *http.Request) (int, bool) {
 func (h *Handler) GetDrivers(w http.ResponseWriter, r *http.Request) {
 	year, ok := parseYear(r)
 	if !ok {
-		http.Error(w, `{"error":"year query parameter is required and must be 1950-2100"}`, http.StatusBadRequest)
+		http.Error(w, `{"error":"year must be between 2023 and the current year"}`, http.StatusBadRequest)
 		return
 	}
 
@@ -55,7 +57,7 @@ func (h *Handler) GetDrivers(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetConstructors(w http.ResponseWriter, r *http.Request) {
 	year, ok := parseYear(r)
 	if !ok {
-		http.Error(w, `{"error":"year query parameter is required and must be 1950-2100"}`, http.StatusBadRequest)
+		http.Error(w, `{"error":"year must be between 2023 and the current year"}`, http.StatusBadRequest)
 		return
 	}
 

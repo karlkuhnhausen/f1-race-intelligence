@@ -7,6 +7,8 @@ export interface StandingsRow {
   constructorId: string;
   points: number;
   wins?: number;
+  /** Direct team color from API (hex without #). Falls back to constructorId lookup. */
+  teamColor?: string;
 }
 
 export interface StandingsTableProps {
@@ -62,7 +64,9 @@ export default function StandingsTable({
         </thead>
         <tbody>
           {rows.map((row, idx) => {
-            const teamColor = getTeamColor(row.constructorId);
+            const teamColor = row.teamColor
+              ? `#${row.teamColor}`
+              : getTeamColor(row.constructorId);
             return (
               <tr
                 key={`${row.position}-${row.name}`}

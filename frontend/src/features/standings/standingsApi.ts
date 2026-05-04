@@ -2,16 +2,25 @@ import { apiClient } from '../../services/apiClient';
 
 export interface DriverStandingDTO {
   position: number;
+  driver_number: number;
   driver_name: string;
   team_name: string;
+  team_color: string;
   points: number;
   wins: number;
+  podiums: number;
+  dnfs: number;
+  poles: number;
 }
 
 export interface ConstructorStandingDTO {
   position: number;
   team_name: string;
+  team_color: string;
   points: number;
+  wins: number;
+  podiums: number;
+  dnfs: number;
 }
 
 export interface DriversStandingsResponse {

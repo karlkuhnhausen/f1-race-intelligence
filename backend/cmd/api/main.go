@@ -39,7 +39,7 @@ func main() {
 		championshipRepo = client
 	}
 
-	router := api.NewRouter(calendarRepo, standingsRepo, sessionRepo, analysisRepo, logger)
+	router := api.NewRouter(calendarRepo, standingsRepo, sessionRepo, analysisRepo, championshipRepo, logger)
 
 	// Start data pollers if Cosmos is configured.
 	if calendarRepo != nil {
