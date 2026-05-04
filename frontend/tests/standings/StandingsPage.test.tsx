@@ -97,4 +97,13 @@ describe('StandingsPage', () => {
     // Index 5 = DNFs column
     expect(firstRowCells[5].textContent).toBe('0');
   });
+
+  it('renders year picker with current year selected', async () => {
+    render(<StandingsPage />);
+
+    await screen.findByText('Max Verstappen');
+
+    const picker = screen.getByTestId('year-picker') as HTMLSelectElement;
+    expect(picker.value).toBe(String(new Date().getFullYear()));
+  });
 });

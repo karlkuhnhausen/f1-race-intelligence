@@ -13,6 +13,7 @@ import StandingsTable, {
   type StandingsRow,
 } from '../design-system/StandingsTable';
 import ProgressionChart, { type ProgressionEntry } from './ProgressionChart';
+import YearPicker from './YearPicker';
 
 type Tab = 'drivers' | 'constructors';
 type ViewMode = 'table' | 'chart';
@@ -55,8 +56,7 @@ export default function StandingsPage() {
   const [constructorProgression, setConstructorProgression] = useState<ConstructorsProgressionResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const year = new Date().getFullYear();
+  const [year, setYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
     setLoading(true);
@@ -90,9 +90,12 @@ export default function StandingsPage() {
 
   return (
     <section className="space-y-6">
-      <h2 className="font-display text-3xl font-bold tracking-tight">
-        {year} Standings
-      </h2>
+      <div className="flex items-center gap-4">
+        <h2 className="font-display text-3xl font-bold tracking-tight">
+          {year} Standings
+        </h2>
+        <YearPicker selectedYear={year} onYearChange={setYear} />
+      </div>
 
       <div className="flex gap-2 border-b border-border">
         <button
