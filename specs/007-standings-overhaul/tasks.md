@@ -19,13 +19,13 @@
 
 **Purpose**: Remove dead code and prepare storage layer for new data types
 
-- [ ] T001 Delete `backend/internal/standings/hyprace_client.go` entirely
-- [ ] T002 Remove Hyprace poller instantiation and goroutine launch from `backend/cmd/api/main.go`
-- [ ] T003 [P] Remove `source = 'hyprace'` filter from Cosmos queries in `backend/internal/storage/cosmos/client.go` — replace with `type` discriminator-based queries
-- [ ] T004 [P] Add new storage types (`DriverChampionshipSnapshot`, `TeamChampionshipSnapshot`, `SessionResult`, `StartingGrid`) to `backend/internal/storage/repository.go` per data-model.md
-- [ ] T005 [P] Add `ChampionshipRepository` interface methods to `backend/internal/storage/repository.go`: `UpsertDriverChampionshipSnapshots`, `GetDriverChampionshipSnapshots`, `UpsertTeamChampionshipSnapshots`, `GetTeamChampionshipSnapshots`, `UpsertSessionResults`, `GetSessionResults`, `UpsertStartingGrids`, `GetStartingGrids`
-- [ ] T006 Implement new Cosmos DB methods for championship snapshots and session results in `backend/internal/storage/cosmos/client.go`
-- [ ] T007 [P] Remove any Hyprace egress firewall rules from `infra/bicep/` and Helm values in `deploy/helm/backend/`
+- [X] T001 Delete `backend/internal/standings/hyprace_client.go` entirely
+- [X] T002 Remove Hyprace poller instantiation and goroutine launch from `backend/cmd/api/main.go`
+- [X] T003 [P] Remove `source = 'hyprace'` filter from Cosmos queries in `backend/internal/storage/cosmos/client.go` — replace with `type` discriminator-based queries
+- [X] T004 [P] Add new storage types (`DriverChampionshipSnapshot`, `TeamChampionshipSnapshot`, `SessionResult`, `StartingGrid`) to `backend/internal/storage/repository.go` per data-model.md
+- [X] T005 [P] Add `ChampionshipRepository` interface methods to `backend/internal/storage/repository.go`: `UpsertDriverChampionshipSnapshots`, `GetDriverChampionshipSnapshots`, `UpsertTeamChampionshipSnapshots`, `GetTeamChampionshipSnapshots`, `UpsertSessionResults`, `GetSessionResults`, `UpsertStartingGrids`, `GetStartingGrids`
+- [X] T006 Implement new Cosmos DB methods for championship snapshots and session results in `backend/internal/storage/cosmos/client.go`
+- [X] T007 [P] Remove any Hyprace egress firewall rules from `infra/bicep/` and Helm values in `deploy/helm/backend/`
 
 **Checkpoint**: Hyprace is fully removed. Storage layer supports new document types. Backend still compiles and passes existing tests.
 
@@ -37,15 +37,15 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T008 Create `backend/internal/standings/championship_ingester.go` with `ChampionshipIngester` struct that fetches `/v1/championship_drivers?session_key={key}` and `/v1/championship_teams?session_key={key}` from OpenF1, transforms responses to `DriverChampionshipSnapshot` and `TeamChampionshipSnapshot`, and upserts to Cosmos via repository
-- [ ] T009 [P] Create `backend/internal/standings/stats_aggregator.go` with `StatsAggregator` that queries session results and starting grids from storage and computes per-driver stats (wins, podiums, DNFs, poles) and per-team stats (wins, podiums, DNFs)
-- [ ] T010 Add OpenF1 session result ingestion to `backend/internal/standings/championship_ingester.go`: fetch `/v1/session_result?session_key={key}` and transform to `SessionResult` documents
-- [ ] T011 Add OpenF1 starting grid ingestion to `backend/internal/standings/championship_ingester.go`: fetch `/v1/starting_grid?meeting_key={meeting_key}` and transform to `StartingGrid` documents
-- [ ] T012 Extend session poller finalization hook in `backend/internal/ingest/session_poller.go` to trigger `ChampionshipIngester.IngestSession(ctx, sessionKey, meetingKey)` after Race and Sprint sessions are finalized
-- [ ] T013 Wire `ChampionshipIngester` instantiation in `backend/cmd/api/main.go` — inject into session poller
-- [ ] T014 [P] Add `--championship` flag to `backend/cmd/backfill/main.go` that iterates all completed Race and Sprint sessions for a given season and calls `ChampionshipIngester.IngestSession` for each with rate limiting (500ms between requests). **Note**: For historical seasons (2023–2025), also fetch and cache driver identity data from `/v1/drivers?session_key={key}` if not already present in Cosmos — joins in T018 depend on this data existing.
-- [ ] T015 [P] Create unit tests in `backend/tests/unit/championship_ingester_test.go` — test transformation of OpenF1 JSON responses to storage types, null handling for `position_start`/`points_start`, and team name resolution for null team names
-- [ ] T016 [P] Create unit tests in `backend/tests/unit/stats_aggregator_test.go` — test wins/podiums/DNFs/poles computation from mock session results and starting grids
+- [X] T008 Create `backend/internal/standings/championship_ingester.go` with `ChampionshipIngester` struct that fetches `/v1/championship_drivers?session_key={key}` and `/v1/championship_teams?session_key={key}` from OpenF1, transforms responses to `DriverChampionshipSnapshot` and `TeamChampionshipSnapshot`, and upserts to Cosmos via repository
+- [X] T009 [P] Create `backend/internal/standings/stats_aggregator.go` with `StatsAggregator` that queries session results and starting grids from storage and computes per-driver stats (wins, podiums, DNFs, poles) and per-team stats (wins, podiums, DNFs)
+- [X] T010 Add OpenF1 session result ingestion to `backend/internal/standings/championship_ingester.go`: fetch `/v1/session_result?session_key={key}` and transform to `SessionResult` documents
+- [X] T011 Add OpenF1 starting grid ingestion to `backend/internal/standings/championship_ingester.go`: fetch `/v1/starting_grid?meeting_key={meeting_key}` and transform to `StartingGrid` documents
+- [X] T012 Extend session poller finalization hook in `backend/internal/ingest/session_poller.go` to trigger `ChampionshipIngester.IngestSession(ctx, sessionKey, meetingKey)` after Race and Sprint sessions are finalized
+- [X] T013 Wire `ChampionshipIngester` instantiation in `backend/cmd/api/main.go` — inject into session poller
+- [X] T014 [P] Add `--championship` flag to `backend/cmd/backfill/main.go` that iterates all completed Race and Sprint sessions for a given season and calls `ChampionshipIngester.IngestSession` for each with rate limiting (500ms between requests). **Note**: For historical seasons (2023–2025), also fetch and cache driver identity data from `/v1/drivers?session_key={key}` if not already present in Cosmos — joins in T018 depend on this data existing.
+- [X] T015 [P] Create unit tests in `backend/tests/unit/championship_ingester_test.go` — test transformation of OpenF1 JSON responses to storage types, null handling for `position_start`/`points_start`, and team name resolution for null team names
+- [X] T016 [P] Create unit tests in `backend/tests/unit/stats_aggregator_test.go` — test wins/podiums/DNFs/poles computation from mock session results and starting grids
 
 **Checkpoint**: Championship data can be ingested from OpenF1 and stored in Cosmos. Backfill CLI can populate historical data. Stats can be computed from stored results.
 
@@ -59,14 +59,14 @@
 
 ### Implementation
 
-- [ ] T017 [US1] Update `backend/internal/api/standings/dto.go` — expand `DriverStandingDTO` to include `driver_number`, `team_color`; expand `ConstructorStandingDTO` to include `team_color`; add `data_as_of_utc` to response envelopes
-- [ ] T018 [US1] Update `backend/internal/api/standings/service.go` — rewrite `GetDrivers(ctx, season)` to read latest `DriverChampionshipSnapshot` per driver for the season, join with driver identity for names/colors, and return expanded DTO; rewrite `GetConstructors(ctx, season)` similarly using `TeamChampionshipSnapshot`
-- [ ] T019 [US1] Update `backend/internal/api/standings/handler.go` — update `parseYear` validation to enforce range 2023–current year; default year to current when not provided
-- [ ] T020 [P] [US1] Update `frontend/src/features/standings/standingsApi.ts` — align TypeScript interfaces with expanded backend DTOs (`driver_number`, `team_color` fields)
-- [ ] T021 [P] [US1] Update `frontend/src/features/design-system/StandingsTable.tsx` — render `team_color` as left-border accent on each row
-- [ ] T022 [US1] Update `frontend/src/features/standings/StandingsPage.tsx` — pass `team_color` through to `StandingsTable`
-- [ ] T023 [US1] Update contract tests in `backend/tests/contract/standings_contract_test.go` — verify new response shapes for `/standings/drivers` and `/standings/constructors` (expanded fields, `data_as_of_utc`)
-- [ ] T024 [US1] Update frontend tests in `frontend/tests/standings/StandingsPage.test.tsx` — verify table renders with team color accents and all expected columns
+- [X] T017 [US1] Update `backend/internal/api/standings/dto.go` — expand `DriverStandingDTO` to include `driver_number`, `team_color`; expand `ConstructorStandingDTO` to include `team_color`; add `data_as_of_utc` to response envelopes
+- [X] T018 [US1] Update `backend/internal/api/standings/service.go` — rewrite `GetDrivers(ctx, season)` to read latest `DriverChampionshipSnapshot` per driver for the season, join with driver identity for names/colors, and return expanded DTO; rewrite `GetConstructors(ctx, season)` similarly using `TeamChampionshipSnapshot`
+- [X] T019 [US1] Update `backend/internal/api/standings/handler.go` — update `parseYear` validation to enforce range 2023–current year; default year to current when not provided
+- [X] T020 [P] [US1] Update `frontend/src/features/standings/standingsApi.ts` — align TypeScript interfaces with expanded backend DTOs (`driver_number`, `team_color` fields)
+- [X] T021 [P] [US1] Update `frontend/src/features/design-system/StandingsTable.tsx` — render `team_color` as left-border accent on each row
+- [X] T022 [US1] Update `frontend/src/features/standings/StandingsPage.tsx` — pass `team_color` through to `StandingsTable`
+- [X] T023 [US1] Update contract tests in `backend/tests/contract/standings_contract_test.go` — verify new response shapes for `/standings/drivers` and `/standings/constructors` (expanded fields, `data_as_of_utc`)
+- [X] T024 [US1] Update frontend tests in `frontend/tests/standings/StandingsPage.test.tsx` — verify table renders with team color accents and all expected columns
 
 **Checkpoint**: Standings page shows real championship data. MVP is usable.
 
@@ -80,13 +80,13 @@
 
 ### Implementation
 
-- [ ] T025 [US2] Extend `backend/internal/api/standings/dto.go` — add `Wins`, `Podiums`, `DNFs`, `Poles` to `DriverStandingDTO`; add `Wins`, `Podiums`, `DNFs` to `ConstructorStandingDTO`
-- [ ] T026 [US2] Extend `backend/internal/api/standings/service.go` — call `StatsAggregator.GetDriverStats(ctx, season)` and `GetTeamStats(ctx, season)` to populate stats fields in standings responses
-- [ ] T027 [P] [US2] Update `frontend/src/features/standings/standingsApi.ts` — add `wins`, `podiums`, `dnfs`, `poles` to TypeScript interfaces
-- [ ] T028 [P] [US2] Update `frontend/src/features/design-system/StandingsTable.tsx` — add optional columns for podiums, DNFs, poles (extend existing `columns` prop to support all stat types)
-- [ ] T029 [US2] Update `frontend/src/features/standings/StandingsPage.tsx` — configure `StandingsTable` to show all stats columns for drivers (`wins`, `podiums`, `dnfs`, `poles`) and constructors (`wins`, `podiums`, `dnfs`)
-- [ ] T030 [US2] Update contract tests in `backend/tests/contract/standings_contract_test.go` — verify stats fields are present and correctly typed in driver and constructor responses
-- [ ] T031 [US2] Update frontend tests in `frontend/tests/standings/StandingsPage.test.tsx` — verify stats columns render with "0" for zero values (not blank/dash)
+- [X] T025 [US2] Extend `backend/internal/api/standings/dto.go` — add `Wins`, `Podiums`, `DNFs`, `Poles` to `DriverStandingDTO`; add `Wins`, `Podiums`, `DNFs` to `ConstructorStandingDTO`
+- [X] T026 [US2] Extend `backend/internal/api/standings/service.go` — call `StatsAggregator.GetDriverStats(ctx, season)` and `GetTeamStats(ctx, season)` to populate stats fields in standings responses
+- [X] T027 [P] [US2] Update `frontend/src/features/standings/standingsApi.ts` — add `wins`, `podiums`, `dnfs`, `poles` to TypeScript interfaces
+- [X] T028 [P] [US2] Update `frontend/src/features/design-system/StandingsTable.tsx` — add optional columns for podiums, DNFs, poles (extend existing `columns` prop to support all stat types)
+- [X] T029 [US2] Update `frontend/src/features/standings/StandingsPage.tsx` — configure `StandingsTable` to show all stats columns for drivers (`wins`, `podiums`, `dnfs`, `poles`) and constructors (`wins`, `podiums`, `dnfs`)
+- [X] T030 [US2] Update contract tests in `backend/tests/contract/standings_contract_test.go` — verify stats fields are present and correctly typed in driver and constructor responses
+- [X] T031 [US2] Update frontend tests in `frontend/tests/standings/StandingsPage.test.tsx` — verify stats columns render with "0" for zero values (not blank/dash)
 
 **Checkpoint**: Standings tables show full statistics. US1 + US2 together form the complete P1 deliverable.
 
@@ -100,14 +100,14 @@
 
 ### Implementation
 
-- [ ] T032 [US3] Add `GetDriverProgression(ctx, season)` and `GetConstructorProgression(ctx, season)` methods to `backend/internal/api/standings/service.go` — query all championship snapshots for the season ordered by session_key, group by driver/team, return per-round points arrays
-- [ ] T033 [US3] Add progression DTOs to `backend/internal/api/standings/dto.go` — `ProgressionResponse` with `rounds` array and `drivers`/`teams` array each containing `points_by_round`
-- [ ] T034 [US3] Add `GetDriversProgression` and `GetConstructorsProgression` handlers in `backend/internal/api/standings/handler.go`
-- [ ] T035 [US3] Register new routes in `backend/internal/api/router.go`: `GET /api/v1/standings/drivers/progression` and `GET /api/v1/standings/constructors/progression`
-- [ ] T036 [P] [US3] Add `fetchDriverProgression(year)` and `fetchConstructorProgression(year)` to `frontend/src/features/standings/standingsApi.ts`
-- [ ] T037 [US3] Create `frontend/src/features/standings/ProgressionChart.tsx` — recharts `<LineChart>` with `<ResponsiveContainer>`, one `<Line>` per competitor colored by `team_color`, `<Tooltip>` showing name + race + points, `<XAxis>` with round names, `<YAxis>` with points
-- [ ] T038 [US3] Update `frontend/src/features/standings/StandingsPage.tsx` — add table/chart toggle, render `<ProgressionChart>` in chart mode for both drivers and constructors tabs
-- [ ] T039 [P] [US3] Create `frontend/tests/standings/ProgressionChart.test.tsx` — test chart renders with mock progression data, tooltip interaction, empty state (single round)
+- [X] T032 [US3] Add `GetDriverProgression(ctx, season)` and `GetConstructorProgression(ctx, season)` methods to `backend/internal/api/standings/service.go` — query all championship snapshots for the season ordered by session_key, group by driver/team, return per-round points arrays
+- [X] T033 [US3] Add progression DTOs to `backend/internal/api/standings/dto.go` — `ProgressionResponse` with `rounds` array and `drivers`/`teams` array each containing `points_by_round`
+- [X] T034 [US3] Add `GetDriversProgression` and `GetConstructorsProgression` handlers in `backend/internal/api/standings/handler.go`
+- [X] T035 [US3] Register new routes in `backend/internal/api/router.go`: `GET /api/v1/standings/drivers/progression` and `GET /api/v1/standings/constructors/progression`
+- [X] T036 [P] [US3] Add `fetchDriverProgression(year)` and `fetchConstructorProgression(year)` to `frontend/src/features/standings/standingsApi.ts`
+- [X] T037 [US3] Create `frontend/src/features/standings/ProgressionChart.tsx` — recharts `<LineChart>` with `<ResponsiveContainer>`, one `<Line>` per competitor colored by `team_color`, `<Tooltip>` showing name + race + points, `<XAxis>` with round names, `<YAxis>` with points
+- [X] T038 [US3] Update `frontend/src/features/standings/StandingsPage.tsx` — add table/chart toggle, render `<ProgressionChart>` in chart mode for both drivers and constructors tabs
+- [X] T039 [P] [US3] Create `frontend/tests/standings/ProgressionChart.test.tsx` — test chart renders with mock progression data, tooltip interaction, empty state (single round)
 
 **Checkpoint**: Users can toggle between table and chart views. Progression chart shows championship narrative visually.
 
@@ -121,12 +121,12 @@
 
 ### Implementation
 
-- [ ] T040 [US4] Ensure backend standings endpoints already support `year` query parameter (verify from T019 — range 2023–current)
-- [ ] T041 [US4] Add on-demand backfill logic in `backend/internal/api/standings/service.go` — when a season has no cached data, trigger synchronous ingestion from OpenF1 (with 30s timeout), cache results, return them; if timeout or no data, return empty response with message
-- [ ] T042 [P] [US4] Create `frontend/src/features/standings/YearPicker.tsx` — select/dropdown component showing years 2023–current, defaults to current year, emits `onYearChange(year)` callback
-- [ ] T043 [US4] Update `frontend/src/features/standings/StandingsPage.tsx` — integrate `<YearPicker>`, pass selected year to all API calls (standings, progression), re-fetch on year change
-- [ ] T044 [US4] Update `frontend/src/features/standings/standingsApi.ts` — ensure all fetch functions accept and pass `year` parameter
-- [ ] T045 [P] [US4] Update `frontend/tests/standings/StandingsPage.test.tsx` — test year picker renders, changing year triggers data reload
+- [X] T040 [US4] Ensure backend standings endpoints already support `year` query parameter (verify from T019 — range 2023–current)
+- [X] T041 [US4] Add on-demand backfill logic in `backend/internal/api/standings/service.go` — when a season has no cached data, trigger synchronous ingestion from OpenF1 (with 30s timeout), cache results, return them; if timeout or no data, return empty response with message
+- [X] T042 [P] [US4] Create `frontend/src/features/standings/YearPicker.tsx` — select/dropdown component showing years 2023–current, defaults to current year, emits `onYearChange(year)` callback
+- [X] T043 [US4] Update `frontend/src/features/standings/StandingsPage.tsx` — integrate `<YearPicker>`, pass selected year to all API calls (standings, progression), re-fetch on year change
+- [X] T044 [US4] Update `frontend/src/features/standings/standingsApi.ts` — ensure all fetch functions accept and pass `year` parameter
+- [X] T045 [P] [US4] Update `frontend/tests/standings/StandingsPage.test.tsx` — test year picker renders, changing year triggers data reload
 
 **Checkpoint**: Historical seasons are accessible. Combined with US3, users can see progression for any season 2023+.
 
@@ -140,14 +140,14 @@
 
 ### Implementation
 
-- [ ] T046 [US5] Add `GetDriverComparison(ctx, season, driver1, driver2)` and `GetConstructorComparison(ctx, season, team1, team2)` methods to `backend/internal/api/standings/service.go` — fetch both competitors' stats and progression, compute deltas
-- [ ] T047 [US5] Add comparison DTOs to `backend/internal/api/standings/dto.go` — `ComparisonResponse` with `driver1`/`driver2` (or `team1`/`team2`) stats, `deltas`, and `progression` overlay data
-- [ ] T048 [US5] Add `GetDriversCompare` and `GetConstructorsCompare` handlers in `backend/internal/api/standings/handler.go` — validate `driver1`/`driver2` or `team1`/`team2` params, return 400 for missing/same values, 404 for not found
-- [ ] T049 [US5] Register new routes in `backend/internal/api/router.go`: `GET /api/v1/standings/drivers/compare` and `GET /api/v1/standings/constructors/compare`
-- [ ] T050 [P] [US5] Add `fetchDriverComparison(year, driver1, driver2)` and `fetchConstructorComparison(year, team1, team2)` to `frontend/src/features/standings/standingsApi.ts`
-- [ ] T051 [US5] Create `frontend/src/features/standings/ComparisonPanel.tsx` — side-by-side stats display with delta badges ("+15 pts", "+2 wins"), plus a `<LineChart>` overlay with exactly 2 lines
-- [ ] T052 [US5] Update `frontend/src/features/standings/StandingsPage.tsx` — add comparison selection UI (checkboxes or click-to-select on table rows), show `<ComparisonPanel>` when two competitors selected, clear on year change if competitors don't exist in new season
-- [ ] T053 [P] [US5] Create `frontend/tests/standings/ComparisonPanel.test.tsx` — test renders stats, deltas, overlay chart; test clearing on season change
+- [X] T046 [US5] Add `GetDriverComparison(ctx, season, driver1, driver2)` and `GetConstructorComparison(ctx, season, team1, team2)` methods to `backend/internal/api/standings/service.go` — fetch both competitors' stats and progression, compute deltas
+- [X] T047 [US5] Add comparison DTOs to `backend/internal/api/standings/dto.go` — `ComparisonResponse` with `driver1`/`driver2` (or `team1`/`team2`) stats, `deltas`, and `progression` overlay data
+- [X] T048 [US5] Add `GetDriversCompare` and `GetConstructorsCompare` handlers in `backend/internal/api/standings/handler.go` — validate `driver1`/`driver2` or `team1`/`team2` params, return 400 for missing/same values, 404 for not found
+- [X] T049 [US5] Register new routes in `backend/internal/api/router.go`: `GET /api/v1/standings/drivers/compare` and `GET /api/v1/standings/constructors/compare`
+- [X] T050 [P] [US5] Add `fetchDriverComparison(year, driver1, driver2)` and `fetchConstructorComparison(year, team1, team2)` to `frontend/src/features/standings/standingsApi.ts`
+- [X] T051 [US5] Create `frontend/src/features/standings/ComparisonPanel.tsx` — side-by-side stats display with delta badges ("+15 pts", "+2 wins"), plus a `<LineChart>` overlay with exactly 2 lines
+- [X] T052 [US5] Update `frontend/src/features/standings/StandingsPage.tsx` — add comparison selection UI (checkboxes or click-to-select on table rows), show `<ComparisonPanel>` when two competitors selected, clear on year change if competitors don't exist in new season
+- [X] T053 [P] [US5] Create `frontend/tests/standings/ComparisonPanel.test.tsx` — test renders stats, deltas, overlay chart; test clearing on season change
 
 **Checkpoint**: Power users can compare championship rivals directly. All P1+P2 features remain working.
 
@@ -161,14 +161,14 @@
 
 ### Implementation
 
-- [ ] T054 [US6] Add `GetConstructorDriverBreakdown(ctx, season, teamName)` method to `backend/internal/api/standings/service.go` — query driver standings for that team's drivers, compute `points_percentage`
-- [ ] T055 [US6] Add breakdown DTO to `backend/internal/api/standings/dto.go` — `ConstructorBreakdownResponse` with `team_name`, `team_points`, `drivers` array
-- [ ] T056 [US6] Add `GetConstructorDrivers` handler in `backend/internal/api/standings/handler.go` — parse team path param, validate year
-- [ ] T057 [US6] Register new route in `backend/internal/api/router.go`: `GET /api/v1/standings/constructors/{team}/drivers`
-- [ ] T058 [P] [US6] Add `fetchConstructorDriverBreakdown(year, teamName)` to `frontend/src/features/standings/standingsApi.ts`
-- [ ] T059 [US6] Create `frontend/src/features/standings/ConstructorBreakdown.tsx` — expandable inline component showing driver rows with position, points, wins, podiums, and percentage bar
-- [ ] T060 [US6] Update `frontend/src/features/standings/StandingsPage.tsx` — make constructor table rows expandable (click to toggle), render `<ConstructorBreakdown>` inline when expanded
-- [ ] T061 [P] [US6] Create `frontend/tests/standings/ConstructorBreakdown.test.tsx` — test expand/collapse, driver points sum to team total, percentage display
+- [X] T054 [US6] Add `GetConstructorDriverBreakdown(ctx, season, teamName)` method to `backend/internal/api/standings/service.go` — query driver standings for that team's drivers, compute `points_percentage`
+- [X] T055 [US6] Add breakdown DTO to `backend/internal/api/standings/dto.go` — `ConstructorBreakdownResponse` with `team_name`, `team_points`, `drivers` array
+- [X] T056 [US6] Add `GetConstructorDrivers` handler in `backend/internal/api/standings/handler.go` — parse team path param, validate year
+- [X] T057 [US6] Register new route in `backend/internal/api/router.go`: `GET /api/v1/standings/constructors/{team}/drivers`
+- [X] T058 [P] [US6] Add `fetchConstructorDriverBreakdown(year, teamName)` to `frontend/src/features/standings/standingsApi.ts`
+- [X] T059 [US6] Create `frontend/src/features/standings/ConstructorBreakdown.tsx` — expandable inline component showing driver rows with position, points, wins, podiums, and percentage bar
+- [X] T060 [US6] Update `frontend/src/features/standings/StandingsPage.tsx` — make constructor table rows expandable (click to toggle), render `<ConstructorBreakdown>` inline when expanded
+- [X] T061 [P] [US6] Create `frontend/tests/standings/ConstructorBreakdown.test.tsx` — test expand/collapse, driver points sum to team total, percentage display
 
 **Checkpoint**: Constructor drill-down complete. All 6 user stories are functional.
 
@@ -178,14 +178,14 @@
 
 **Purpose**: Integration testing, observability, and deployment readiness
 
-- [ ] T062 [P] Verify structured JSON logging in `ChampionshipIngester` — log session_key, data type, row count, duration on each ingestion; log errors with context
-- [ ] T063 [P] Validate no direct frontend calls to OpenF1 — update `frontend/tests/integration/network_boundary.test.ts` to cover new standings API client functions
-- [ ] T064 Run backfill for 2026 completed sessions: `go run cmd/backfill/main.go --season=2026 --championship`
-- [ ] T065 [P] Run backfill for historical seasons: `--season=2025 --championship`, `--season=2024 --championship`, `--season=2023 --championship`
-- [ ] T066 Verify all backend tests pass: `cd backend && go test ./...`
-- [ ] T067 Verify all frontend tests pass: `cd frontend && npx vitest run`
-- [ ] T068 [P] Verify lint passes: `cd backend && golangci-lint run ./...` and `cd frontend && npx tsc --noEmit`
-- [ ] T069 Verify zero Hyprace references remain: `grep -ri "hyprace" --include='*.go' --include='*.ts' --include='*.tsx' --include='*.yaml' --include='*.yml' --include='*.json' --include='*.bicep' .` — must return no matches (satisfies SC-006)
+- [X] T062 [P] Verify structured JSON logging in `ChampionshipIngester` — log session_key, data type, row count, duration on each ingestion; log errors with context
+- [X] T063 [P] Validate no direct frontend calls to OpenF1 — update `frontend/tests/integration/network_boundary.test.ts` to cover new standings API client functions
+- [X] T064 Run backfill for 2026 completed sessions: `go run cmd/backfill/main.go --season=2026 --championship`
+- [X] T065 [P] Run backfill for historical seasons: `--season=2025 --championship`, `--season=2024 --championship`, `--season=2023 --championship`
+- [X] T066 Verify all backend tests pass: `cd backend && go test ./...`
+- [X] T067 Verify all frontend tests pass: `cd frontend && npx vitest run`
+- [X] T068 [P] Verify lint passes: `cd backend && golangci-lint run ./...` and `cd frontend && npx tsc --noEmit`
+- [X] T069 Verify zero Hyprace references remain: `grep -ri "hyprace" --include='*.go' --include='*.ts' --include='*.tsx' --include='*.yaml' --include='*.yml' --include='*.json' --include='*.bicep' .` — must return no matches (satisfies SC-006)
 
 **Checkpoint**: Feature is complete, tested, and deployment-ready.
 
