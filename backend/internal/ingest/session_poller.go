@@ -47,15 +47,22 @@ const SessionSchemaVersion = 3
 // publish official final results (penalties, classification changes, etc.).
 const finalizationBuffer = 2 * time.Hour
 
+// ChampionshipHook is called after a Race or Sprint session is finalized
+// to ingest championship data from OpenF1.
+type ChampionshipHook interface {
+	IngestSession(ctx context.Context, season, sessionKey, meetingKey int) error
+}
+
 // SessionPoller polls the OpenF1 sessions, session_result, drivers, and laps
 // endpoints, transforms the data, and upserts session metadata + per-driver
 // results into the SessionRepository.
 type SessionPoller struct {
-	repo         storage.SessionRepository
-	client       *http.Client
-	interval     time.Duration
-	logger       *slog.Logger
-	forceRefresh bool
+	repo             storage.SessionRepository
+	client           *http.Client
+	interval         time.Duration
+	logger           *slog.Logger
+	forceRefresh     bool
+	championshipHook ChampionshipHook
 
 	mu       sync.Mutex
 	lastPoll time.Time
@@ -77,6 +84,12 @@ func NewSessionPoller(repo storage.SessionRepository, logger *slog.Logger) *Sess
 		logger:       logger,
 		forceRefresh: isTruthy(os.Getenv("INGEST_FORCE_REFRESH_SESSIONS")),
 	}
+}
+
+// SetChampionshipHook registers a hook that is called after Race or Sprint
+// sessions are finalized, to ingest championship standings data.
+func (p *SessionPoller) SetChampionshipHook(hook ChampionshipHook) {
+	p.championshipHook = hook
 }
 
 func isTruthy(v string) bool {
@@ -238,6 +251,18 @@ func (p *SessionPoller) poll(ctx context.Context, season int) {
 				p.logger.Error("session finalize upsert failed", "session_id", sess.ID, "error", err)
 			} else {
 				p.logger.Info("session finalized", "session_id", sess.ID, "session_key", raw.SessionKey)
+
+				// Trigger championship ingestion for Race and Sprint sessions.
+				if p.championshipHook != nil && (sessionType == domain.SessionRace || sessionType == domain.SessionSprint) {
+					select {
+					case <-ctx.Done():
+						return
+					case <-time.After(500 * time.Millisecond):
+					}
+					if err := p.championshipHook.IngestSession(ctx, season, raw.SessionKey, raw.MeetingKey); err != nil {
+						p.logger.Error("championship ingestion failed", "session_key", raw.SessionKey, "error", err)
+					}
+				}
 			}
 		}
 	}

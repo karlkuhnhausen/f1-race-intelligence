@@ -21,67 +21,126 @@ type mockStandingsRepo struct {
 }
 
 func (m *mockStandingsRepo) UpsertDriverStandings(_ context.Context, rows []storage.DriverStandingRow) error {
-	m.drivers = append(m.drivers, rows...)
 	return nil
 }
 
-func (m *mockStandingsRepo) GetDriverStandings(_ context.Context, season int) ([]storage.DriverStandingRow, error) {
-	var result []storage.DriverStandingRow
-	for _, r := range m.drivers {
-		if r.Season == season {
-			result = append(result, r)
-		}
-	}
-	return result, nil
+func (m *mockStandingsRepo) GetDriverStandings(_ context.Context, _ int) ([]storage.DriverStandingRow, error) {
+	return m.drivers, nil
 }
 
 func (m *mockStandingsRepo) UpsertConstructorStandings(_ context.Context, rows []storage.ConstructorStandingRow) error {
-	m.constructors = append(m.constructors, rows...)
 	return nil
 }
 
-func (m *mockStandingsRepo) GetConstructorStandings(_ context.Context, season int) ([]storage.ConstructorStandingRow, error) {
-	var result []storage.ConstructorStandingRow
-	for _, r := range m.constructors {
-		if r.Season == season {
-			result = append(result, r)
-		}
-	}
-	return result, nil
+func (m *mockStandingsRepo) GetConstructorStandings(_ context.Context, _ int) ([]storage.ConstructorStandingRow, error) {
+	return m.constructors, nil
 }
 
-func seedDriverStandings() []storage.DriverStandingRow {
-	now := time.Now().UTC()
-	return []storage.DriverStandingRow{
-		{ID: "d-2026-1", Season: 2026, Position: 1, DriverName: "Max Verstappen", TeamName: "Red Bull Racing", Points: 119, Wins: 4, DataAsOfUTC: now, Source: "hyprace"},
-		{ID: "d-2026-2", Season: 2026, Position: 2, DriverName: "Lando Norris", TeamName: "McLaren", Points: 98, Wins: 2, DataAsOfUTC: now, Source: "hyprace"},
-		{ID: "d-2026-3", Season: 2026, Position: 3, DriverName: "Charles Leclerc", TeamName: "Ferrari", Points: 87, Wins: 1, DataAsOfUTC: now, Source: "hyprace"},
-	}
+// mockChampionshipRepo implements storage.ChampionshipRepository for testing.
+type mockChampionshipRepo struct {
+	driverSnapshots []storage.DriverChampionshipSnapshot
+	teamSnapshots   []storage.TeamChampionshipSnapshot
+	sessionResults  []storage.ChampionshipSessionResult
+	startingGrid    []storage.StartingGridEntry
 }
 
-func seedConstructorStandings() []storage.ConstructorStandingRow {
+func (m *mockChampionshipRepo) UpsertDriverChampionshipSnapshots(_ context.Context, s []storage.DriverChampionshipSnapshot) error {
+	return nil
+}
+func (m *mockChampionshipRepo) GetDriverChampionshipSnapshots(_ context.Context, _ int) ([]storage.DriverChampionshipSnapshot, error) {
+	return m.driverSnapshots, nil
+}
+func (m *mockChampionshipRepo) UpsertTeamChampionshipSnapshots(_ context.Context, s []storage.TeamChampionshipSnapshot) error {
+	return nil
+}
+func (m *mockChampionshipRepo) GetTeamChampionshipSnapshots(_ context.Context, _ int) ([]storage.TeamChampionshipSnapshot, error) {
+	return m.teamSnapshots, nil
+}
+func (m *mockChampionshipRepo) UpsertChampionshipSessionResults(_ context.Context, r []storage.ChampionshipSessionResult) error {
+	return nil
+}
+func (m *mockChampionshipRepo) GetChampionshipSessionResults(_ context.Context, _ int) ([]storage.ChampionshipSessionResult, error) {
+	return m.sessionResults, nil
+}
+func (m *mockChampionshipRepo) UpsertStartingGridEntries(_ context.Context, e []storage.StartingGridEntry) error {
+	return nil
+}
+func (m *mockChampionshipRepo) GetStartingGridEntries(_ context.Context, _ int) ([]storage.StartingGridEntry, error) {
+	return m.startingGrid, nil
+}
+
+// mockSessionRepoForStandings implements storage.SessionRepository for identity resolution.
+type mockSessionRepoForStandings struct {
+	results []storage.SessionResult
+}
+
+func (m *mockSessionRepoForStandings) UpsertSession(_ context.Context, _ storage.Session) error {
+	return nil
+}
+func (m *mockSessionRepoForStandings) UpsertSessionResult(_ context.Context, _ storage.SessionResult) error {
+	return nil
+}
+func (m *mockSessionRepoForStandings) GetSessionsByRound(_ context.Context, _, _ int) ([]storage.Session, error) {
+	return nil, nil
+}
+func (m *mockSessionRepoForStandings) GetSessionResultsByRound(_ context.Context, _, _ int) ([]storage.SessionResult, error) {
+	return nil, nil
+}
+func (m *mockSessionRepoForStandings) GetSessionResultsBySeason(_ context.Context, _ int) ([]storage.SessionResult, error) {
+	return m.results, nil
+}
+func (m *mockSessionRepoForStandings) GetFinalizedSessionKeys(_ context.Context, _ int) (map[int]int, error) {
+	return nil, nil
+}
+func (m *mockSessionRepoForStandings) GetFinalizedSessions(_ context.Context, _ int) ([]storage.Session, error) {
+	return nil, nil
+}
+func (m *mockSessionRepoForStandings) DeleteSession(_ context.Context, _ int, _ string) error {
+	return nil
+}
+func (m *mockSessionRepoForStandings) DeleteSessionResultsBySessionType(_ context.Context, _, _ int, _ string) error {
+	return nil
+}
+
+func newTestService() (*standings.Service, *mockChampionshipRepo, *mockSessionRepoForStandings) {
 	now := time.Now().UTC()
-	return []storage.ConstructorStandingRow{
-		{ID: "c-2026-1", Season: 2026, Position: 1, TeamName: "Red Bull Racing", Points: 198, DataAsOfUTC: now, Source: "hyprace"},
-		{ID: "c-2026-2", Season: 2026, Position: 2, TeamName: "McLaren", Points: 165, DataAsOfUTC: now, Source: "hyprace"},
-		{ID: "c-2026-3", Season: 2026, Position: 3, TeamName: "Ferrari", Points: 150, DataAsOfUTC: now, Source: "hyprace"},
+	champRepo := &mockChampionshipRepo{
+		driverSnapshots: []storage.DriverChampionshipSnapshot{
+			{Season: 2025, SessionKey: 9000, DriverNumber: 1, PositionCurrent: 1, PointsCurrent: 119, DataAsOfUTC: now},
+			{Season: 2025, SessionKey: 9000, DriverNumber: 4, PositionCurrent: 2, PointsCurrent: 98, DataAsOfUTC: now},
+			{Season: 2025, SessionKey: 9000, DriverNumber: 16, PositionCurrent: 3, PointsCurrent: 87, DataAsOfUTC: now},
+		},
+		teamSnapshots: []storage.TeamChampionshipSnapshot{
+			{Season: 2025, SessionKey: 9000, TeamSlug: "red-bull-racing", TeamName: "Red Bull Racing", PositionCurrent: 1, PointsCurrent: 198, DataAsOfUTC: now},
+			{Season: 2025, SessionKey: 9000, TeamSlug: "mclaren", TeamName: "McLaren", PositionCurrent: 2, PointsCurrent: 165, DataAsOfUTC: now},
+			{Season: 2025, SessionKey: 9000, TeamSlug: "ferrari", TeamName: "Ferrari", PositionCurrent: 3, PointsCurrent: 150, DataAsOfUTC: now},
+		},
+		sessionResults: []storage.ChampionshipSessionResult{},
+		startingGrid:   []storage.StartingGridEntry{},
 	}
+	sessionRepo := &mockSessionRepoForStandings{
+		results: []storage.SessionResult{
+			{Season: 2025, DriverNumber: 1, DriverName: "Max Verstappen", TeamName: "Red Bull Racing"},
+			{Season: 2025, DriverNumber: 4, DriverName: "Lando Norris", TeamName: "McLaren"},
+			{Season: 2025, DriverNumber: 16, DriverName: "Charles Leclerc", TeamName: "Ferrari"},
+		},
+	}
+	standingsRepo := &mockStandingsRepo{}
+	svc := standings.NewService(standingsRepo, champRepo, sessionRepo)
+	return svc, champRepo, sessionRepo
 }
 
 func TestStandingsDriversContractReturnsRows(t *testing.T) {
-	repo := &mockStandingsRepo{
-		drivers: seedDriverStandings(),
-	}
-	svc := standings.NewService(repo)
+	svc, _, _ := newTestService()
 	handler := standings.NewHandler(svc, slog.Default())
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/standings/drivers?year=2026", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/standings/drivers?year=2025", nil)
 	rec := httptest.NewRecorder()
 
 	handler.GetDrivers(rec, req)
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d", rec.Code)
+		t.Fatalf("expected 200, got %d; body: %s", rec.Code, rec.Body.String())
 	}
 
 	var resp standings.DriversStandingsResponse
@@ -89,8 +148,8 @@ func TestStandingsDriversContractReturnsRows(t *testing.T) {
 		t.Fatalf("decode: %v", err)
 	}
 
-	if resp.Year != 2026 {
-		t.Errorf("expected year 2026, got %d", resp.Year)
+	if resp.Year != 2025 {
+		t.Errorf("expected year 2025, got %d", resp.Year)
 	}
 
 	if len(resp.Rows) != 3 {
@@ -110,11 +169,10 @@ func TestStandingsDriversContractReturnsRows(t *testing.T) {
 }
 
 func TestStandingsDriversContractRequiredFields(t *testing.T) {
-	repo := &mockStandingsRepo{drivers: seedDriverStandings()}
-	svc := standings.NewService(repo)
+	svc, _, _ := newTestService()
 	handler := standings.NewHandler(svc, slog.Default())
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/standings/drivers?year=2026", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/standings/drivers?year=2025", nil)
 	rec := httptest.NewRecorder()
 
 	handler.GetDrivers(rec, req)
@@ -146,19 +204,16 @@ func TestStandingsDriversContractRequiredFields(t *testing.T) {
 }
 
 func TestStandingsConstructorsContractReturnsRows(t *testing.T) {
-	repo := &mockStandingsRepo{
-		constructors: seedConstructorStandings(),
-	}
-	svc := standings.NewService(repo)
+	svc, _, _ := newTestService()
 	handler := standings.NewHandler(svc, slog.Default())
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/standings/constructors?year=2026", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/standings/constructors?year=2025", nil)
 	rec := httptest.NewRecorder()
 
 	handler.GetConstructors(rec, req)
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d", rec.Code)
+		t.Fatalf("expected 200, got %d; body: %s", rec.Code, rec.Body.String())
 	}
 
 	var resp standings.ConstructorsStandingsResponse
@@ -166,8 +221,8 @@ func TestStandingsConstructorsContractReturnsRows(t *testing.T) {
 		t.Fatalf("decode: %v", err)
 	}
 
-	if resp.Year != 2026 {
-		t.Errorf("expected year 2026, got %d", resp.Year)
+	if resp.Year != 2025 {
+		t.Errorf("expected year 2025, got %d", resp.Year)
 	}
 
 	if len(resp.Rows) != 3 {
@@ -184,11 +239,10 @@ func TestStandingsConstructorsContractReturnsRows(t *testing.T) {
 }
 
 func TestStandingsConstructorsContractRequiredFields(t *testing.T) {
-	repo := &mockStandingsRepo{constructors: seedConstructorStandings()}
-	svc := standings.NewService(repo)
+	svc, _, _ := newTestService()
 	handler := standings.NewHandler(svc, slog.Default())
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/standings/constructors?year=2026", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/standings/constructors?year=2025", nil)
 	rec := httptest.NewRecorder()
 
 	handler.GetConstructors(rec, req)
@@ -219,32 +273,31 @@ func TestStandingsConstructorsContractRequiredFields(t *testing.T) {
 	}
 }
 
-func TestStandingsDriversMissingYear(t *testing.T) {
-	repo := &mockStandingsRepo{}
-	svc := standings.NewService(repo)
+func TestStandingsDriversDefaultsToCurrentYear(t *testing.T) {
+	svc, _, _ := newTestService()
 	handler := standings.NewHandler(svc, slog.Default())
 
+	// No year parameter — should default to current year, not 400.
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/standings/drivers", nil)
 	rec := httptest.NewRecorder()
 
 	handler.GetDrivers(rec, req)
 
-	if rec.Code != http.StatusBadRequest {
-		t.Errorf("expected 400 for missing year, got %d", rec.Code)
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200 for missing year (defaults to current), got %d", rec.Code)
 	}
 }
 
-func TestStandingsConstructorsMissingYear(t *testing.T) {
-	repo := &mockStandingsRepo{}
-	svc := standings.NewService(repo)
+func TestStandingsDriversInvalidYear(t *testing.T) {
+	svc, _, _ := newTestService()
 	handler := standings.NewHandler(svc, slog.Default())
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/standings/constructors", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/standings/drivers?year=2020", nil)
 	rec := httptest.NewRecorder()
 
-	handler.GetConstructors(rec, req)
+	handler.GetDrivers(rec, req)
 
 	if rec.Code != http.StatusBadRequest {
-		t.Errorf("expected 400 for missing year, got %d", rec.Code)
+		t.Errorf("expected 400 for year before 2023, got %d", rec.Code)
 	}
 }

@@ -22,6 +22,7 @@ import (
 
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/ingest"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/observability"
+	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/standings"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/storage"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/storage/cosmos"
 )
@@ -32,6 +33,7 @@ func main() {
 	rateLimitMs := flag.Int("rate-limit-ms", 1000, "Delay between OpenF1 fetches in milliseconds")
 	analysisMode := flag.Bool("analysis", false, "Backfill session analysis data (positions, intervals, stints, pits, overtakes) for Race/Sprint sessions")
 	analysisOnly := flag.Bool("analysis-only", false, "Run only analysis backfill, skip race control backfill")
+	championshipMode := flag.Bool("championship", false, "Backfill championship standings, session results, and starting grids for Race/Sprint sessions")
 	sessionsFlag := flag.String("sessions", "", "Explicit session mappings: round:session_key:type,... (e.g. 1:11234:race,2:11245:race)")
 	deleteAnalysis := flag.String("delete-analysis", "", "Delete analysis data for round:type pairs (e.g. 4:race,5:race)")
 	flag.Parse()
@@ -177,6 +179,11 @@ func main() {
 		} else {
 			backfillAnalysis(ctx, client, client, sessions, httpClient, delay, *dryRun, logger)
 		}
+	}
+
+	// --- Championship backfill (Feature 007) ---
+	if *championshipMode {
+		backfillChampionship(ctx, client, sessions, delay, *dryRun, *season, logger)
 	}
 }
 
@@ -526,4 +533,69 @@ func backfillAnalysisExplicit(
 	if aUpdated > 0 {
 		fmt.Println("Backfill explicit complete.")
 	}
+}
+
+func backfillChampionship(
+	ctx context.Context,
+	client *cosmos.Client,
+	sessions []storage.Session,
+	delay time.Duration,
+	dryRun bool,
+	season int,
+	logger *slog.Logger,
+) {
+	// Filter to Race and Sprint sessions only
+	var champSessions []storage.Session
+	for _, sess := range sessions {
+		if sess.SessionType == "race" || sess.SessionType == "sprint" {
+			champSessions = append(champSessions, sess)
+		}
+	}
+
+	logger.Info("backfill-championship: starting",
+		"season", season,
+		"total_race_sprint_sessions", len(champSessions),
+		"dry_run", dryRun,
+	)
+
+	ingester := standings.NewChampionshipIngester(client, logger)
+	updated, failed := 0, 0
+
+	for _, sess := range champSessions {
+		logger.Info("backfill-championship: processing",
+			"session_key", sess.SessionKey,
+			"meeting_key", sess.MeetingKey,
+			"round", sess.Round,
+			"session_type", sess.SessionType,
+		)
+
+		if dryRun {
+			logger.Info("backfill-championship: dry-run — would ingest",
+				"session_key", sess.SessionKey,
+				"outcome", "would-update",
+			)
+			updated++
+			time.Sleep(delay)
+			continue
+		}
+
+		if err := ingester.IngestSession(ctx, season, sess.SessionKey, sess.MeetingKey); err != nil {
+			logger.Warn("backfill-championship: ingestion failed",
+				"session_key", sess.SessionKey,
+				"error", err.Error(),
+				"outcome", "failed",
+			)
+			failed++
+		} else {
+			updated++
+		}
+		time.Sleep(delay)
+	}
+
+	logger.Info("backfill-championship: complete",
+		"season", season,
+		"updated", updated,
+		"failed", failed,
+		"dry_run", dryRun,
+	)
 }

@@ -7,6 +7,11 @@ export interface StandingsRow {
   constructorId: string;
   points: number;
   wins?: number;
+  podiums?: number;
+  dnfs?: number;
+  poles?: number;
+  /** Direct team color from API (hex without #). Falls back to constructorId lookup. */
+  teamColor?: string;
 }
 
 export interface StandingsTableProps {
@@ -15,7 +20,7 @@ export interface StandingsTableProps {
   /** Ordered rows of standings data */
   rows: StandingsRow[];
   /** Column configuration — which optional columns to show */
-  columns?: ("wins")[];
+  columns?: ("wins" | "podiums" | "dnfs" | "poles")[];
   /** Optional className passthrough */
   className?: string;
   /**
@@ -36,7 +41,10 @@ export default function StandingsTable({
   nameLabel = "Driver",
 }: StandingsTableProps) {
   const showWins = columns.includes("wins");
-  const colCount = 3 + (showWins ? 1 : 0);
+  const showPodiums = columns.includes("podiums");
+  const showDNFs = columns.includes("dnfs");
+  const showPoles = columns.includes("poles");
+  const colCount = 3 + [showWins, showPodiums, showDNFs, showPoles].filter(Boolean).length;
 
   return (
     <div
@@ -58,11 +66,16 @@ export default function StandingsTable({
             <th className={headerCellClass}>{nameLabel}</th>
             <th className={headerCellClass}>Points</th>
             {showWins && <th className={headerCellClass}>Wins</th>}
+            {showPodiums && <th className={headerCellClass}>Podiums</th>}
+            {showDNFs && <th className={headerCellClass}>DNFs</th>}
+            {showPoles && <th className={headerCellClass}>Poles</th>}
           </tr>
         </thead>
         <tbody>
           {rows.map((row, idx) => {
-            const teamColor = getTeamColor(row.constructorId);
+            const teamColor = row.teamColor
+              ? `#${row.teamColor}`
+              : getTeamColor(row.constructorId);
             return (
               <tr
                 key={`${row.position}-${row.name}`}
@@ -85,6 +98,21 @@ export default function StandingsTable({
                 {showWins && (
                   <td className="px-4 py-3 font-mono text-muted-foreground">
                     {row.wins ?? 0}
+                  </td>
+                )}
+                {showPodiums && (
+                  <td className="px-4 py-3 font-mono text-muted-foreground">
+                    {row.podiums ?? 0}
+                  </td>
+                )}
+                {showDNFs && (
+                  <td className="px-4 py-3 font-mono text-muted-foreground">
+                    {row.dnfs ?? 0}
+                  </td>
+                )}
+                {showPoles && (
+                  <td className="px-4 py-3 font-mono text-muted-foreground">
+                    {row.poles ?? 0}
                   </td>
                 )}
               </tr>
