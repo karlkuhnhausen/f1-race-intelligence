@@ -43,6 +43,8 @@
         "git push": true,
         "az": true,
         "cp": true,
-        "gofmt": true
+        "gofmt": true,
+        "kubectl exec": true,
+        "kubectl get": true
     }
 }
