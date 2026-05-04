@@ -231,8 +231,9 @@ func TestGetCalendar_PodiumEnrichment(t *testing.T) {
 				Status string
 				Podium int
 			}{r.Round, r.Status, len(r.Podium)}
+			// Miami has no race results in this test, so podium should be empty.
 			if len(r.Podium) != 0 {
-				t.Errorf("upcoming Miami should have empty podium, got %d entries", len(r.Podium))
+				t.Errorf("Miami (no race results) should have empty podium, got %d entries", len(r.Podium))
 			}
 		}
 	}
@@ -316,5 +317,63 @@ func TestGetCalendar_PodiumRunningTotal(t *testing.T) {
 	}
 	if r2.Podium[2].DriverAcronym != "NOR" || r2.Podium[2].SeasonPoints != 15 {
 		t.Errorf("Round 2 P3: got %s %.0fpts, want NOR 15pts", r2.Podium[2].DriverAcronym, r2.Podium[2].SeasonPoints)
+	}
+}
+
+// TestGetCalendar_PodiumShownDuringActiveWeekend verifies that a round whose
+// meeting end date is still in the future (status="scheduled") gets podium
+// enrichment if race results already exist. This covers the Miami GP scenario:
+// the race session finishes on Sunday but the meeting end is start+3 days.
+func TestGetCalendar_PodiumShownDuringActiveWeekend(t *testing.T) {
+	// Clock: Sunday evening — race is done but meeting end is Monday.
+	now := time.Date(2026, 5, 3, 22, 0, 0, 0, time.UTC)
+
+	meetings := []storage.RaceMeeting{
+		{
+			ID: "2026-05", Season: 2026, Round: 5,
+			RaceName:         "Miami Grand Prix",
+			StartDatetimeUTC: time.Date(2026, 5, 2, 19, 0, 0, 0, time.UTC),
+			EndDatetimeUTC:   time.Date(2026, 5, 5, 19, 0, 0, 0, time.UTC), // still in the future
+		},
+	}
+
+	pts := func(v float64) *float64 { return &v }
+	results := map[int][]storage.SessionResult{
+		5: {
+			{Round: 5, SessionType: "race", Position: 1, DriverNumber: 1, DriverAcronym: "VER", DriverName: "Max Verstappen", TeamName: "Red Bull Racing", Points: pts(25)},
+			{Round: 5, SessionType: "race", Position: 2, DriverNumber: 44, DriverAcronym: "HAM", DriverName: "Lewis Hamilton", TeamName: "Ferrari", Points: pts(18)},
+			{Round: 5, SessionType: "race", Position: 3, DriverNumber: 4, DriverAcronym: "NOR", DriverName: "Lando Norris", TeamName: "McLaren", Points: pts(15)},
+		},
+	}
+
+	calRepo := &fakeCalendarRepo{meetings: meetings}
+	sessRepo := &fakeSessionRepoWithResults{resultsByRound: results}
+	svc := calendar.NewServiceWithSessionsAndClock(calRepo, sessRepo, func() time.Time { return now })
+
+	resp, err := svc.GetCalendar(context.Background(), 2026)
+	if err != nil {
+		t.Fatalf("GetCalendar returned error: %v", err)
+	}
+	if len(resp.Rounds) != 1 {
+		t.Fatalf("expected 1 round, got %d", len(resp.Rounds))
+	}
+
+	r := resp.Rounds[0]
+	// Meeting end is in the future, so status remains "scheduled".
+	if r.Status != "scheduled" {
+		t.Errorf("status = %q, want scheduled (weekend still active)", r.Status)
+	}
+	// But podium should still be populated from race results.
+	if len(r.Podium) != 3 {
+		t.Fatalf("podium length = %d, want 3 (race results exist)", len(r.Podium))
+	}
+	if r.Podium[0].DriverAcronym != "VER" {
+		t.Errorf("P1 = %s, want VER", r.Podium[0].DriverAcronym)
+	}
+	if r.Podium[1].DriverAcronym != "HAM" {
+		t.Errorf("P2 = %s, want HAM", r.Podium[1].DriverAcronym)
+	}
+	if r.Podium[2].DriverAcronym != "NOR" {
+		t.Errorf("P3 = %s, want NOR", r.Podium[2].DriverAcronym)
 	}
 }
