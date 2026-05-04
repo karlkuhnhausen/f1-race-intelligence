@@ -73,3 +73,45 @@ func (h *Handler) GetConstructors(w http.ResponseWriter, r *http.Request) {
 		h.logger.Error("constructors standings encode error", "error", err)
 	}
 }
+
+// GetDriversProgression handles GET /api/v1/standings/drivers/progression?year=YYYY.
+func (h *Handler) GetDriversProgression(w http.ResponseWriter, r *http.Request) {
+	year, ok := parseYear(r)
+	if !ok {
+		http.Error(w, `{"error":"year must be between 2023 and the current year"}`, http.StatusBadRequest)
+		return
+	}
+
+	resp, err := h.service.GetDriverProgression(r.Context(), year)
+	if err != nil {
+		h.logger.Error("drivers progression error", "error", err, "year", year)
+		http.Error(w, `{"error":"internal server error"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		h.logger.Error("drivers progression encode error", "error", err)
+	}
+}
+
+// GetConstructorsProgression handles GET /api/v1/standings/constructors/progression?year=YYYY.
+func (h *Handler) GetConstructorsProgression(w http.ResponseWriter, r *http.Request) {
+	year, ok := parseYear(r)
+	if !ok {
+		http.Error(w, `{"error":"year must be between 2023 and the current year"}`, http.StatusBadRequest)
+		return
+	}
+
+	resp, err := h.service.GetConstructorProgression(r.Context(), year)
+	if err != nil {
+		h.logger.Error("constructors progression error", "error", err, "year", year)
+		http.Error(w, `{"error":"internal server error"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		h.logger.Error("constructors progression encode error", "error", err)
+	}
+}

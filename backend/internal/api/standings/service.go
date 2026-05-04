@@ -2,6 +2,7 @@ package standings
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"time"
 
@@ -172,5 +173,138 @@ func (s *Service) GetConstructors(ctx context.Context, season int) (*Constructor
 		Year:        season,
 		DataAsOfUTC: latestDataAsOf,
 		Rows:        dtos,
+	}, nil
+}
+
+// GetDriverProgression returns per-round cumulative points for each driver.
+func (s *Service) GetDriverProgression(ctx context.Context, season int) (*DriversProgressionResponse, error) {
+	snapshots, err := s.championshipRepo.GetDriverChampionshipSnapshots(ctx, season)
+	if err != nil {
+		return nil, err
+	}
+
+	// Collect unique session keys (each represents a round) and sort them.
+	sessionKeySet := make(map[int]struct{})
+	for _, snap := range snapshots {
+		sessionKeySet[snap.SessionKey] = struct{}{}
+	}
+	sessionKeys := make([]int, 0, len(sessionKeySet))
+	for sk := range sessionKeySet {
+		sessionKeys = append(sessionKeys, sk)
+	}
+	sort.Ints(sessionKeys)
+
+	rounds := make([]string, len(sessionKeys))
+	skIndex := make(map[int]int)
+	for i, sk := range sessionKeys {
+		rounds[i] = fmt.Sprintf("Round %d", i+1)
+		skIndex[sk] = i
+	}
+
+	identities, err := s.resolveDriverIdentities(ctx, season)
+	if err != nil {
+		return nil, err
+	}
+
+	type driverData struct {
+		driverNum int
+		points    []int
+	}
+	byDriver := make(map[int]*driverData)
+	for _, snap := range snapshots {
+		dd, ok := byDriver[snap.DriverNumber]
+		if !ok {
+			dd = &driverData{
+				driverNum: snap.DriverNumber,
+				points:    make([]int, len(sessionKeys)),
+			}
+			byDriver[snap.DriverNumber] = dd
+		}
+		dd.points[skIndex[snap.SessionKey]] = int(snap.PointsCurrent)
+	}
+
+	entries := make([]DriverProgressionEntry, 0, len(byDriver))
+	for driverNum, dd := range byDriver {
+		id := identities[driverNum]
+		entries = append(entries, DriverProgressionEntry{
+			DriverNumber:  driverNum,
+			DriverName:    id.DriverName,
+			TeamName:      id.TeamName,
+			TeamColor:     id.TeamColor,
+			PointsByRound: dd.points,
+		})
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		lastI := entries[i].PointsByRound[len(entries[i].PointsByRound)-1]
+		lastJ := entries[j].PointsByRound[len(entries[j].PointsByRound)-1]
+		return lastI > lastJ
+	})
+
+	return &DriversProgressionResponse{
+		Year:    season,
+		Rounds:  rounds,
+		Drivers: entries,
+	}, nil
+}
+
+// GetConstructorProgression returns per-round cumulative points for each team.
+func (s *Service) GetConstructorProgression(ctx context.Context, season int) (*ConstructorsProgressionResponse, error) {
+	snapshots, err := s.championshipRepo.GetTeamChampionshipSnapshots(ctx, season)
+	if err != nil {
+		return nil, err
+	}
+
+	sessionKeySet := make(map[int]struct{})
+	for _, snap := range snapshots {
+		sessionKeySet[snap.SessionKey] = struct{}{}
+	}
+	sessionKeys := make([]int, 0, len(sessionKeySet))
+	for sk := range sessionKeySet {
+		sessionKeys = append(sessionKeys, sk)
+	}
+	sort.Ints(sessionKeys)
+
+	rounds := make([]string, len(sessionKeys))
+	skIndex := make(map[int]int)
+	for i, sk := range sessionKeys {
+		rounds[i] = fmt.Sprintf("Round %d", i+1)
+		skIndex[sk] = i
+	}
+
+	type teamData struct {
+		teamName string
+		points   []int
+	}
+	byTeam := make(map[string]*teamData)
+	for _, snap := range snapshots {
+		td, ok := byTeam[snap.TeamSlug]
+		if !ok {
+			td = &teamData{
+				teamName: snap.TeamName,
+				points:   make([]int, len(sessionKeys)),
+			}
+			byTeam[snap.TeamSlug] = td
+		}
+		td.points[skIndex[snap.SessionKey]] = int(snap.PointsCurrent)
+	}
+
+	entries := make([]TeamProgressionEntry, 0, len(byTeam))
+	for _, td := range byTeam {
+		entries = append(entries, TeamProgressionEntry{
+			TeamName:      td.teamName,
+			TeamColor:     "",
+			PointsByRound: td.points,
+		})
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		lastI := entries[i].PointsByRound[len(entries[i].PointsByRound)-1]
+		lastJ := entries[j].PointsByRound[len(entries[j].PointsByRound)-1]
+		return lastI > lastJ
+	})
+
+	return &ConstructorsProgressionResponse{
+		Year:   season,
+		Rounds: rounds,
+		Teams:  entries,
 	}, nil
 }

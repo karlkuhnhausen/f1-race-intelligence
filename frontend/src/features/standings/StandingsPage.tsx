@@ -2,14 +2,20 @@ import { useEffect, useState } from 'react';
 import {
   fetchDriverStandings,
   fetchConstructorStandings,
+  fetchDriverProgression,
+  fetchConstructorProgression,
   type DriverStandingDTO,
   type ConstructorStandingDTO,
+  type DriversProgressionResponse,
+  type ConstructorsProgressionResponse,
 } from './standingsApi';
 import StandingsTable, {
   type StandingsRow,
 } from '../design-system/StandingsTable';
+import ProgressionChart, { type ProgressionEntry } from './ProgressionChart';
 
 type Tab = 'drivers' | 'constructors';
+type ViewMode = 'table' | 'chart';
 
 function driversToRows(drivers: DriverStandingDTO[]): StandingsRow[] {
   return drivers.map((d) => ({
@@ -42,8 +48,11 @@ function constructorsToRows(
 
 export default function StandingsPage() {
   const [tab, setTab] = useState<Tab>('drivers');
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [drivers, setDrivers] = useState<DriverStandingDTO[]>([]);
   const [constructors, setConstructors] = useState<ConstructorStandingDTO[]>([]);
+  const [driverProgression, setDriverProgression] = useState<DriversProgressionResponse | null>(null);
+  const [constructorProgression, setConstructorProgression] = useState<ConstructorsProgressionResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,10 +62,17 @@ export default function StandingsPage() {
     setLoading(true);
     setError(null);
 
-    Promise.all([fetchDriverStandings(year), fetchConstructorStandings(year)])
-      .then(([d, c]) => {
+    Promise.all([
+      fetchDriverStandings(year),
+      fetchConstructorStandings(year),
+      fetchDriverProgression(year),
+      fetchConstructorProgression(year),
+    ])
+      .then(([d, c, dp, cp]) => {
         setDrivers(d.rows ?? []);
         setConstructors(c.rows ?? []);
+        setDriverProgression(dp);
+        setConstructorProgression(cp);
       })
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
@@ -93,22 +109,60 @@ export default function StandingsPage() {
         >
           Constructors
         </button>
+        <div className="ml-auto flex gap-1 items-center">
+          <button
+            type="button"
+            onClick={() => setViewMode('table')}
+            className={tabClass(viewMode === 'table')}
+          >
+            Table
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('chart')}
+            className={tabClass(viewMode === 'chart')}
+          >
+            Chart
+          </button>
+        </div>
       </div>
 
-      {tab === 'drivers' ? (
-        <StandingsTable
-          title="Drivers Championship"
-          nameLabel="Driver"
-          rows={driversToRows(drivers)}
-          columns={["wins", "podiums", "dnfs", "poles"]}
-        />
+      {viewMode === 'table' ? (
+        tab === 'drivers' ? (
+          <StandingsTable
+            title="Drivers Championship"
+            nameLabel="Driver"
+            rows={driversToRows(drivers)}
+            columns={["wins", "podiums", "dnfs", "poles"]}
+          />
+        ) : (
+          <StandingsTable
+            title="Constructors Championship"
+            nameLabel="Team"
+            rows={constructorsToRows(constructors)}
+            columns={["wins", "podiums", "dnfs"]}
+          />
+        )
       ) : (
-        <StandingsTable
-          title="Constructors Championship"
-          nameLabel="Team"
-          rows={constructorsToRows(constructors)}
-          columns={["wins", "podiums", "dnfs"]}
-        />
+        tab === 'drivers' && driverProgression ? (
+          <ProgressionChart
+            rounds={driverProgression.rounds}
+            entries={driverProgression.drivers.map((d): ProgressionEntry => ({
+              name: d.driver_name,
+              color: d.team_color,
+              pointsByRound: d.points_by_round,
+            }))}
+          />
+        ) : constructorProgression ? (
+          <ProgressionChart
+            rounds={constructorProgression.rounds}
+            entries={constructorProgression.teams.map((t): ProgressionEntry => ({
+              name: t.team_name,
+              color: t.team_color,
+              pointsByRound: t.points_by_round,
+            }))}
+          />
+        ) : null
       )}
     </section>
   );

@@ -29,6 +29,8 @@ const mockConstructors: ConstructorsStandingsResponse = {
 vi.mock('../../src/features/standings/standingsApi', () => ({
   fetchDriverStandings: vi.fn(() => Promise.resolve(mockDrivers)),
   fetchConstructorStandings: vi.fn(() => Promise.resolve(mockConstructors)),
+  fetchDriverProgression: vi.fn(() => Promise.resolve({ year: 2026, rounds: ['Round 1'], drivers: [] })),
+  fetchConstructorProgression: vi.fn(() => Promise.resolve({ year: 2026, rounds: ['Round 1'], teams: [] })),
 }));
 
 describe('StandingsPage', () => {
