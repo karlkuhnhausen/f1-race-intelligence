@@ -67,6 +67,10 @@ This project is being built in public, with architecture decisions and progress 
 - [Day 20: The Session Deep Dive — Telling the Story of a Race in Four Charts](docs/blog/day-20-session-deep-dive.md)
 - [Day 21: Analysis UX Polish — Making Four Charts Tell a Clearer Story](docs/blog/day-21-analysis-ux-polish.md)
 
+### Feature 7: Standings Overhaul
+
+- [Day 22: The Standings Overhaul — Real Data, Real Bugs, and a Credit Long Overdue](docs/blog/day-22-standings-overhaul.md)
+
 ## Architecture Direction
 
 - Go backend with Chi router
@@ -97,14 +101,18 @@ This project is being built in public, with architecture decisions and progress 
 
 **Feature 5 — Session Recap Strip (May 2, 2026):** Complete. All 32 tasks done. A horizontal strip of recap cards on the round detail page — one per completed session, showing winner, gap to P2, fastest lap, race-control events. Backend ingests `/v1/race_control` at session finalization, deduplicates events, and caches a `RaceControlSummary` in Cosmos. Rounds API derives recap DTOs at read time with lazy hydration for pre-existing sessions. Frontend renders `RaceRecapCard`, `QualifyingRecapCard`, and `PracticeRecapCard` in descending date order (race first). Calendar shows "Race Weekend" badge during active weekends. Backfill CLI at `cmd/backfill` populates historical sessions. PRs [#46](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/46), [#47](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/47).
 
-**Feature 6 — Session Deep Dive (May 3, 2026):** In progress. Four analysis charts per race/sprint session: Position Battle (lap-by-lap position changes as colored lines), Gap to Leader (time delta progression), Tire Strategy (compound swimlanes), and Pit Stops (timeline with duration-scaled dots). Backend fetches `/positions`, `/intervals`, `/stints`, `/pit`, and `/drivers` from OpenF1, aggregates per-lap, and stores typed analysis documents in Cosmos. Frontend renders with recharts, team-colored lines, and sorted tooltips. Data backfilled for Rounds 1-3. PR [#52](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/52).
+**Feature 6 — Session Deep Dive (May 3, 2026):** Complete. Four analysis charts per race/sprint session: Position Battle (lap-by-lap position changes as colored lines), Gap to Leader (time delta progression), Tire Strategy (compound swimlanes), and Pit Stops (timeline with duration-scaled dots). Backend fetches `/positions`, `/intervals`, `/stints`, `/pit`, and `/drivers` from OpenF1, aggregates per-lap, and stores typed analysis documents in Cosmos. Frontend renders with recharts, team-colored lines, and sorted tooltips. An in-process `AnalysisScheduler` goroutine auto-ingests new sessions within ~2 hours of each session ending. PR [#52](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/52).
+
+**Feature 7 — Standings Overhaul (May 4, 2026):** Complete (with known follow-up items). Removed the fictional Hyprace standings integration and replaced it with real OpenF1 championship data (`/v1/championship_drivers`, `/v1/championship_teams`). New `ChampionshipIngester` fetches standings snapshots, session results, and starting grids at each race/sprint finalization. New API endpoints serve progression data, head-to-head comparisons, and constructor driver breakdowns. Frontend gains year picker (2023–current), recharts-based progression charts, comparison panel, and expandable constructor rows. 68 tasks across 9 phases. PRs [#57](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/57), [#58](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/58), [#59](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/59), [#60](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/60).
+
+**Known Issues (May 4, 2026):** (1) Wins/podiums/DNFs/poles columns in standings show per-session values rather than cumulative season totals — root cause is incomplete 2026 backfill; fix requires running `--championship` backfill from inside AKS cluster. (2) OpenF1 API attribution is missing from the application UI — a footer credit linking to openf1.org needs to be added.
 
 - **Frontend**: http://f1raceintel.westus3.cloudapp.azure.com/
 - **API**: http://f1raceintel.westus3.cloudapp.azure.com/api/v1/calendar?year=2026
 - **Round Detail**: http://f1raceintel.westus3.cloudapp.azure.com/rounds/3?year=2026
 - **Race Analysis**: http://f1raceintel.westus3.cloudapp.azure.com/rounds/1/sessions/race/analysis
 - **Pipeline**: Fully green — lint → test → build → push → deploy
-- **Tests**: 149 passing (35 backend + 114 frontend)
+- **Tests**: 149 passing (35 backend + 114 frontend) — Feature 007 adds 5 new test files
 
 ## Why Spec-Driven Development
 
