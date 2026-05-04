@@ -48,7 +48,7 @@ func (s *Service) resolveDriverIdentities(ctx context.Context, season int) (map[
 		identities[r.DriverNumber] = driverIdentity{
 			DriverName: r.DriverName,
 			TeamName:   r.TeamName,
-			TeamColor:  "", // team_colour not in SessionResult; will resolve from analysis data
+			TeamColor:  "", // team_color not in SessionResult; will resolve from analysis data
 		}
 	}
 	return identities, nil
