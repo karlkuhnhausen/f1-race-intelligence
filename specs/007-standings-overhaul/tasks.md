@@ -43,7 +43,7 @@
 - [ ] T011 Add OpenF1 starting grid ingestion to `backend/internal/standings/championship_ingester.go`: fetch `/v1/starting_grid?meeting_key={meeting_key}` and transform to `StartingGrid` documents
 - [ ] T012 Extend session poller finalization hook in `backend/internal/ingest/session_poller.go` to trigger `ChampionshipIngester.IngestSession(ctx, sessionKey, meetingKey)` after Race and Sprint sessions are finalized
 - [ ] T013 Wire `ChampionshipIngester` instantiation in `backend/cmd/api/main.go` — inject into session poller
-- [ ] T014 [P] Add `--championship` flag to `backend/cmd/backfill/main.go` that iterates all completed Race and Sprint sessions for a given season and calls `ChampionshipIngester.IngestSession` for each with rate limiting (500ms between requests)
+- [ ] T014 [P] Add `--championship` flag to `backend/cmd/backfill/main.go` that iterates all completed Race and Sprint sessions for a given season and calls `ChampionshipIngester.IngestSession` for each with rate limiting (500ms between requests). **Note**: For historical seasons (2023–2025), also fetch and cache driver identity data from `/v1/drivers?session_key={key}` if not already present in Cosmos — joins in T018 depend on this data existing.
 - [ ] T015 [P] Create unit tests in `backend/tests/unit/championship_ingester_test.go` — test transformation of OpenF1 JSON responses to storage types, null handling for `position_start`/`points_start`, and team name resolution for null team names
 - [ ] T016 [P] Create unit tests in `backend/tests/unit/stats_aggregator_test.go` — test wins/podiums/DNFs/poles computation from mock session results and starting grids
 
@@ -185,6 +185,7 @@
 - [ ] T066 Verify all backend tests pass: `cd backend && go test ./...`
 - [ ] T067 Verify all frontend tests pass: `cd frontend && npx vitest run`
 - [ ] T068 [P] Verify lint passes: `cd backend && golangci-lint run ./...` and `cd frontend && npx tsc --noEmit`
+- [ ] T069 Verify zero Hyprace references remain: `grep -ri "hyprace" --include='*.go' --include='*.ts' --include='*.tsx' --include='*.yaml' --include='*.yml' --include='*.json' --include='*.bicep' .` — must return no matches (satisfies SC-006)
 
 **Checkpoint**: Feature is complete, tested, and deployment-ready.
 
@@ -193,17 +194,17 @@
 ## Dependencies
 
 ```
-Phase 1 (T001–T007) → Phase 2 (T008–T016) → Phase 3 (T017–T024) → Phase 4 (T025–T031)
+Phase 1 (T001–T007) → Phase 2 (T008–T016) → Phase 3 (T017–T024) ─┬→ Phase 4 (T025–T031) ─┐
+                                                                   │                       │
+                                                                   └→ Phase 5 (T032–T039) ─┤
+                                                                                            │
+                                                                   Phase 6 (T040–T045) ←───┘
                                                                          ↓
-                                                          Phase 5 (T032–T039) ←──┘
+                                                                   Phase 7 (T046–T053)
                                                                          ↓
-                                                          Phase 6 (T040–T045)
+                                                                   Phase 8 (T054–T061)
                                                                          ↓
-                                                          Phase 7 (T046–T053)
-                                                                         ↓
-                                                          Phase 8 (T054–T061)
-                                                                         ↓
-                                                          Phase 9 (T062–T068)
+                                                                   Phase 9 (T062–T069)
 ```
 
 **Story independence notes**:
@@ -233,6 +234,6 @@ Phase 1 (T001–T007) → Phase 2 (T008–T016) → Phase 3 (T017–T024) → Ph
 4. Phase 7–8: P3 stories (comparison + breakdown). Deploy both.
 5. Phase 9: Polish and verify production readiness.
 
-**Total tasks**: 68  
+**Total tasks**: 69  
 **Tasks per story**: US1: 8, US2: 7, US3: 8, US4: 6, US5: 8, US6: 8  
-**Setup/foundational**: 16, Polish: 7
+**Setup/foundational**: 16, Polish: 8
