@@ -52,6 +52,9 @@ func main() {
 
 		sessionPoller := ingest.NewSessionPoller(sessionRepo, logger)
 		go sessionPoller.Start(ctx, season)
+
+		analysisScheduler := ingest.NewAnalysisScheduler(sessionRepo, analysisRepo, logger)
+		go analysisScheduler.Start(ctx, season)
 	}
 
 	server := &http.Server{

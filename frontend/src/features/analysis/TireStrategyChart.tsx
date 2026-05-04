@@ -3,6 +3,8 @@ import type { Stint } from './analysisTypes';
 interface TireStrategyChartProps {
   stints: Stint[];
   totalLaps: number;
+  driverOrder?: Map<number, number>;
+  teamColors?: Map<number, string>;
 }
 
 const COMPOUND_COLORS: Record<string, string> = {
@@ -11,6 +13,7 @@ const COMPOUND_COLORS: Record<string, string> = {
   HARD: '#EBEBEB',
   INTERMEDIATE: '#43B02A',
   WET: '#0072C6',
+  UNKNOWN: '#555555',
 };
 
 /**
@@ -20,6 +23,8 @@ const COMPOUND_COLORS: Record<string, string> = {
 export default function TireStrategyChart({
   stints,
   totalLaps,
+  driverOrder,
+  teamColors,
 }: TireStrategyChartProps) {
   // Group stints by driver
   const byDriver = new Map<string, Stint[]>();
@@ -31,18 +36,34 @@ export default function TireStrategyChart({
     byDriver.get(key)!.push(stint);
   }
 
-  // Sort drivers by their first stint's driver_number for consistent ordering
+  // Sort drivers by finishing position (P1 at top) if driverOrder provided, else by number
   const drivers = Array.from(byDriver.entries()).sort((a, b) => {
+    if (driverOrder) {
+      const aPos = driverOrder.get(a[1][0]?.driver_number ?? 0) ?? 99;
+      const bPos = driverOrder.get(b[1][0]?.driver_number ?? 0) ?? 99;
+      return aPos - bPos;
+    }
     const aNum = a[1][0]?.driver_number ?? 0;
     const bNum = b[1][0]?.driver_number ?? 0;
     return aNum - bNum;
   });
 
+  // Generate X-axis ticks at every 5-lap interval
+  const xTicks: number[] = [1];
+  for (let t = 5; t <= totalLaps; t += 5) {
+    xTicks.push(t);
+  }
+  if (xTicks[xTicks.length - 1] !== totalLaps) {
+    xTicks.push(totalLaps);
+  }
+
   return (
-    <div className="w-full rounded-lg border border-border bg-surface p-4 overflow-x-auto">
+    <div className="w-full rounded-lg border border-border bg-surface p-4">
       {/* Legend */}
       <div className="flex gap-4 mb-4 text-xs">
-        {Object.entries(COMPOUND_COLORS).map(([compound, color]) => (
+        {Object.entries(COMPOUND_COLORS)
+          .filter(([compound]) => compound !== 'UNKNOWN')
+          .map(([compound, color]) => (
           <div key={compound} className="flex items-center gap-1">
             <div
               className="w-3 h-3 rounded-sm"
@@ -51,16 +72,23 @@ export default function TireStrategyChart({
             <span className="text-muted-foreground">{compound}</span>
           </div>
         ))}
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#555555' }} />
+          <span className="text-muted-foreground">UNKNOWN</span>
+        </div>
       </div>
 
       {/* Swimlane rows */}
       <div className="space-y-1">
         {drivers.map(([acronym, driverStints]) => (
           <div key={acronym} className="flex items-center gap-2">
-            <span className="w-10 text-xs font-mono text-muted-foreground text-right shrink-0">
+            <span
+              className="w-10 text-xs font-mono text-right shrink-0"
+              style={{ color: teamColors?.get(driverStints[0]?.driver_number ?? 0) ? `#${teamColors.get(driverStints[0]?.driver_number ?? 0)}` : '#8888aa' }}
+            >
               {acronym}
             </span>
-            <div className="flex-1 relative h-5 bg-muted/30 rounded-sm">
+            <div className="flex-1 relative h-5 bg-muted/30 rounded-sm min-w-0">
               {driverStints
                 .sort((a, b) => a.stint_number - b.stint_number)
                 .map((stint) => {
@@ -75,7 +103,7 @@ export default function TireStrategyChart({
                         left: `${left}%`,
                         width: `${width}%`,
                         backgroundColor:
-                          COMPOUND_COLORS[stint.compound] || '#666',
+                          COMPOUND_COLORS[stint.compound] || COMPOUND_COLORS['UNKNOWN'],
                       }}
                       title={`${stint.compound} (Laps ${stint.lap_start}–${stint.lap_end})`}
                     />
@@ -89,12 +117,16 @@ export default function TireStrategyChart({
       {/* Lap axis */}
       <div className="flex items-center gap-2 mt-2">
         <span className="w-10 shrink-0" />
-        <div className="flex-1 flex justify-between text-xs text-muted-foreground">
-          <span>1</span>
-          <span>{Math.round(totalLaps / 4)}</span>
-          <span>{Math.round(totalLaps / 2)}</span>
-          <span>{Math.round((totalLaps * 3) / 4)}</span>
-          <span>{totalLaps}</span>
+        <div className="flex-1 relative h-4 min-w-0">
+          {xTicks.map((tick) => (
+            <span
+              key={tick}
+              className="absolute -translate-x-1/2 text-xs"
+              style={{ left: `${((tick - 1) / (totalLaps - 1)) * 100}%`, color: '#ffffff' }}
+            >
+              {tick}
+            </span>
+          ))}
         </div>
       </div>
     </div>

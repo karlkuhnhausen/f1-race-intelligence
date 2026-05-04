@@ -7,6 +7,8 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
+  ReferenceDot,
+  Label,
 } from 'recharts';
 import type { PositionDriver, Overtake } from './analysisTypes';
 
@@ -14,46 +16,6 @@ interface PositionChartProps {
   positions: PositionDriver[];
   totalLaps: number;
   overtakes?: Overtake[];
-}
-
-interface TooltipEntry {
-  value?: number | null;
-  name?: string;
-  color?: string;
-  dataKey?: string | number;
-}
-
-/** Custom tooltip that lists drivers sorted by position (P1 first). */
-function PositionTooltip({ active, payload, label }: { active?: boolean; payload?: TooltipEntry[]; label?: string | number }) {
-  if (!active || !payload || payload.length === 0) return null;
-
-  const sorted = [...payload]
-    .filter((entry) => entry.value != null)
-    .sort((a, b) => (a.value as number) - (b.value as number));
-
-  return (
-    <div
-      style={{
-        backgroundColor: 'hsl(var(--surface))',
-        border: '1px solid hsl(var(--border))',
-        borderRadius: '6px',
-        padding: '8px 12px',
-        fontSize: '12px',
-      }}
-    >
-      <p style={{ color: 'hsl(var(--foreground))', marginBottom: 4, fontWeight: 600 }}>
-        Lap {label}
-      </p>
-      {sorted.map((entry) => (
-        <div key={entry.dataKey} style={{ display: 'flex', gap: 8, lineHeight: '1.5' }}>
-          <span style={{ color: 'hsl(var(--muted-foreground))', minWidth: 20, textAlign: 'right' }}>
-            P{entry.value}
-          </span>
-          <span style={{ color: entry.color }}>{entry.name}</span>
-        </div>
-      ))}
-    </div>
-  );
 }
 
 /**
@@ -82,36 +44,92 @@ export default function PositionChart({
     lapData.push(point);
   }
 
+  // Generate X-axis ticks at every 5-lap interval
+  const xTicks: number[] = [1];
+  for (let t = 5; t <= totalLaps; t += 5) {
+    xTicks.push(t);
+  }
+  if (xTicks[xTicks.length - 1] !== totalLaps) {
+    xTicks.push(totalLaps);
+  }
+
+  // Build finishing order: each driver's position on the last lap they appear in
+  const finishingOrder = positions.map((driver) => {
+    const lastLap = driver.laps.length > 0
+      ? driver.laps.reduce((a, b) => (b.lap > a.lap ? b : a))
+      : null;
+    return {
+      acronym: driver.driver_acronym,
+      position: lastLap?.position ?? 20,
+      color: `#${driver.team_colour || '888888'}`,
+    };
+  });
+
+  // Build starting grid: each driver's position on lap 1
+  const startingGrid = positions.map((driver) => {
+    const firstLap = driver.laps.find((l) => l.lap === 1)
+      ?? (driver.laps.length > 0 ? driver.laps.reduce((a, b) => (a.lap < b.lap ? a : b)) : null);
+    return {
+      acronym: driver.driver_acronym,
+      position: firstLap?.position ?? 20,
+      color: `#${driver.team_colour || '888888'}`,
+    };
+  });
+
   return (
     <div className="w-full rounded-lg border border-border bg-surface p-4">
       <ResponsiveContainer width="100%" height={500}>
         <LineChart
           data={lapData}
-          margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
+          margin={{ top: 10, right: 55, left: 55, bottom: 10 }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#2a2a38" />
           <XAxis
             dataKey="lap"
             type="number"
             domain={[1, totalLaps]}
-            label={{ value: 'Lap', position: 'insideBottom', offset: -5 }}
-            stroke="hsl(var(--muted-foreground))"
-            tick={{ fontSize: 11 }}
+            ticks={xTicks}
+            label={{ value: 'Lap', position: 'insideBottom', offset: -5, fill: '#ffffff' }}
+            stroke="#8888aa"
+            tick={{ fontSize: 11, fill: '#ffffff' }}
           />
           <YAxis
             reversed
             domain={[1, 20]}
-            label={{
-              value: 'Position',
-              angle: -90,
-              position: 'insideLeft',
-            }}
-            stroke="hsl(var(--muted-foreground))"
-            tick={{ fontSize: 11 }}
+            stroke="#2a2a38"
+            tick={false}
+            axisLine={false}
           />
-          <Tooltip content={<PositionTooltip />} />
+          <Tooltip
+            cursor={{ stroke: '#555', strokeDasharray: '3 3' }}
+            content={({ active, payload, label: lap }) => {
+              if (!active || !payload || payload.length === 0) return null;
+              const sorted = [...payload]
+                .filter((e) => e.value != null)
+                .sort((a, b) => (a.value as number) - (b.value as number));
+              return (
+                <div style={{
+                  backgroundColor: 'rgba(26, 26, 35, 0.85)',
+                  border: '1px solid #2a2a38',
+                  borderRadius: '6px',
+                  padding: '6px 10px',
+                  fontSize: '11px',
+                  backdropFilter: 'blur(4px)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                }}>
+                  <p style={{ color: '#ffffff', marginBottom: 3, fontWeight: 600 }}>Lap {lap}</p>
+                  {sorted.map((entry) => (
+                    <div key={String(entry.dataKey)} style={{ display: 'flex', gap: 6, lineHeight: '1.6' }}>
+                      <span style={{ color: '#999999', minWidth: 22, textAlign: 'right', fontWeight: 600 }}>P{entry.value}</span>
+                      <span style={{ color: entry.color, fontWeight: 600 }}>{entry.name}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            }}
+          />
           <Legend
-            wrapperStyle={{ fontSize: '11px' }}
+            wrapperStyle={{ fontSize: '11px', paddingTop: '16px' }}
           />
           {positions.map((driver) => (
             <Line
@@ -124,6 +142,50 @@ export default function PositionChart({
               strokeWidth={1.5}
               connectNulls={false}
             />
+          ))}
+          {finishingOrder.map((driver) => (
+            <ReferenceDot
+              key={`finish-${driver.acronym}`}
+              x={totalLaps}
+              y={driver.position}
+              r={0}
+            >
+              <Label
+                content={(props) => {
+                  const vb = (props as { viewBox?: { x?: number; y?: number } }).viewBox;
+                  const vx = vb?.x ?? 0;
+                  const vy = vb?.y ?? 0;
+                  return (
+                    <text y={vy} dominantBaseline="central" fontSize={10} fontWeight={600}>
+                      <tspan x={vx + 6} fill="#999999">{'P' + driver.position}</tspan>
+                      <tspan dx={2} fill={driver.color}>{driver.acronym}</tspan>
+                    </text>
+                  );
+                }}
+              />
+            </ReferenceDot>
+          ))}
+          {startingGrid.map((driver) => (
+            <ReferenceDot
+              key={`start-${driver.acronym}`}
+              x={1}
+              y={driver.position}
+              r={0}
+            >
+              <Label
+                content={(props) => {
+                  const vb = (props as { viewBox?: { x?: number; y?: number } }).viewBox;
+                  const vx = vb?.x ?? 0;
+                  const vy = vb?.y ?? 0;
+                  return (
+                    <text y={vy} dominantBaseline="central" fontSize={10} fontWeight={600}>
+                      <tspan x={vx - 55} fill="#999999">{'P' + driver.position}</tspan>
+                      <tspan dx={2} fill={driver.color}>{driver.acronym}</tspan>
+                    </text>
+                  );
+                }}
+              />
+            </ReferenceDot>
           ))}
         </LineChart>
       </ResponsiveContainer>
