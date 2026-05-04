@@ -58,6 +58,8 @@ func (s *Service) GetSessionAnalysis(ctx context.Context, season, round int, ses
 	}
 
 	// Map intervals
+	// NOTE: Intervals are NOT included in total_laps computation because OpenF1
+	// sometimes reports interval data beyond actual race distance.
 	for _, iv := range data.Intervals {
 		laps := make([]IntervalLapDTO, len(iv.Laps))
 		for i, l := range iv.Laps {
@@ -84,6 +86,9 @@ func (s *Service) GetSessionAnalysis(ctx context.Context, season, round int, ses
 			LapEnd:         s.LapEnd,
 			TireAgeAtStart: s.TireAgeAtStart,
 		})
+		if s.LapEnd > dto.TotalLaps {
+			dto.TotalLaps = s.LapEnd
+		}
 	}
 
 	// Map pits
@@ -96,6 +101,9 @@ func (s *Service) GetSessionAnalysis(ctx context.Context, season, round int, ses
 			PitDuration:   p.PitDuration,
 			StopDuration:  p.StopDuration,
 		})
+		if p.LapNumber > dto.TotalLaps {
+			dto.TotalLaps = p.LapNumber
+		}
 	}
 
 	// Map overtakes

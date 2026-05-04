@@ -3,6 +3,8 @@ import type { PitStop } from './analysisTypes';
 interface PitStopTimelineProps {
   pits: PitStop[];
   totalLaps: number;
+  driverOrder?: Map<number, number>;
+  teamColors?: Map<number, string>;
 }
 
 /**
@@ -12,6 +14,8 @@ interface PitStopTimelineProps {
 export default function PitStopTimeline({
   pits,
   totalLaps,
+  driverOrder,
+  teamColors,
 }: PitStopTimelineProps) {
   // Group by driver
   const byDriver = new Map<string, PitStop[]>();
@@ -23,36 +27,67 @@ export default function PitStopTimeline({
     byDriver.get(key)!.push(pit);
   }
 
+  // Sort drivers by finishing position (P1 at top) if driverOrder provided, else by number
   const drivers = Array.from(byDriver.entries()).sort((a, b) => {
+    if (driverOrder) {
+      const aPos = driverOrder.get(a[1][0]?.driver_number ?? 0) ?? 99;
+      const bPos = driverOrder.get(b[1][0]?.driver_number ?? 0) ?? 99;
+      return aPos - bPos;
+    }
     const aNum = a[1][0]?.driver_number ?? 0;
     const bNum = b[1][0]?.driver_number ?? 0;
     return aNum - bNum;
   });
 
-  // Find max stop duration for relative sizing
+  // Determine if stop_duration (crew time) is available for this session
+  const hasStopDuration = pits.some((p) => p.stop_duration != null && p.stop_duration > 0);
+  const slowThreshold = hasStopDuration ? 5 : 30;
+  const durationLabel = hasStopDuration ? 'Stop Duration' : 'Lane Duration';
+
+  // Find max duration for relative sizing
   const maxDuration = Math.max(
-    ...pits.map((p) => p.stop_duration || p.pit_duration),
+    ...pits.map((p) => hasStopDuration ? (p.stop_duration ?? p.pit_duration) : p.pit_duration),
     3,
   );
 
+  // Generate X-axis ticks at every 5-lap interval
+  const xTicks: number[] = [1];
+  for (let t = 5; t <= totalLaps; t += 5) {
+    xTicks.push(t);
+  }
+  if (xTicks[xTicks.length - 1] !== totalLaps) {
+    xTicks.push(totalLaps);
+  }
+
   return (
-    <div className="w-full rounded-lg border border-border bg-surface p-4 overflow-x-auto">
-      <div className="space-y-1">
-        {drivers.map(([acronym, driverPits]) => (
-          <div key={acronym} className="flex items-center gap-2">
-            <span className="w-10 text-xs font-mono text-muted-foreground text-right shrink-0">
+    <div className="w-full rounded-lg border border-border bg-surface p-4">
+      <div className="space-y-0">
+        {drivers.map(([acronym, driverPits], idx) => (
+          <div
+            key={acronym}
+            className={`flex items-center gap-2 py-0.5 ${idx < drivers.length - 1 ? 'border-b border-border/70' : ''}`}
+          >
+            <span
+              className="w-10 text-xs font-mono text-right shrink-0"
+              style={{ color: teamColors?.get(driverPits[0]?.driver_number ?? 0) ? `#${teamColors.get(driverPits[0]?.driver_number ?? 0)}` : '#8888aa' }}
+            >
               {acronym}
             </span>
-            <div className="flex-1 relative h-6 bg-muted/30 rounded-sm">
-              {driverPits.map((pit, idx) => {
+            <div className="flex-1 relative h-6 bg-muted/30 rounded-sm min-w-0">
+              {driverPits.map((pit, pidx) => {
                 const left = ((pit.lap - 1) / totalLaps) * 100;
-                const duration = pit.stop_duration || pit.pit_duration;
-                // Scale dot size: normal stops ~2-3s = small, slow stops >5s = large
-                const size = Math.max(8, Math.min(20, (duration / maxDuration) * 20));
-                const isSlow = duration > 5;
+                // Use crew stop time when available, otherwise lane time
+                const displayTime = hasStopDuration ? (pit.stop_duration ?? pit.pit_duration) : pit.pit_duration;
+                // Scale dot size based on displayed time
+                const size = Math.max(8, Math.min(20, (displayTime / maxDuration) * 20));
+                const isSlow = displayTime > slowThreshold;
+                // Tooltip: show primary time, include lane time as context when showing stop duration
+                const tooltip = hasStopDuration
+                  ? `${acronym} Lap ${pit.lap}: ${displayTime.toFixed(1)}s stop (Lane: ${pit.pit_duration.toFixed(1)}s)`
+                  : `${acronym} Lap ${pit.lap}: ${pit.pit_duration.toFixed(1)}s lane`;
                 return (
                   <div
-                    key={`${acronym}-${idx}`}
+                    key={`${acronym}-${pidx}`}
                     className={`absolute top-1/2 -translate-y-1/2 rounded-full ${
                       isSlow ? 'bg-accent-red' : 'bg-accent-cyan'
                     }`}
@@ -61,7 +96,7 @@ export default function PitStopTimeline({
                       width: `${size}px`,
                       height: `${size}px`,
                     }}
-                    title={`Lap ${pit.lap}: ${duration.toFixed(1)}s${pit.stop_duration ? ` (stop: ${pit.stop_duration.toFixed(1)}s)` : ''}`}
+                    title={tooltip}
                   />
                 );
               })}
@@ -73,12 +108,16 @@ export default function PitStopTimeline({
       {/* Lap axis */}
       <div className="flex items-center gap-2 mt-2">
         <span className="w-10 shrink-0" />
-        <div className="flex-1 flex justify-between text-xs text-muted-foreground">
-          <span>1</span>
-          <span>{Math.round(totalLaps / 4)}</span>
-          <span>{Math.round(totalLaps / 2)}</span>
-          <span>{Math.round((totalLaps * 3) / 4)}</span>
-          <span>{totalLaps}</span>
+        <div className="flex-1 relative h-4 min-w-0">
+          {xTicks.map((tick) => (
+            <span
+              key={tick}
+              className="absolute -translate-x-1/2 text-xs"
+              style={{ left: `${((tick - 1) / (totalLaps - 1)) * 100}%`, color: '#ffffff' }}
+            >
+              {tick}
+            </span>
+          ))}
         </div>
       </div>
 
@@ -86,11 +125,11 @@ export default function PitStopTimeline({
       <div className="flex gap-4 mt-3 text-xs">
         <div className="flex items-center gap-1">
           <div className="w-2 h-2 rounded-full bg-accent-cyan" />
-          <span className="text-muted-foreground">Normal stop (≤5s)</span>
+          <span className="text-muted-foreground">Normal {durationLabel.toLowerCase()} (≤{slowThreshold}s)</span>
         </div>
         <div className="flex items-center gap-1">
           <div className="w-2 h-2 rounded-full bg-accent-red" />
-          <span className="text-muted-foreground">Slow stop (&gt;5s)</span>
+          <span className="text-muted-foreground">Slow {durationLabel.toLowerCase()} (&gt;{slowThreshold}s)</span>
         </div>
       </div>
     </div>

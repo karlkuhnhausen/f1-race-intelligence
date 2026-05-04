@@ -139,13 +139,23 @@ function SessionCard({
     <div className="rounded-lg border border-border bg-surface p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="font-display text-xl font-bold tracking-tight">{session.session_name}</h3>
-        <time
-          dateTime={session.date_start_utc}
-          title={session.date_start_utc}
-          className="text-sm text-muted-foreground font-mono"
-        >
-          {formatLocalDateTime(session.date_start_utc)}
-        </time>
+        <div className="flex items-baseline gap-3">
+          <time
+            dateTime={session.date_start_utc}
+            title={session.date_start_utc}
+            className="text-sm text-muted-foreground font-mono"
+          >
+            {formatLocalDateTime(session.date_start_utc)}
+          </time>
+          {session.status === 'completed' && ANALYSIS_SESSION_TYPES.has(session.session_type) && (
+            <Link
+              to={`/rounds/${round}/sessions/${session.session_type}/analysis`}
+              className="inline-flex items-center gap-1 rounded-md bg-accent-cyan/10 border border-accent-cyan/30 px-3 py-1 text-xs font-display font-bold text-accent-cyan hover:bg-accent-cyan/20 transition-colors"
+            >
+              View Analysis →
+            </Link>
+          )}
+        </div>
       </div>
       <p className="mt-2">
         <span
@@ -201,17 +211,6 @@ function SessionCard({
           <p className="text-muted-foreground">No results available.</p>
         )}
       </div>
-
-      {session.status === 'completed' && ANALYSIS_SESSION_TYPES.has(session.session_type) && (
-        <div className="mt-4">
-          <Link
-            to={`/rounds/${round}/sessions/${session.session_type}/analysis`}
-            className="inline-flex items-center gap-2 rounded-md bg-accent-cyan/10 border border-accent-cyan/30 px-4 py-2 text-sm font-display font-bold text-accent-cyan hover:bg-accent-cyan/20 transition-colors"
-          >
-            View Analysis →
-          </Link>
-        </div>
-      )}
     </div>
   );
 }

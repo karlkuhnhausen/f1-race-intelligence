@@ -2,10 +2,70 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchSessionAnalysis } from './analysisApi';
 import type { SessionAnalysisResponse } from './analysisTypes';
+import { fetchRoundDetail } from '../rounds/roundApi';
 import PositionChart from './PositionChart';
 import GapChart from './GapChart';
 import TireStrategyChart from './TireStrategyChart';
 import PitStopTimeline from './PitStopTimeline';
+
+/**
+ * Derive finishing order from position data: each driver's last lap position = final position.
+ * Returns a Map<driver_number, finishing_position>.
+ */
+function buildDriverOrder(data: SessionAnalysisResponse): Map<number, number> {
+  const order = new Map<number, number>();
+  for (const driver of data.positions) {
+    if (driver.laps.length > 0) {
+      const lastLap = driver.laps[driver.laps.length - 1];
+      order.set(driver.driver_number, lastLap.position);
+    }
+  }
+  return order;
+}
+
+/**
+ * Compute the true total laps from ALL data sources — position laps,
+ * stint lap_end, and pit lap. Takes the max across these.
+ * NOTE: Intervals are excluded because OpenF1 sometimes reports interval data
+ * beyond actual race distance (e.g., 70 laps for a 58-lap race).
+ * Stints lap_end is the most reliable indicator of actual race length.
+ */
+function computeTotalLaps(data: SessionAnalysisResponse): number {
+  let max = data.total_laps;
+
+  for (const driver of data.positions) {
+    for (const lap of driver.laps) {
+      if (lap.lap > max) max = lap.lap;
+    }
+  }
+
+  if (data.stints) {
+    for (const stint of data.stints) {
+      if (stint.lap_end > max) max = stint.lap_end;
+    }
+  }
+
+  if (data.pits) {
+    for (const pit of data.pits) {
+      if (pit.lap > max) max = pit.lap;
+    }
+  }
+
+  return max;
+}
+
+/**
+ * Build a map of driver_number → team_colour hex string from position data.
+ */
+function buildTeamColors(data: SessionAnalysisResponse): Map<number, string> {
+  const colors = new Map<number, string>();
+  for (const driver of data.positions) {
+    if (driver.team_colour) {
+      colors.set(driver.driver_number, driver.team_colour);
+    }
+  }
+  return colors;
+}
 
 export default function AnalysisPage() {
   const { round, sessionType } = useParams<{
@@ -13,6 +73,7 @@ export default function AnalysisPage() {
     sessionType: string;
   }>();
   const [data, setData] = useState<SessionAnalysisResponse | null>(null);
+  const [gpName, setGpName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [notAvailable, setNotAvailable] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,13 +85,19 @@ export default function AnalysisPage() {
     setError(null);
     setNotAvailable(false);
 
-    fetchSessionAnalysis(parseInt(round, 10), sessionType)
-      .then((result) => {
+    const roundNum = parseInt(round, 10);
+
+    Promise.all([
+      fetchSessionAnalysis(roundNum, sessionType),
+      fetchRoundDetail(roundNum).then((r) => ({ race: r.race_name, circuit: r.circuit_name })).catch(() => null),
+    ])
+      .then(([result, roundInfo]) => {
         if (result === null) {
           setNotAvailable(true);
         } else {
           setData(result);
         }
+        setGpName(roundInfo ? `${roundInfo.race} — ${roundInfo.circuit}` : null);
       })
       .catch((err) => {
         setError(err instanceof Error ? err.message : 'Failed to load analysis');
@@ -45,14 +112,19 @@ export default function AnalysisPage() {
     <div>
       <Link
         to={`/rounds/${round}`}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+        className="inline-block font-display text-sm uppercase tracking-wider text-accent-cyan hover:text-foreground transition-colors"
       >
-        ← Back to Round {round}
+        ← Back to Round {round} {sessionLabel} Results
       </Link>
 
-      <h2 className="font-display text-xl font-bold mb-6">
-        {sessionLabel} Analysis — Round {round}
-      </h2>
+      <div className="mt-2 mb-6">
+        <p className="font-display text-xs uppercase tracking-[0.2em] text-accent-red">
+          Round {round} — {sessionLabel} Analysis
+        </p>
+        <h2 className="mt-1 font-display text-3xl font-bold tracking-tight">
+          {gpName ?? `Round ${round}`}
+        </h2>
+      </div>
 
       {loading && (
         <p className="text-muted-foreground">Loading analysis data...</p>
@@ -73,7 +145,11 @@ export default function AnalysisPage() {
         </div>
       )}
 
-      {data && (
+      {data && (() => {
+        const totalLaps = computeTotalLaps(data);
+        const driverOrder = buildDriverOrder(data);
+        const teamColors = buildTeamColors(data);
+        return (
         <div className="space-y-8">
           {/* Position Battle Chart */}
           {data.positions && data.positions.length > 0 && (
@@ -83,7 +159,7 @@ export default function AnalysisPage() {
               </h3>
               <PositionChart
                 positions={data.positions}
-                totalLaps={data.total_laps}
+                totalLaps={totalLaps}
                 overtakes={data.overtakes}
               />
             </section>
@@ -95,7 +171,7 @@ export default function AnalysisPage() {
               <h3 className="font-display text-lg font-semibold mb-3">
                 Gap to Leader
               </h3>
-              <GapChart intervals={data.intervals} />
+              <GapChart intervals={data.intervals} totalLaps={totalLaps} />
             </section>
           )}
 
@@ -107,7 +183,9 @@ export default function AnalysisPage() {
               </h3>
               <TireStrategyChart
                 stints={data.stints}
-                totalLaps={data.total_laps}
+                totalLaps={totalLaps}
+                driverOrder={driverOrder}
+                teamColors={teamColors}
               />
             </section>
           )}
@@ -118,11 +196,17 @@ export default function AnalysisPage() {
               <h3 className="font-display text-lg font-semibold mb-3">
                 Pit Stops
               </h3>
-              <PitStopTimeline pits={data.pits} totalLaps={data.total_laps} />
+              <PitStopTimeline
+                pits={data.pits}
+                totalLaps={totalLaps}
+                driverOrder={driverOrder}
+                teamColors={teamColors}
+              />
             </section>
           )}
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
