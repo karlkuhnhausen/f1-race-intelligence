@@ -73,7 +73,7 @@ func TestStructuredLogSchemaErrorLevel(t *testing.T) {
 	logger := slog.New(handler)
 
 	logger.Error("poll_error",
-		slog.String("source", "hyprace"),
+		slog.String("source", "openf1"),
 		slog.String("error", "connection refused"),
 	)
 
