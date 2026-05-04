@@ -98,4 +98,4 @@ Circuit maps would be a nice addition to the page header — showing the track l
 
 ---
 
-[← Day 20: The Session Deep Dive — Telling the Story of a Race in Four Charts](day-20-session-deep-dive.md)
+[← Day 20: The Session Deep Dive — Telling the Story of a Race in Four Charts](day-20-session-deep-dive.md) | [Day 22: The Standings Overhaul — Real Data, Real Bugs, and a Credit Long Overdue →](day-22-standings-overhaul.md)
