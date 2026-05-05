@@ -53,6 +53,15 @@ func (r *inMemoryCalendarRepo) GetMeetingByID(_ context.Context, _ int, id strin
 	return nil, nil
 }
 
+func (r *inMemoryCalendarRepo) GetMeetingByMeetingKey(_ context.Context, _ int, meetingKey int) (*storage.RaceMeeting, error) {
+	for _, m := range r.meetings {
+		if m.MeetingKey == meetingKey {
+			return &m, nil
+		}
+	}
+	return nil, nil
+}
+
 func (r *inMemoryCalendarRepo) DeleteMeeting(_ context.Context, _ int, id string) error {
 	for i, m := range r.meetings {
 		if m.ID == id {

@@ -131,6 +131,7 @@ func TransformSessionResult(
 		Type:          "session_result",
 		Season:        season,
 		Round:         round,
+		MeetingKey:    raw.MeetingKey,
 		SessionKey:    raw.SessionKey,
 		SessionType:   string(sessionType),
 		Position:      raw.Position,

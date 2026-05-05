@@ -11,6 +11,7 @@ type RaceMeeting struct {
 	ID               string    `json:"id"`
 	Season           int       `json:"season"`
 	Round            int       `json:"round"`
+	MeetingKey       int       `json:"meeting_key"`
 	RaceName         string    `json:"race_name"`
 	CircuitName      string    `json:"circuit_name"`
 	CountryName      string    `json:"country_name"`
@@ -54,6 +55,7 @@ type CalendarRepository interface {
 	UpsertMeeting(ctx context.Context, m RaceMeeting) error
 	GetMeetingsBySeason(ctx context.Context, season int) ([]RaceMeeting, error)
 	GetMeetingByID(ctx context.Context, season int, id string) (*RaceMeeting, error)
+	GetMeetingByMeetingKey(ctx context.Context, season, meetingKey int) (*RaceMeeting, error)
 	DeleteMeeting(ctx context.Context, season int, id string) error
 }
 
@@ -127,6 +129,7 @@ type SessionResult struct {
 	Type          string    `json:"type"` // document type discriminator: "session_result"
 	Season        int       `json:"season"`
 	Round         int       `json:"round"`
+	MeetingKey    int       `json:"meeting_key"`
 	SessionKey    int       `json:"session_key"`
 	SessionType   string    `json:"session_type"`
 	Position      int       `json:"position"`
@@ -190,6 +193,8 @@ type SessionAnalysisPosition struct {
 	Type          string        `json:"type"`   // "analysis_position"
 	Season        int           `json:"season"` // partition key
 	Round         int           `json:"round"`
+	MeetingKey    int           `json:"meeting_key"`
+	SessionKey    int           `json:"session_key"`
 	SessionType   string        `json:"session_type"`
 	DriverNumber  int           `json:"driver_number"`
 	DriverName    string        `json:"driver_name"`
@@ -211,6 +216,8 @@ type SessionAnalysisInterval struct {
 	Type          string        `json:"type"` // "analysis_interval"
 	Season        int           `json:"season"`
 	Round         int           `json:"round"`
+	MeetingKey    int           `json:"meeting_key"`
+	SessionKey    int           `json:"session_key"`
 	SessionType   string        `json:"session_type"`
 	DriverNumber  int           `json:"driver_number"`
 	DriverAcronym string        `json:"driver_acronym"`
@@ -232,6 +239,8 @@ type SessionAnalysisStint struct {
 	Type           string `json:"type"` // "analysis_stint"
 	Season         int    `json:"season"`
 	Round          int    `json:"round"`
+	MeetingKey     int    `json:"meeting_key"`
+	SessionKey     int    `json:"session_key"`
 	SessionType    string `json:"session_type"`
 	DriverNumber   int    `json:"driver_number"`
 	DriverAcronym  string `json:"driver_acronym"`
@@ -249,6 +258,8 @@ type SessionAnalysisPit struct {
 	Type          string  `json:"type"` // "analysis_pit"
 	Season        int     `json:"season"`
 	Round         int     `json:"round"`
+	MeetingKey    int     `json:"meeting_key"`
+	SessionKey    int     `json:"session_key"`
 	SessionType   string  `json:"session_type"`
 	DriverNumber  int     `json:"driver_number"`
 	DriverAcronym string  `json:"driver_acronym"`
@@ -264,6 +275,8 @@ type SessionAnalysisOvertake struct {
 	Type                   string `json:"type"` // "analysis_overtake"
 	Season                 int    `json:"season"`
 	Round                  int    `json:"round"`
+	MeetingKey             int    `json:"meeting_key"`
+	SessionKey             int    `json:"session_key"`
 	SessionType            string `json:"session_type"`
 	OvertakingDriverNumber int    `json:"overtaking_driver_number"`
 	OvertakingDriverName   string `json:"overtaking_driver_name"`

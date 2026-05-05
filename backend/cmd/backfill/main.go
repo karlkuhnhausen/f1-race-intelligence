@@ -300,29 +300,29 @@ func backfillAnalysis(
 		}
 
 		// Persist each data type
-		if err := analysisRepo.UpsertSessionPositions(ctx, ingest.ToStoragePositions(sess.Season, sess.Round, sess.SessionType, fetchResult.Positions)); err != nil {
+		if err := analysisRepo.UpsertSessionPositions(ctx, ingest.ToStoragePositions(sess.Season, sess.Round, sess.MeetingKey, sess.SessionKey, sess.SessionType, fetchResult.Positions)); err != nil {
 			logger.Warn("backfill-analysis: upsert positions failed", "error", err.Error())
 			aFailed++
 			time.Sleep(delay)
 			continue
 		}
 		if len(fetchResult.Intervals) > 0 {
-			if err := analysisRepo.UpsertSessionIntervals(ctx, ingest.ToStorageIntervals(sess.Season, sess.Round, sess.SessionType, fetchResult.Intervals)); err != nil {
+			if err := analysisRepo.UpsertSessionIntervals(ctx, ingest.ToStorageIntervals(sess.Season, sess.Round, sess.MeetingKey, sess.SessionKey, sess.SessionType, fetchResult.Intervals)); err != nil {
 				logger.Warn("backfill-analysis: upsert intervals failed", "error", err.Error())
 			}
 		}
 		if len(fetchResult.Stints) > 0 {
-			if err := analysisRepo.UpsertSessionStints(ctx, ingest.ToStorageStints(sess.Season, sess.Round, sess.SessionType, fetchResult.Stints)); err != nil {
+			if err := analysisRepo.UpsertSessionStints(ctx, ingest.ToStorageStints(sess.Season, sess.Round, sess.MeetingKey, sess.SessionKey, sess.SessionType, fetchResult.Stints)); err != nil {
 				logger.Warn("backfill-analysis: upsert stints failed", "error", err.Error())
 			}
 		}
 		if len(fetchResult.Pits) > 0 {
-			if err := analysisRepo.UpsertSessionPits(ctx, ingest.ToStoragePits(sess.Season, sess.Round, sess.SessionType, fetchResult.Pits)); err != nil {
+			if err := analysisRepo.UpsertSessionPits(ctx, ingest.ToStoragePits(sess.Season, sess.Round, sess.MeetingKey, sess.SessionKey, sess.SessionType, fetchResult.Pits)); err != nil {
 				logger.Warn("backfill-analysis: upsert pits failed", "error", err.Error())
 			}
 		}
 		if len(fetchResult.Overtakes) > 0 {
-			if err := analysisRepo.UpsertSessionOvertakes(ctx, ingest.ToStorageOvertakes(sess.Season, sess.Round, sess.SessionType, fetchResult.Overtakes)); err != nil {
+			if err := analysisRepo.UpsertSessionOvertakes(ctx, ingest.ToStorageOvertakes(sess.Season, sess.Round, sess.MeetingKey, sess.SessionKey, sess.SessionType, fetchResult.Overtakes)); err != nil {
 				logger.Warn("backfill-analysis: upsert overtakes failed", "error", err.Error())
 			}
 		}
@@ -351,6 +351,7 @@ func backfillAnalysis(
 
 type explicitSession struct {
 	Round       int
+	MeetingKey  int
 	SessionKey  int
 	SessionType string
 	Season      int
@@ -482,29 +483,29 @@ func backfillAnalysisExplicit(
 			continue
 		}
 
-		if err := analysisRepo.UpsertSessionPositions(ctx, ingest.ToStoragePositions(sess.Season, sess.Round, sess.SessionType, fetchResult.Positions)); err != nil {
+		if err := analysisRepo.UpsertSessionPositions(ctx, ingest.ToStoragePositions(sess.Season, sess.Round, sess.MeetingKey, sess.SessionKey, sess.SessionType, fetchResult.Positions)); err != nil {
 			logger.Warn("backfill-analysis-explicit: upsert positions failed", "error", err.Error())
 			aFailed++
 			time.Sleep(delay)
 			continue
 		}
 		if len(fetchResult.Intervals) > 0 {
-			if err := analysisRepo.UpsertSessionIntervals(ctx, ingest.ToStorageIntervals(sess.Season, sess.Round, sess.SessionType, fetchResult.Intervals)); err != nil {
+			if err := analysisRepo.UpsertSessionIntervals(ctx, ingest.ToStorageIntervals(sess.Season, sess.Round, sess.MeetingKey, sess.SessionKey, sess.SessionType, fetchResult.Intervals)); err != nil {
 				logger.Warn("backfill-analysis-explicit: upsert intervals failed", "error", err.Error())
 			}
 		}
 		if len(fetchResult.Stints) > 0 {
-			if err := analysisRepo.UpsertSessionStints(ctx, ingest.ToStorageStints(sess.Season, sess.Round, sess.SessionType, fetchResult.Stints)); err != nil {
+			if err := analysisRepo.UpsertSessionStints(ctx, ingest.ToStorageStints(sess.Season, sess.Round, sess.MeetingKey, sess.SessionKey, sess.SessionType, fetchResult.Stints)); err != nil {
 				logger.Warn("backfill-analysis-explicit: upsert stints failed", "error", err.Error())
 			}
 		}
 		if len(fetchResult.Pits) > 0 {
-			if err := analysisRepo.UpsertSessionPits(ctx, ingest.ToStoragePits(sess.Season, sess.Round, sess.SessionType, fetchResult.Pits)); err != nil {
+			if err := analysisRepo.UpsertSessionPits(ctx, ingest.ToStoragePits(sess.Season, sess.Round, sess.MeetingKey, sess.SessionKey, sess.SessionType, fetchResult.Pits)); err != nil {
 				logger.Warn("backfill-analysis-explicit: upsert pits failed", "error", err.Error())
 			}
 		}
 		if len(fetchResult.Overtakes) > 0 {
-			if err := analysisRepo.UpsertSessionOvertakes(ctx, ingest.ToStorageOvertakes(sess.Season, sess.Round, sess.SessionType, fetchResult.Overtakes)); err != nil {
+			if err := analysisRepo.UpsertSessionOvertakes(ctx, ingest.ToStorageOvertakes(sess.Season, sess.Round, sess.MeetingKey, sess.SessionKey, sess.SessionType, fetchResult.Overtakes)); err != nil {
 				logger.Warn("backfill-analysis-explicit: upsert overtakes failed", "error", err.Error())
 			}
 		}
