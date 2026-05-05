@@ -105,6 +105,7 @@ func (ci *ChampionshipIngester) IngestSession(ctx context.Context, season, sessi
 }
 
 // --- OpenF1 response types ---
+// Championship endpoints have consistent schemas — safe to use typed structs.
 
 type openF1ChampionshipDriver struct {
 	DriverNumber    int      `json:"driver_number"`
@@ -126,22 +127,74 @@ type openF1ChampionshipTeam struct {
 	PointsCurrent   float64  `json:"points_current"`
 }
 
-type openF1SessionResult struct {
-	Position     int          `json:"position"`
-	DriverNumber int          `json:"driver_number"`
-	DNF          bool         `json:"dnf"`
-	DNS          bool         `json:"dns"`
-	DSQ          bool         `json:"dsq"`
-	Points       *float64     `json:"points"`
-	NumberOfLaps int          `json:"number_of_laps"`
-	GapToLeader  *json.Number `json:"gap_to_leader"`
-	Duration     *float64     `json:"duration"`
+// Session result and starting grid endpoints return polymorphic types
+// (e.g., gap_to_leader can be 0, 2.974, or "+1 LAP"). We decode into
+// []map[string]any to avoid json.Unmarshal failures, then extract fields
+// with type-safe helpers below.
+
+// --- Type-safe field extractors for map[string]any ---
+
+func getInt(m map[string]any, key string) int {
+	v, ok := m[key]
+	if !ok || v == nil {
+		return 0
+	}
+	switch n := v.(type) {
+	case float64:
+		return int(n)
+	case int:
+		return n
+	default:
+		return 0
+	}
 }
 
-type openF1StartingGrid struct {
-	Position    int      `json:"position"`
-	DriverNum   int      `json:"driver_number"`
-	LapDuration *float64 `json:"lap_duration"`
+func getFloat(m map[string]any, key string) float64 {
+	v, ok := m[key]
+	if !ok || v == nil {
+		return 0
+	}
+	switch n := v.(type) {
+	case float64:
+		return n
+	case int:
+		return float64(n)
+	default:
+		return 0
+	}
+}
+
+func getFloatPtr(m map[string]any, key string) *float64 {
+	v, ok := m[key]
+	if !ok || v == nil {
+		return nil
+	}
+	switch n := v.(type) {
+	case float64:
+		return &n
+	case int:
+		f := float64(n)
+		return &f
+	default:
+		return nil
+	}
+}
+
+func getBool(m map[string]any, key string) bool {
+	v, ok := m[key]
+	if !ok || v == nil {
+		return false
+	}
+	b, _ := v.(bool)
+	return b
+}
+
+func getString(m map[string]any, key string) string {
+	v, ok := m[key]
+	if !ok || v == nil {
+		return ""
+	}
+	return fmt.Sprintf("%v", v)
 }
 
 // --- Fetch and transform methods ---
@@ -209,7 +262,7 @@ func (ci *ChampionshipIngester) fetchTeamChampionship(ctx context.Context, seaso
 
 func (ci *ChampionshipIngester) fetchSessionResults(ctx context.Context, season, sessionKey, meetingKey int) ([]storage.ChampionshipSessionResult, error) {
 	url := fmt.Sprintf("%s/session_result?session_key=%d", openF1BaseURL, sessionKey)
-	var raw []openF1SessionResult
+	var raw []map[string]any
 	if err := ci.fetchJSON(ctx, url, &raw); err != nil {
 		return nil, err
 	}
@@ -217,33 +270,22 @@ func (ci *ChampionshipIngester) fetchSessionResults(ctx context.Context, season,
 	now := time.Now().UTC()
 	results := make([]storage.ChampionshipSessionResult, 0, len(raw))
 	for _, r := range raw {
-		points := 0.0
-		if r.Points != nil {
-			points = *r.Points
-		}
-		gap := ""
-		if r.GapToLeader != nil {
-			gap = r.GapToLeader.String()
-		}
-		duration := 0.0
-		if r.Duration != nil {
-			duration = *r.Duration
-		}
+		driverNum := getInt(r, "driver_number")
 		results = append(results, storage.ChampionshipSessionResult{
-			ID:           fmt.Sprintf("%d-result-%d-%d", season, sessionKey, r.DriverNumber),
+			ID:           fmt.Sprintf("%d-result-%d-%d", season, sessionKey, driverNum),
 			Type:         "championship_result",
 			Season:       season,
 			SessionKey:   sessionKey,
 			MeetingKey:   meetingKey,
-			DriverNumber: r.DriverNumber,
-			Position:     r.Position,
-			Points:       points,
-			DNF:          r.DNF,
-			DNS:          r.DNS,
-			DSQ:          r.DSQ,
-			NumberOfLaps: r.NumberOfLaps,
-			GapToLeader:  gap,
-			Duration:     duration,
+			DriverNumber: driverNum,
+			Position:     getInt(r, "position"),
+			Points:       getFloat(r, "points"),
+			DNF:          getBool(r, "dnf"),
+			DNS:          getBool(r, "dns"),
+			DSQ:          getBool(r, "dsq"),
+			NumberOfLaps: getInt(r, "number_of_laps"),
+			GapToLeader:  getString(r, "gap_to_leader"),
+			Duration:     getFloat(r, "duration"),
 			DataAsOfUTC:  now,
 			Source:       "openf1",
 		})
@@ -253,7 +295,7 @@ func (ci *ChampionshipIngester) fetchSessionResults(ctx context.Context, season,
 
 func (ci *ChampionshipIngester) fetchStartingGrid(ctx context.Context, season, meetingKey int) ([]storage.StartingGridEntry, error) {
 	url := fmt.Sprintf("%s/starting_grid?meeting_key=%d", openF1BaseURL, meetingKey)
-	var raw []openF1StartingGrid
+	var raw []map[string]any
 	if err := ci.fetchJSON(ctx, url, &raw); err != nil {
 		return nil, err
 	}
@@ -261,18 +303,15 @@ func (ci *ChampionshipIngester) fetchStartingGrid(ctx context.Context, season, m
 	now := time.Now().UTC()
 	entries := make([]storage.StartingGridEntry, 0, len(raw))
 	for _, r := range raw {
-		lapDur := 0.0
-		if r.LapDuration != nil {
-			lapDur = *r.LapDuration
-		}
+		driverNum := getInt(r, "driver_number")
 		entries = append(entries, storage.StartingGridEntry{
-			ID:           fmt.Sprintf("%d-grid-%d-%d", season, meetingKey, r.DriverNum),
+			ID:           fmt.Sprintf("%d-grid-%d-%d", season, meetingKey, driverNum),
 			Type:         "starting_grid",
 			Season:       season,
 			MeetingKey:   meetingKey,
-			DriverNumber: r.DriverNum,
-			Position:     r.Position,
-			LapDuration:  lapDur,
+			DriverNumber: driverNum,
+			Position:     getInt(r, "position"),
+			LapDuration:  getFloat(r, "lap_duration"),
 			DataAsOfUTC:  now,
 			Source:       "openf1",
 		})
