@@ -90,4 +90,4 @@ The stats bug and the missing attribution aren't separate cleanup items — they
 
 ---
 
-[← Day 21: Analysis UX Polish — Making Four Charts Tell a Clearer Story](day-21-analysis-ux-polish.md)
+[← Day 21: Analysis UX Polish — Making Four Charts Tell a Clearer Story](day-21-analysis-ux-polish.md) · [Day 23: The Round Numbers Were Lying — A Cancelled-Race Desync →](day-23-cancelled-round-desync.md)

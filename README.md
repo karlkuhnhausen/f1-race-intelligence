@@ -70,6 +70,7 @@ This project is being built in public, with architecture decisions and progress 
 ### Feature 7: Standings Overhaul
 
 - [Day 22: The Standings Overhaul — Real Data, Real Bugs, and a Credit Long Overdue](docs/blog/day-22-standings-overhaul.md)
+- [Day 23: The Round Numbers Were Lying — A Cancelled-Race Desync](docs/blog/day-23-cancelled-round-desync.md)
 
 ## Architecture Direction
 
@@ -105,7 +106,7 @@ This project is being built in public, with architecture decisions and progress 
 
 **Feature 7 — Standings Overhaul (May 4, 2026):** Complete (with known follow-up items). Removed the fictional Hyprace standings integration and replaced it with real OpenF1 championship data (`/v1/championship_drivers`, `/v1/championship_teams`). New `ChampionshipIngester` fetches standings snapshots, session results, and starting grids at each race/sprint finalization. New API endpoints serve progression data, head-to-head comparisons, and constructor driver breakdowns. Frontend gains year picker (2023–current), recharts-based progression charts, comparison panel, and expandable constructor rows. 68 tasks across 9 phases. PRs [#57](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/57), [#58](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/58), [#59](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/59), [#60](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/60).
 
-**Known Issues (May 4, 2026):** (1) Wins/podiums/DNFs/poles columns in standings show per-session values rather than cumulative season totals — root cause is incomplete 2026 backfill; fix requires running `--championship` backfill from inside AKS cluster. (2) OpenF1 API attribution is missing from the application UI — a footer credit linking to openf1.org needs to be added.
+**Known Issues (May 5, 2026):** (1) Podium data leaking into future rounds (5 and 6) — the calendar's podium enrichment query doesn't filter by round status, so championship snapshots from the latest completed session get attributed to future rounds. Separate fix needed. (2) OpenF1 API attribution is missing from the application UI — a footer credit linking to openf1.org needs to be added.
 
 - **Frontend**: http://f1raceintel.westus3.cloudapp.azure.com/
 - **API**: http://f1raceintel.westus3.cloudapp.azure.com/api/v1/calendar?year=2026
