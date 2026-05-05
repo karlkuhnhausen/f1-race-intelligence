@@ -3,6 +3,7 @@ import {
   Line,
   XAxis,
   YAxis,
+  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
   Legend,
@@ -64,10 +65,38 @@ export default function ComparisonPanel({ data, loading }: ComparisonPanelProps)
         <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-              <XAxis dataKey="round" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip />
-              <Legend />
+              <CartesianGrid strokeDasharray="3 3" stroke="#2a2a38" />
+              <XAxis dataKey="round" stroke="#8888aa" tick={{ fontSize: 11, fill: '#ffffff' }} />
+              <YAxis stroke="#8888aa" tick={{ fontSize: 11, fill: '#ffffff' }} />
+              <Tooltip
+                cursor={{ stroke: '#555', strokeDasharray: '3 3' }}
+                content={({ active, payload, label }) => {
+                  if (!active || !payload || payload.length === 0) return null;
+                  const sorted = [...payload]
+                    .filter((e) => e.value != null)
+                    .sort((a, b) => (b.value as number) - (a.value as number));
+                  return (
+                    <div style={{
+                      backgroundColor: 'rgba(26, 26, 35, 0.85)',
+                      border: '1px solid #2a2a38',
+                      borderRadius: '6px',
+                      padding: '6px 10px',
+                      fontSize: '11px',
+                      backdropFilter: 'blur(4px)',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                    }}>
+                      <p style={{ color: '#ffffff', marginBottom: 3, fontWeight: 600 }}>{label}</p>
+                      {sorted.map((entry) => (
+                        <div key={String(entry.dataKey)} style={{ display: 'flex', gap: 6, lineHeight: '1.6' }}>
+                          <span style={{ color: '#999999', minWidth: 32, textAlign: 'right', fontWeight: 600 }}>{entry.value}</span>
+                          <span style={{ color: entry.color, fontWeight: 600 }}>{entry.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }}
+              />
+              <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
               <Line
                 type="monotone"
                 dataKey={name1}

@@ -52,7 +52,7 @@ const finalizationBuffer = 2 * time.Hour
 // ChampionshipHook is called after a Race or Sprint session is finalized
 // to ingest championship data from OpenF1.
 type ChampionshipHook interface {
-	IngestSession(ctx context.Context, season, sessionKey, meetingKey int) error
+	IngestSession(ctx context.Context, season, sessionKey, meetingKey int, sessionType string) error
 }
 
 // SessionPoller polls the OpenF1 sessions, session_result, drivers, and laps
@@ -261,7 +261,7 @@ func (p *SessionPoller) poll(ctx context.Context, season int) {
 						return
 					case <-time.After(500 * time.Millisecond):
 					}
-					if err := p.championshipHook.IngestSession(ctx, season, raw.SessionKey, raw.MeetingKey); err != nil {
+					if err := p.championshipHook.IngestSession(ctx, season, raw.SessionKey, raw.MeetingKey, string(sessionType)); err != nil {
 						p.logger.Error("championship ingestion failed", "session_key", raw.SessionKey, "error", err)
 					}
 				}

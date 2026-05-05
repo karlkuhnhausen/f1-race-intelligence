@@ -57,12 +57,12 @@ func (m *mockChampionshipRepo) GetStartingGridEntries(_ context.Context, _ int) 
 func TestStatsAggregator_GetDriverStats(t *testing.T) {
 	repo := &mockChampionshipRepo{
 		results: []storage.ChampionshipSessionResult{
-			{DriverNumber: 1, Position: 1, DNF: false, DSQ: false, SessionKey: 100},
-			{DriverNumber: 1, Position: 2, DNF: false, DSQ: false, SessionKey: 101},
-			{DriverNumber: 1, Position: 5, DNF: true, DSQ: false, SessionKey: 102},
-			{DriverNumber: 44, Position: 3, DNF: false, DSQ: false, SessionKey: 100},
-			{DriverNumber: 44, Position: 1, DNF: false, DSQ: false, SessionKey: 101},
-			{DriverNumber: 44, Position: 10, DNF: false, DSQ: false, SessionKey: 102},
+			{DriverNumber: 1, Position: 1, DNF: false, DSQ: false, SessionKey: 100, SessionType: "race"},
+			{DriverNumber: 1, Position: 2, DNF: false, DSQ: false, SessionKey: 101, SessionType: "race"},
+			{DriverNumber: 1, Position: 5, DNF: true, DSQ: false, SessionKey: 102, SessionType: "race"},
+			{DriverNumber: 44, Position: 3, DNF: false, DSQ: false, SessionKey: 100, SessionType: "race"},
+			{DriverNumber: 44, Position: 1, DNF: false, DSQ: false, SessionKey: 101, SessionType: "race"},
+			{DriverNumber: 44, Position: 10, DNF: false, DSQ: false, SessionKey: 102, SessionType: "race"},
 		},
 		grids: []storage.StartingGridEntry{
 			{DriverNumber: 1, Position: 1, MeetingKey: 200},
@@ -113,7 +113,7 @@ func TestStatsAggregator_GetDriverStats_DNFDoesNotCountAsPodium(t *testing.T) {
 	repo := &mockChampionshipRepo{
 		results: []storage.ChampionshipSessionResult{
 			// Position 1 but DNF — should NOT count as win or podium
-			{DriverNumber: 10, Position: 1, DNF: true, DSQ: false, SessionKey: 100},
+			{DriverNumber: 10, Position: 1, DNF: true, DSQ: false, SessionKey: 100, SessionType: "race"},
 		},
 	}
 
@@ -138,7 +138,7 @@ func TestStatsAggregator_GetDriverStats_DNFDoesNotCountAsPodium(t *testing.T) {
 func TestStatsAggregator_GetDriverStats_DSQDoesNotCountAsWin(t *testing.T) {
 	repo := &mockChampionshipRepo{
 		results: []storage.ChampionshipSessionResult{
-			{DriverNumber: 5, Position: 1, DNF: false, DSQ: true, SessionKey: 100},
+			{DriverNumber: 5, Position: 1, DNF: false, DSQ: true, SessionKey: 100, SessionType: "race"},
 		},
 	}
 
@@ -160,10 +160,10 @@ func TestStatsAggregator_GetDriverStats_DSQDoesNotCountAsWin(t *testing.T) {
 func TestStatsAggregator_GetTeamStats(t *testing.T) {
 	repo := &mockChampionshipRepo{
 		results: []storage.ChampionshipSessionResult{
-			{DriverNumber: 1, Position: 1, DNF: false, DSQ: false, SessionKey: 100},
-			{DriverNumber: 11, Position: 3, DNF: false, DSQ: false, SessionKey: 100},
-			{DriverNumber: 1, Position: 5, DNF: true, DSQ: false, SessionKey: 101},
-			{DriverNumber: 11, Position: 2, DNF: false, DSQ: false, SessionKey: 101},
+			{DriverNumber: 1, Position: 1, DNF: false, DSQ: false, SessionKey: 100, SessionType: "race"},
+			{DriverNumber: 11, Position: 3, DNF: false, DSQ: false, SessionKey: 100, SessionType: "race"},
+			{DriverNumber: 1, Position: 5, DNF: true, DSQ: false, SessionKey: 101, SessionType: "race"},
+			{DriverNumber: 11, Position: 2, DNF: false, DSQ: false, SessionKey: 101, SessionType: "race"},
 		},
 	}
 
@@ -203,5 +203,35 @@ func TestStatsAggregator_EmptyResults(t *testing.T) {
 	}
 	if len(stats) != 0 {
 		t.Errorf("expected empty stats, got %d entries", len(stats))
+	}
+}
+
+func TestStatsAggregator_SprintP1IsNotARaceWin(t *testing.T) {
+	repo := &mockChampionshipRepo{
+		results: []storage.ChampionshipSessionResult{
+			// Sprint P1 — should NOT count as a win or podium
+			{DriverNumber: 12, Position: 1, DNF: false, DSQ: false, SessionKey: 200, SessionType: "sprint"},
+			// Race P3 — should count as a podium but not a win
+			{DriverNumber: 12, Position: 3, DNF: false, DSQ: false, SessionKey: 201, SessionType: "race"},
+			// Sprint DNF — should still count as a DNF
+			{DriverNumber: 12, Position: 15, DNF: true, DSQ: false, SessionKey: 300, SessionType: "sprint"},
+		},
+	}
+
+	agg := standings.NewStatsAggregator(repo)
+	stats, err := agg.GetDriverStats(context.Background(), 2026)
+	if err != nil {
+		t.Fatalf("GetDriverStats returned error: %v", err)
+	}
+
+	d12 := stats[12]
+	if d12.Wins != 0 {
+		t.Errorf("sprint P1 should not count as win: got %d, want 0", d12.Wins)
+	}
+	if d12.Podiums != 1 {
+		t.Errorf("only race P3 should count as podium: got %d, want 1", d12.Podiums)
+	}
+	if d12.DNFs != 1 {
+		t.Errorf("sprint DNF should count: got %d, want 1", d12.DNFs)
 	}
 }

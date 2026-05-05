@@ -337,6 +337,7 @@ type ChampionshipSessionResult struct {
 	Season       int       `json:"season"`
 	SessionKey   int       `json:"session_key"`
 	MeetingKey   int       `json:"meeting_key"`
+	SessionType  string    `json:"session_type"` // "race" or "sprint"
 	DriverNumber int       `json:"driver_number"`
 	Position     int       `json:"position"`
 	Points       float64   `json:"points"`

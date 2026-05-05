@@ -69,14 +69,6 @@ func (s *Service) GetCalendar(ctx context.Context, season int) (*CalendarRespons
 			continue
 		}
 
-		// Apply cancellation overrides.
-		if override, ok := domain.IsCancelled(m.Season, m.RaceName); ok {
-			m.IsCancelled = true
-			m.Status = string(domain.StatusCancelled)
-			m.CancelledLabel = override.Label
-			m.CancelledReason = override.Reason
-		}
-
 		// Derive lifecycle status at read time so past meetings flip to
 		// "completed" without requiring an ingest cycle. The stored Status is
 		// effectively a cache; dates + the wall clock are the source of truth.

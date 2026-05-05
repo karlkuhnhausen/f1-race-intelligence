@@ -46,18 +46,12 @@ func (m *mockCalendarRepo) GetMeetingByID(_ context.Context, _ int, id string) (
 
 func seedMeetings() []storage.RaceMeeting {
 	now := time.Now().UTC()
-	meetings := make([]storage.RaceMeeting, 0, 24)
+	meetings := make([]storage.RaceMeeting, 0, 22)
 	baseDate := time.Date(2026, 3, 15, 14, 0, 0, 0, time.UTC)
 
-	for i := 1; i <= 24; i++ {
+	for i := 1; i <= 22; i++ {
 		raceDate := baseDate.Add(time.Duration(i*14) * 24 * time.Hour)
 		raceName := fmt.Sprintf("Round %d Grand Prix", i)
-		// Use real names for the races that have cancellation overrides.
-		if i == 6 {
-			raceName = "Bahrain Grand Prix"
-		} else if i == 7 {
-			raceName = "Saudi Arabian Grand Prix"
-		}
 		m := storage.RaceMeeting{
 			ID:               fmt.Sprintf("2026-%02d", i),
 			Season:           2026,
@@ -78,7 +72,7 @@ func seedMeetings() []storage.RaceMeeting {
 	return meetings
 }
 
-func TestCalendarContractReturns24Rounds(t *testing.T) {
+func TestCalendarContractReturns22Rounds(t *testing.T) {
 	repo := &mockCalendarRepo{meetings: seedMeetings()}
 	svc := calendar.NewService(repo)
 	handler := calendar.NewHandler(svc, slog.Default())
@@ -101,8 +95,8 @@ func TestCalendarContractReturns24Rounds(t *testing.T) {
 		t.Errorf("expected year 2026, got %d", resp.Year)
 	}
 
-	if len(resp.Rounds) != 24 {
-		t.Errorf("expected 24 rounds, got %d", len(resp.Rounds))
+	if len(resp.Rounds) != 22 {
+		t.Errorf("expected 22 rounds, got %d", len(resp.Rounds))
 	}
 }
 
@@ -129,7 +123,7 @@ func TestCalendarContractRequiredFields(t *testing.T) {
 	}
 }
 
-func TestCalendarContractCancelledRounds(t *testing.T) {
+func TestCalendarContractNoCancelledRounds(t *testing.T) {
 	repo := &mockCalendarRepo{meetings: seedMeetings()}
 	svc := calendar.NewService(repo)
 	handler := calendar.NewHandler(svc, slog.Default())
@@ -144,18 +138,10 @@ func TestCalendarContractCancelledRounds(t *testing.T) {
 		t.Fatalf("decode: %v", err)
 	}
 
-	cancelledCount := 0
 	for _, r := range resp.Rounds {
 		if r.IsCancelled {
-			cancelledCount++
-			if r.Status != "cancelled" {
-				t.Errorf("round %d: is_cancelled=true but status=%q", r.Round, r.Status)
-			}
+			t.Errorf("round %d (%s): should not be cancelled — cancelled races are excluded at ingestion", r.Round, r.RaceName)
 		}
-	}
-
-	if cancelledCount != 2 {
-		t.Errorf("expected 2 cancelled rounds (R4, R5), got %d", cancelledCount)
 	}
 }
 

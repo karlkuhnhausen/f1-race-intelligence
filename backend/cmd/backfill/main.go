@@ -579,7 +579,7 @@ func backfillChampionship(
 			continue
 		}
 
-		if err := ingester.IngestSession(ctx, season, sess.SessionKey, sess.MeetingKey); err != nil {
+		if err := ingester.IngestSession(ctx, season, sess.SessionKey, sess.MeetingKey, sess.SessionType); err != nil {
 			logger.Warn("backfill-championship: ingestion failed",
 				"session_key", sess.SessionKey,
 				"error", err.Error(),

@@ -139,6 +139,39 @@ func TestNormalizeMeetings_SkipsTestingForRoundNumbering(t *testing.T) {
 	}
 }
 
+// TestNormalizeMeetings_SkipsCancelledRaces verifies that cancelled races
+// (Bahrain and Saudi Arabia) are excluded from the output and do not
+// consume round numbers, keeping numbering aligned with FIA.
+func TestNormalizeMeetings_SkipsCancelledRaces(t *testing.T) {
+	raw := []ingest.OpenF1MeetingForTest{
+		{MeetingName: "Australian Grand Prix", DateStart: "2026-03-08T05:00:00Z", MeetingKey: 1279},
+		{MeetingName: "Chinese Grand Prix", DateStart: "2026-03-15T05:00:00Z", MeetingKey: 1280},
+		{MeetingName: "Japanese Grand Prix", DateStart: "2026-03-29T05:00:00Z", MeetingKey: 1281},
+		{MeetingName: "Bahrain Grand Prix", DateStart: "2026-04-05T15:00:00Z", MeetingKey: 1282},
+		{MeetingName: "Saudi Arabian Grand Prix", DateStart: "2026-04-12T17:00:00Z", MeetingKey: 1283},
+		{MeetingName: "Miami Grand Prix", DateStart: "2026-05-03T17:00:00Z", MeetingKey: 1284},
+	}
+	meetings := ingest.NormalizeMeetingsForTest(raw, 2026)
+	if len(meetings) != 4 {
+		t.Fatalf("expected 4 meetings (Bahrain + Saudi excluded), got %d", len(meetings))
+	}
+	expected := []struct {
+		round int
+		name  string
+	}{
+		{1, "Australian Grand Prix"},
+		{2, "Chinese Grand Prix"},
+		{3, "Japanese Grand Prix"},
+		{4, "Miami Grand Prix"},
+	}
+	for i, exp := range expected {
+		if meetings[i].Round != exp.round || meetings[i].RaceName != exp.name {
+			t.Errorf("index %d: expected Round %d %q, got Round %d %q",
+				i, exp.round, exp.name, meetings[i].Round, meetings[i].RaceName)
+		}
+	}
+}
+
 // TestGetCalendar_PodiumEnrichment verifies that completed races are
 // enriched with top-3 race finishers + cumulative season points (summed
 // from race + sprint session results), while upcoming races are not.

@@ -49,6 +49,19 @@ export default function App() {
           <Route path="*" element={<Navigate to="/calendar" replace />} />
         </Routes>
       </div>
+      <footer className="border-t border-border py-4 mt-8">
+        <div className="mx-auto max-w-6xl px-6 text-center text-xs text-muted-foreground">
+          Data provided by{' '}
+          <a
+            href="https://openf1.org"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent-cyan hover:underline"
+          >
+            OpenF1
+          </a>
+        </div>
+      </footer>
     </main>
   );
 }
