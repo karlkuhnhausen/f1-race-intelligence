@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/domain"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/ingest"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/observability"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/standings"
@@ -34,6 +35,7 @@ func main() {
 	analysisMode := flag.Bool("analysis", false, "Backfill session analysis data (positions, intervals, stints, pits, overtakes) for Race/Sprint sessions")
 	analysisOnly := flag.Bool("analysis-only", false, "Run only analysis backfill, skip race control backfill")
 	championshipMode := flag.Bool("championship", false, "Backfill championship standings, session results, and starting grids for Race/Sprint sessions")
+	stampMeetingKeys := flag.Bool("stamp-meeting-keys", false, "Stamp meeting_key (and session_key for analysis docs) on pre-migration documents")
 	sessionsFlag := flag.String("sessions", "", "Explicit session mappings: round:session_key:type,... (e.g. 1:11234:race,2:11245:race)")
 	deleteAnalysis := flag.String("delete-analysis", "", "Delete analysis data for round:type pairs (e.g. 4:race,5:race)")
 	flag.Parse()
@@ -179,6 +181,11 @@ func main() {
 		} else {
 			backfillAnalysis(ctx, client, client, sessions, httpClient, delay, *dryRun, logger)
 		}
+	}
+
+	// --- Stamp meeting keys (Feature 008) ---
+	if *stampMeetingKeys {
+		stampMeetingKeysBackfill(ctx, client, *season, *dryRun, logger)
 	}
 
 	// --- Championship backfill (Feature 007) ---
@@ -597,6 +604,324 @@ func backfillChampionship(
 		"season", season,
 		"updated", updated,
 		"failed", failed,
+		"dry_run", dryRun,
+	)
+}
+
+// stampMeetingKeysBackfill populates meeting_key (and session_key for analysis
+// docs) on pre-migration documents that have meeting_key=0.
+func stampMeetingKeysBackfill(ctx context.Context, client *cosmos.Client, season int, dryRun bool, logger *slog.Logger) {
+	// Step 1: Build MeetingIndex from calendar data.
+	meetings, err := client.GetMeetingsBySeason(ctx, season)
+	if err != nil {
+		log.Fatalf("stamp-meeting-keys: fetch meetings: %v", err)
+	}
+	indexInputs := make([]domain.MeetingForIndex, 0, len(meetings))
+	for _, m := range meetings {
+		indexInputs = append(indexInputs, domain.MeetingForIndex{
+			MeetingKey:       m.MeetingKey,
+			RaceName:         m.RaceName,
+			StartDatetimeUTC: m.StartDatetimeUTC,
+			IsCancelled:      m.IsCancelled,
+		})
+	}
+	meetingIdx := domain.BuildMeetingIndex(indexInputs)
+
+	// Also build round→meeting_key lookup from actual RaceMeeting docs
+	// (which have assigned round numbers).
+	roundToMeetingKey := make(map[int]int, len(meetings))
+	for _, m := range meetings {
+		if m.MeetingKey > 0 {
+			roundToMeetingKey[m.Round] = m.MeetingKey
+		}
+	}
+
+	logger.Info("stamp-meeting-keys: starting",
+		"season", season,
+		"total_meetings", len(meetings),
+		"index_rounds", meetingIdx.TotalRounds(),
+		"dry_run", dryRun,
+	)
+
+	// Step 2: Stamp sessions.
+	allSessions, err := client.GetFinalizedSessions(ctx, season)
+	if err != nil {
+		log.Fatalf("stamp-meeting-keys: fetch sessions: %v", err)
+	}
+	// Also get non-finalized sessions (upcoming/in-progress).
+	allSessionsByRound := make(map[int][]storage.Session)
+	for i := 1; i <= meetingIdx.TotalRounds(); i++ {
+		roundSessions, qErr := client.GetSessionsByRound(ctx, season, i)
+		if qErr != nil {
+			logger.Warn("stamp-meeting-keys: query sessions by round failed", "round", i, "error", qErr)
+			continue
+		}
+		allSessionsByRound[i] = roundSessions
+		for _, s := range roundSessions {
+			// Avoid duplicates with finalized list.
+			found := false
+			for _, fs := range allSessions {
+				if fs.ID == s.ID {
+					found = true
+					break
+				}
+			}
+			if !found {
+				allSessions = append(allSessions, s)
+			}
+		}
+	}
+
+	sessStamped, sessSkipped, sessFailed := 0, 0, 0
+	for _, sess := range allSessions {
+		if sess.MeetingKey > 0 {
+			sessSkipped++
+			continue
+		}
+		mk, ok := roundToMeetingKey[sess.Round]
+		if !ok {
+			mk = meetingIdx.MeetingKeyForRound(sess.Round)
+		}
+		if mk == 0 {
+			logger.Warn("stamp-meeting-keys: cannot resolve meeting_key for session",
+				"session_id", sess.ID, "round", sess.Round)
+			sessFailed++
+			continue
+		}
+		sess.MeetingKey = mk
+		if dryRun {
+			logger.Info("stamp-meeting-keys: dry-run — would stamp session",
+				"session_id", sess.ID, "round", sess.Round, "meeting_key", mk)
+			sessStamped++
+		} else {
+			if err := client.UpsertSession(ctx, sess); err != nil {
+				logger.Warn("stamp-meeting-keys: session upsert failed",
+					"session_id", sess.ID, "error", err)
+				sessFailed++
+			} else {
+				sessStamped++
+			}
+		}
+	}
+	logger.Info("stamp-meeting-keys: sessions complete",
+		"stamped", sessStamped, "skipped", sessSkipped, "failed", sessFailed)
+
+	// Step 3: Stamp session results.
+	allResults, err := client.GetSessionResultsBySeason(ctx, season)
+	if err != nil {
+		log.Fatalf("stamp-meeting-keys: fetch results: %v", err)
+	}
+	resStamped, resSkipped, resFailed := 0, 0, 0
+	for _, res := range allResults {
+		if res.MeetingKey > 0 {
+			resSkipped++
+			continue
+		}
+		mk, ok := roundToMeetingKey[res.Round]
+		if !ok {
+			mk = meetingIdx.MeetingKeyForRound(res.Round)
+		}
+		if mk == 0 {
+			logger.Warn("stamp-meeting-keys: cannot resolve meeting_key for result",
+				"result_id", res.ID, "round", res.Round)
+			resFailed++
+			continue
+		}
+		res.MeetingKey = mk
+		if dryRun {
+			logger.Info("stamp-meeting-keys: dry-run — would stamp result",
+				"result_id", res.ID, "round", res.Round, "meeting_key", mk)
+			resStamped++
+		} else {
+			if err := client.UpsertSessionResult(ctx, res); err != nil {
+				logger.Warn("stamp-meeting-keys: result upsert failed",
+					"result_id", res.ID, "error", err)
+				resFailed++
+			} else {
+				resStamped++
+			}
+		}
+	}
+	logger.Info("stamp-meeting-keys: results complete",
+		"stamped", resStamped, "skipped", resSkipped, "failed", resFailed)
+
+	// Step 4: Stamp analysis documents.
+	// Build a session lookup for resolving session_key: season+round+type → session_key.
+	sessionKeyLookup := make(map[string]int) // "round:type" → session_key
+	for _, sess := range allSessions {
+		key := fmt.Sprintf("%d:%s", sess.Round, sess.SessionType)
+		if sess.SessionKey > 0 {
+			sessionKeyLookup[key] = sess.SessionKey
+		}
+	}
+
+	// Query all analysis docs for the season by querying each round+type combo.
+	analysisStamped, analysisSkipped, analysisFailed := 0, 0, 0
+	sessionTypes := []string{"race", "sprint"}
+
+	for round := 1; round <= meetingIdx.TotalRounds(); round++ {
+		mk, ok := roundToMeetingKey[round]
+		if !ok {
+			mk = meetingIdx.MeetingKeyForRound(round)
+		}
+		if mk == 0 {
+			continue
+		}
+
+		for _, st := range sessionTypes {
+			data, qErr := client.GetSessionAnalysis(ctx, season, round, st)
+			if qErr != nil {
+				logger.Warn("stamp-meeting-keys: query analysis failed",
+					"round", round, "type", st, "error", qErr)
+				analysisFailed++
+				continue
+			}
+			if data == nil {
+				continue
+			}
+
+			sk := sessionKeyLookup[fmt.Sprintf("%d:%s", round, st)]
+
+			// Stamp positions.
+			needsStamp := false
+			for i := range data.Positions {
+				if data.Positions[i].MeetingKey == 0 {
+					needsStamp = true
+					data.Positions[i].MeetingKey = mk
+					data.Positions[i].SessionKey = sk
+				}
+			}
+			if needsStamp {
+				if dryRun {
+					logger.Info("stamp-meeting-keys: dry-run — would stamp positions",
+						"round", round, "type", st, "meeting_key", mk, "session_key", sk,
+						"count", len(data.Positions))
+				} else {
+					if err := client.UpsertSessionPositions(ctx, data.Positions); err != nil {
+						logger.Warn("stamp-meeting-keys: positions upsert failed",
+							"round", round, "type", st, "error", err)
+						analysisFailed++
+					}
+				}
+				analysisStamped += len(data.Positions)
+			} else {
+				analysisSkipped += len(data.Positions)
+			}
+
+			// Stamp intervals.
+			needsStamp = false
+			for i := range data.Intervals {
+				if data.Intervals[i].MeetingKey == 0 {
+					needsStamp = true
+					data.Intervals[i].MeetingKey = mk
+					data.Intervals[i].SessionKey = sk
+				}
+			}
+			if needsStamp {
+				if dryRun {
+					logger.Info("stamp-meeting-keys: dry-run — would stamp intervals",
+						"round", round, "type", st, "meeting_key", mk, "session_key", sk,
+						"count", len(data.Intervals))
+				} else {
+					if err := client.UpsertSessionIntervals(ctx, data.Intervals); err != nil {
+						logger.Warn("stamp-meeting-keys: intervals upsert failed",
+							"round", round, "type", st, "error", err)
+						analysisFailed++
+					}
+				}
+				analysisStamped += len(data.Intervals)
+			} else {
+				analysisSkipped += len(data.Intervals)
+			}
+
+			// Stamp stints.
+			needsStamp = false
+			for i := range data.Stints {
+				if data.Stints[i].MeetingKey == 0 {
+					needsStamp = true
+					data.Stints[i].MeetingKey = mk
+					data.Stints[i].SessionKey = sk
+				}
+			}
+			if needsStamp {
+				if dryRun {
+					logger.Info("stamp-meeting-keys: dry-run — would stamp stints",
+						"round", round, "type", st, "meeting_key", mk, "session_key", sk,
+						"count", len(data.Stints))
+				} else {
+					if err := client.UpsertSessionStints(ctx, data.Stints); err != nil {
+						logger.Warn("stamp-meeting-keys: stints upsert failed",
+							"round", round, "type", st, "error", err)
+						analysisFailed++
+					}
+				}
+				analysisStamped += len(data.Stints)
+			} else {
+				analysisSkipped += len(data.Stints)
+			}
+
+			// Stamp pits.
+			needsStamp = false
+			for i := range data.Pits {
+				if data.Pits[i].MeetingKey == 0 {
+					needsStamp = true
+					data.Pits[i].MeetingKey = mk
+					data.Pits[i].SessionKey = sk
+				}
+			}
+			if needsStamp {
+				if dryRun {
+					logger.Info("stamp-meeting-keys: dry-run — would stamp pits",
+						"round", round, "type", st, "meeting_key", mk, "session_key", sk,
+						"count", len(data.Pits))
+				} else {
+					if err := client.UpsertSessionPits(ctx, data.Pits); err != nil {
+						logger.Warn("stamp-meeting-keys: pits upsert failed",
+							"round", round, "type", st, "error", err)
+						analysisFailed++
+					}
+				}
+				analysisStamped += len(data.Pits)
+			} else {
+				analysisSkipped += len(data.Pits)
+			}
+
+			// Stamp overtakes.
+			needsStamp = false
+			for i := range data.Overtakes {
+				if data.Overtakes[i].MeetingKey == 0 {
+					needsStamp = true
+					data.Overtakes[i].MeetingKey = mk
+					data.Overtakes[i].SessionKey = sk
+				}
+			}
+			if needsStamp {
+				if dryRun {
+					logger.Info("stamp-meeting-keys: dry-run — would stamp overtakes",
+						"round", round, "type", st, "meeting_key", mk, "session_key", sk,
+						"count", len(data.Overtakes))
+				} else {
+					if err := client.UpsertSessionOvertakes(ctx, data.Overtakes); err != nil {
+						logger.Warn("stamp-meeting-keys: overtakes upsert failed",
+							"round", round, "type", st, "error", err)
+						analysisFailed++
+					}
+				}
+				analysisStamped += len(data.Overtakes)
+			} else {
+				analysisSkipped += len(data.Overtakes)
+			}
+		}
+	}
+
+	logger.Info("stamp-meeting-keys: analysis complete",
+		"stamped", analysisStamped, "skipped", analysisSkipped, "failed", analysisFailed)
+
+	logger.Info("stamp-meeting-keys: all done",
+		"season", season,
+		"sessions_stamped", sessStamped,
+		"results_stamped", resStamped,
+		"analysis_stamped", analysisStamped,
 		"dry_run", dryRun,
 	)
 }
