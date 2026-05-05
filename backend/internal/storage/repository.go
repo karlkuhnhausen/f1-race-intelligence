@@ -11,6 +11,7 @@ type RaceMeeting struct {
 	ID               string    `json:"id"`
 	Season           int       `json:"season"`
 	Round            int       `json:"round"`
+	MeetingKey       int       `json:"meeting_key"`
 	RaceName         string    `json:"race_name"`
 	CircuitName      string    `json:"circuit_name"`
 	CountryName      string    `json:"country_name"`
@@ -54,6 +55,7 @@ type CalendarRepository interface {
 	UpsertMeeting(ctx context.Context, m RaceMeeting) error
 	GetMeetingsBySeason(ctx context.Context, season int) ([]RaceMeeting, error)
 	GetMeetingByID(ctx context.Context, season int, id string) (*RaceMeeting, error)
+	GetMeetingByMeetingKey(ctx context.Context, season, meetingKey int) (*RaceMeeting, error)
 	DeleteMeeting(ctx context.Context, season int, id string) error
 }
 
@@ -127,6 +129,7 @@ type SessionResult struct {
 	Type          string    `json:"type"` // document type discriminator: "session_result"
 	Season        int       `json:"season"`
 	Round         int       `json:"round"`
+	MeetingKey    int       `json:"meeting_key"`
 	SessionKey    int       `json:"session_key"`
 	SessionType   string    `json:"session_type"`
 	Position      int       `json:"position"`
@@ -161,6 +164,11 @@ type SessionRepository interface {
 	UpsertSessionResult(ctx context.Context, r SessionResult) error
 	GetSessionsByRound(ctx context.Context, season, round int) ([]Session, error)
 	GetSessionResultsByRound(ctx context.Context, season, round int) ([]SessionResult, error)
+	// GetSessionsByMeetingKey returns all sessions for the given meeting_key.
+	// Used by the API layer after resolving round → meeting_key via MeetingIndex.
+	GetSessionsByMeetingKey(ctx context.Context, season, meetingKey int) ([]Session, error)
+	// GetSessionResultsByMeetingKey returns all session results for the given meeting_key.
+	GetSessionResultsByMeetingKey(ctx context.Context, season, meetingKey int) ([]SessionResult, error)
 	// GetSessionResultsBySeason returns every cached SessionResult for the
 	// given season across all rounds. Used to compute running championship
 	// totals from OpenF1 race + sprint points without depending on a
@@ -190,6 +198,8 @@ type SessionAnalysisPosition struct {
 	Type          string        `json:"type"`   // "analysis_position"
 	Season        int           `json:"season"` // partition key
 	Round         int           `json:"round"`
+	MeetingKey    int           `json:"meeting_key"`
+	SessionKey    int           `json:"session_key"`
 	SessionType   string        `json:"session_type"`
 	DriverNumber  int           `json:"driver_number"`
 	DriverName    string        `json:"driver_name"`
@@ -211,6 +221,8 @@ type SessionAnalysisInterval struct {
 	Type          string        `json:"type"` // "analysis_interval"
 	Season        int           `json:"season"`
 	Round         int           `json:"round"`
+	MeetingKey    int           `json:"meeting_key"`
+	SessionKey    int           `json:"session_key"`
 	SessionType   string        `json:"session_type"`
 	DriverNumber  int           `json:"driver_number"`
 	DriverAcronym string        `json:"driver_acronym"`
@@ -232,6 +244,8 @@ type SessionAnalysisStint struct {
 	Type           string `json:"type"` // "analysis_stint"
 	Season         int    `json:"season"`
 	Round          int    `json:"round"`
+	MeetingKey     int    `json:"meeting_key"`
+	SessionKey     int    `json:"session_key"`
 	SessionType    string `json:"session_type"`
 	DriverNumber   int    `json:"driver_number"`
 	DriverAcronym  string `json:"driver_acronym"`
@@ -249,6 +263,8 @@ type SessionAnalysisPit struct {
 	Type          string  `json:"type"` // "analysis_pit"
 	Season        int     `json:"season"`
 	Round         int     `json:"round"`
+	MeetingKey    int     `json:"meeting_key"`
+	SessionKey    int     `json:"session_key"`
 	SessionType   string  `json:"session_type"`
 	DriverNumber  int     `json:"driver_number"`
 	DriverAcronym string  `json:"driver_acronym"`
@@ -264,6 +280,8 @@ type SessionAnalysisOvertake struct {
 	Type                   string `json:"type"` // "analysis_overtake"
 	Season                 int    `json:"season"`
 	Round                  int    `json:"round"`
+	MeetingKey             int    `json:"meeting_key"`
+	SessionKey             int    `json:"session_key"`
 	SessionType            string `json:"session_type"`
 	OvertakingDriverNumber int    `json:"overtaking_driver_number"`
 	OvertakingDriverName   string `json:"overtaking_driver_name"`
@@ -290,6 +308,8 @@ type AnalysisRepository interface {
 	UpsertSessionPits(ctx context.Context, pits []SessionAnalysisPit) error
 	UpsertSessionOvertakes(ctx context.Context, overtakes []SessionAnalysisOvertake) error
 	GetSessionAnalysis(ctx context.Context, season, round int, sessionType string) (*SessionAnalysisData, error)
+	// GetSessionAnalysisByMeetingKey queries analysis data using meeting_key instead of round.
+	GetSessionAnalysisByMeetingKey(ctx context.Context, season, meetingKey int, sessionType string) (*SessionAnalysisData, error)
 	HasAnalysisData(ctx context.Context, season, round int, sessionType string) (bool, error)
 }
 

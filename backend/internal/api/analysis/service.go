@@ -4,13 +4,15 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/domain"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/storage"
 )
 
 // Service handles business logic for the session analysis API.
 type Service struct {
-	repo   storage.AnalysisRepository
-	logger *slog.Logger
+	repo         storage.AnalysisRepository
+	calendarRepo storage.CalendarRepository
+	logger       *slog.Logger
 }
 
 // NewService creates a new analysis service.
@@ -18,13 +20,37 @@ func NewService(repo storage.AnalysisRepository, logger *slog.Logger) *Service {
 	return &Service{repo: repo, logger: logger}
 }
 
+// NewServiceWithCalendar creates an analysis service with calendar access for
+// meeting_key-based queries.
+func NewServiceWithCalendar(repo storage.AnalysisRepository, calendarRepo storage.CalendarRepository, logger *slog.Logger) *Service {
+	return &Service{repo: repo, calendarRepo: calendarRepo, logger: logger}
+}
+
 // GetSessionAnalysis retrieves and maps analysis data for a given session.
 // Returns nil if no data is available.
 func (s *Service) GetSessionAnalysis(ctx context.Context, season, round int, sessionType string) (*SessionAnalysisDTO, error) {
-	data, err := s.repo.GetSessionAnalysis(ctx, season, round, sessionType)
-	if err != nil {
-		return nil, err
+	var data *storage.SessionAnalysisData
+	var err error
+
+	// Try meeting_key-based query first if calendar repo is available.
+	if s.calendarRepo != nil {
+		meetingKey := s.resolveMeetingKey(ctx, season, round)
+		if meetingKey != 0 {
+			data, err = s.repo.GetSessionAnalysisByMeetingKey(ctx, season, meetingKey, sessionType)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
+
+	// Fallback to round-based query.
+	if data == nil {
+		data, err = s.repo.GetSessionAnalysis(ctx, season, round, sessionType)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	if data == nil {
 		return nil, nil
 	}
@@ -119,4 +145,23 @@ func (s *Service) GetSessionAnalysis(ctx context.Context, season, round int, ses
 	}
 
 	return dto, nil
+}
+
+func (s *Service) resolveMeetingKey(ctx context.Context, season, round int) int {
+	meetings, err := s.calendarRepo.GetMeetingsBySeason(ctx, season)
+	if err != nil {
+		s.logger.WarnContext(ctx, "failed to get meetings for meeting_key resolution", "error", err)
+		return 0
+	}
+	indexInputs := make([]domain.MeetingForIndex, 0, len(meetings))
+	for _, m := range meetings {
+		indexInputs = append(indexInputs, domain.MeetingForIndex{
+			MeetingKey:       m.MeetingKey,
+			RaceName:         m.RaceName,
+			StartDatetimeUTC: m.StartDatetimeUTC,
+			IsCancelled:      m.IsCancelled,
+		})
+	}
+	idx := domain.BuildMeetingIndex(indexInputs)
+	return idx.MeetingKeyForRound(round)
 }

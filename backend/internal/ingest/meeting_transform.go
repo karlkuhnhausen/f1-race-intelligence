@@ -51,6 +51,7 @@ func NormalizeMeetings(raw []openF1Meeting, season int) []storage.RaceMeeting {
 			ID:               fmt.Sprintf("%d-%02d", season, round),
 			Season:           season,
 			Round:            round,
+			MeetingKey:       r.MeetingKey,
 			RaceName:         r.MeetingName,
 			CircuitName:      r.CircuitName,
 			CountryName:      r.CountryName,

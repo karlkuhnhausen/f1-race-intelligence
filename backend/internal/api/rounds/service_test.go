@@ -91,6 +91,12 @@ func (f *fakeSessionRepo) DeleteSession(_ context.Context, _ int, _ string) erro
 func (f *fakeSessionRepo) DeleteSessionResultsBySessionType(_ context.Context, _, _ int, _ string) error {
 	return nil
 }
+func (f *fakeSessionRepo) GetSessionsByMeetingKey(_ context.Context, _, _ int) ([]storage.Session, error) {
+	return nil, nil
+}
+func (f *fakeSessionRepo) GetSessionResultsByMeetingKey(_ context.Context, _, _ int) ([]storage.SessionResult, error) {
+	return nil, nil
+}
 func (f *fakeSessionRepo) GetFinalizedSessions(_ context.Context, _ int) ([]storage.Session, error) {
 	return nil, nil
 }
@@ -108,6 +114,10 @@ func (f *fakeCalendarRepo) GetMeetingsBySeason(_ context.Context, _ int) ([]stor
 	return f.meetings, nil
 }
 func (f *fakeCalendarRepo) GetMeetingByID(_ context.Context, _ int, _ string) (*storage.RaceMeeting, error) {
+	return nil, nil
+}
+
+func (f *fakeCalendarRepo) GetMeetingByMeetingKey(_ context.Context, _ int, _ int) (*storage.RaceMeeting, error) {
 	return nil, nil
 }
 

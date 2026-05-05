@@ -300,11 +300,23 @@ func derivePracticeRecap(sess storage.Session, results []SessionResultDTO) *Sess
 
 // GetRoundDetail retrieves session data and results for a specific round.
 func (s *Service) GetRoundDetail(ctx context.Context, season, round int) (*RoundDetailResponse, error) {
-	// Get meeting info for the round
+	// Get meeting info for the round and build a MeetingIndex.
 	meetings, err := s.calendarRepo.GetMeetingsBySeason(ctx, season)
 	if err != nil {
 		return nil, err
 	}
+
+	// Build MeetingIndex for round → meeting_key resolution.
+	indexInputs := make([]domain.MeetingForIndex, 0, len(meetings))
+	for _, m := range meetings {
+		indexInputs = append(indexInputs, domain.MeetingForIndex{
+			MeetingKey:       m.MeetingKey,
+			RaceName:         m.RaceName,
+			StartDatetimeUTC: m.StartDatetimeUTC,
+			IsCancelled:      m.IsCancelled,
+		})
+	}
+	meetingIdx := domain.BuildMeetingIndex(indexInputs)
 
 	var meeting *storage.RaceMeeting
 	for i := range meetings {
@@ -323,16 +335,36 @@ func (s *Service) GetRoundDetail(ctx context.Context, season, round int) (*Round
 		countryName = meeting.CountryName
 	}
 
-	// Get sessions for this round
-	sessions, err := s.sessionRepo.GetSessionsByRound(ctx, season, round)
-	if err != nil {
-		return nil, err
+	// Resolve round → meeting_key and prefer meeting_key-based queries.
+	meetingKey := meetingIdx.MeetingKeyForRound(round)
+
+	var sessions []storage.Session
+	var results []storage.SessionResult
+
+	if meetingKey != 0 {
+		sessions, err = s.sessionRepo.GetSessionsByMeetingKey(ctx, season, meetingKey)
+		if err != nil {
+			return nil, err
+		}
+		results, err = s.sessionRepo.GetSessionResultsByMeetingKey(ctx, season, meetingKey)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	// Get all results for this round
-	results, err := s.sessionRepo.GetSessionResultsByRound(ctx, season, round)
-	if err != nil {
-		return nil, err
+	// Fallback to round-based queries if meeting_key query returned nothing
+	// (handles pre-migration data that doesn't have meeting_key populated).
+	if len(sessions) == 0 {
+		sessions, err = s.sessionRepo.GetSessionsByRound(ctx, season, round)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if len(results) == 0 {
+		results, err = s.sessionRepo.GetSessionResultsByRound(ctx, season, round)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Group results by session_type

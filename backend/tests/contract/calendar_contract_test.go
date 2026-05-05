@@ -44,6 +44,15 @@ func (m *mockCalendarRepo) GetMeetingByID(_ context.Context, _ int, id string) (
 	return nil, nil
 }
 
+func (m *mockCalendarRepo) GetMeetingByMeetingKey(_ context.Context, _ int, meetingKey int) (*storage.RaceMeeting, error) {
+	for _, mtg := range m.meetings {
+		if mtg.MeetingKey == meetingKey {
+			return &mtg, nil
+		}
+	}
+	return nil, nil
+}
+
 func (m *mockCalendarRepo) DeleteMeeting(_ context.Context, _ int, id string) error {
 	for i, mtg := range m.meetings {
 		if mtg.ID == id {

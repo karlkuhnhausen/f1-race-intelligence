@@ -26,6 +26,10 @@ func (f *fakeCalendarRepo) GetMeetingByID(_ context.Context, _ int, _ string) (*
 	return nil, nil
 }
 
+func (f *fakeCalendarRepo) GetMeetingByMeetingKey(_ context.Context, _ int, _ int) (*storage.RaceMeeting, error) {
+	return nil, nil
+}
+
 func (f *fakeCalendarRepo) DeleteMeeting(_ context.Context, _ int, _ string) error {
 	return nil
 }

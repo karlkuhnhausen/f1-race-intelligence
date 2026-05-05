@@ -108,6 +108,73 @@ func (c *Client) GetSessionResultsByRound(ctx context.Context, season, round int
 	return results, nil
 }
 
+func (c *Client) GetSessionsByMeetingKey(ctx context.Context, season, meetingKey int) ([]storage.Session, error) {
+	pk := azcosmos.NewPartitionKeyNumber(float64(season))
+	query := "SELECT * FROM c WHERE c.season = @season AND c.meeting_key = @meetingKey AND c.type = 'session'"
+	queryOpts := &azcosmos.QueryOptions{
+		QueryParameters: []azcosmos.QueryParameter{
+			{Name: "@season", Value: season},
+			{Name: "@meetingKey", Value: meetingKey},
+		},
+	}
+
+	pager := c.sessions.NewQueryItemsPager(query, pk, queryOpts)
+	var sessions []storage.Session
+
+	for pager.More() {
+		resp, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("cosmos: query sessions by meeting_key: %w", err)
+		}
+		for _, item := range resp.Items {
+			var s storage.Session
+			if err := json.Unmarshal(item, &s); err != nil {
+				return nil, fmt.Errorf("cosmos: unmarshal session: %w", err)
+			}
+			sessions = append(sessions, s)
+		}
+	}
+	sort.Slice(sessions, func(i, j int) bool {
+		return sessions[i].DateStartUTC.Before(sessions[j].DateStartUTC)
+	})
+	return sessions, nil
+}
+
+func (c *Client) GetSessionResultsByMeetingKey(ctx context.Context, season, meetingKey int) ([]storage.SessionResult, error) {
+	pk := azcosmos.NewPartitionKeyNumber(float64(season))
+	query := "SELECT * FROM c WHERE c.season = @season AND c.meeting_key = @meetingKey AND c.type = 'session_result'"
+	queryOpts := &azcosmos.QueryOptions{
+		QueryParameters: []azcosmos.QueryParameter{
+			{Name: "@season", Value: season},
+			{Name: "@meetingKey", Value: meetingKey},
+		},
+	}
+
+	pager := c.sessions.NewQueryItemsPager(query, pk, queryOpts)
+	var results []storage.SessionResult
+
+	for pager.More() {
+		resp, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("cosmos: query session results by meeting_key: %w", err)
+		}
+		for _, item := range resp.Items {
+			var r storage.SessionResult
+			if err := json.Unmarshal(item, &r); err != nil {
+				return nil, fmt.Errorf("cosmos: unmarshal session result: %w", err)
+			}
+			results = append(results, r)
+		}
+	}
+	sort.Slice(results, func(i, j int) bool {
+		if results[i].SessionType != results[j].SessionType {
+			return results[i].SessionType < results[j].SessionType
+		}
+		return results[i].Position < results[j].Position
+	})
+	return results, nil
+}
+
 // GetSessionResultsBySeason returns every cached session result for the
 // season (across all rounds and session types). The calendar service uses
 // this to compute running championship totals from race+sprint points.

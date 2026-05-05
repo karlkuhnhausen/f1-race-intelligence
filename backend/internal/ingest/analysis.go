@@ -612,7 +612,7 @@ func FetchAllAnalysisData(ctx context.Context, client *http.Client, sessionKey i
 }
 
 // ToStoragePositions converts domain positions to storage documents for a given session.
-func ToStoragePositions(season, round int, sessionType string, positions []domain.AnalysisPosition) []storage.SessionAnalysisPosition {
+func ToStoragePositions(season, round, meetingKey, sessionKey int, sessionType string, positions []domain.AnalysisPosition) []storage.SessionAnalysisPosition {
 	docs := make([]storage.SessionAnalysisPosition, 0, len(positions))
 	for _, p := range positions {
 		laps := make([]storage.PositionLap, len(p.Laps))
@@ -624,6 +624,8 @@ func ToStoragePositions(season, round int, sessionType string, positions []domai
 			Type:          "analysis_position",
 			Season:        season,
 			Round:         round,
+			MeetingKey:    meetingKey,
+			SessionKey:    sessionKey,
 			SessionType:   sessionType,
 			DriverNumber:  p.DriverNumber,
 			DriverName:    p.DriverName,
@@ -637,7 +639,7 @@ func ToStoragePositions(season, round int, sessionType string, positions []domai
 }
 
 // ToStorageIntervals converts domain intervals to storage documents.
-func ToStorageIntervals(season, round int, sessionType string, intervals []domain.AnalysisInterval) []storage.SessionAnalysisInterval {
+func ToStorageIntervals(season, round, meetingKey, sessionKey int, sessionType string, intervals []domain.AnalysisInterval) []storage.SessionAnalysisInterval {
 	docs := make([]storage.SessionAnalysisInterval, 0, len(intervals))
 	for _, iv := range intervals {
 		laps := make([]storage.IntervalLap, len(iv.Laps))
@@ -649,6 +651,8 @@ func ToStorageIntervals(season, round int, sessionType string, intervals []domai
 			Type:          "analysis_interval",
 			Season:        season,
 			Round:         round,
+			MeetingKey:    meetingKey,
+			SessionKey:    sessionKey,
 			SessionType:   sessionType,
 			DriverNumber:  iv.DriverNumber,
 			DriverAcronym: iv.DriverAcronym,
@@ -661,7 +665,7 @@ func ToStorageIntervals(season, round int, sessionType string, intervals []domai
 }
 
 // ToStorageStints converts domain stints to storage documents.
-func ToStorageStints(season, round int, sessionType string, stints []domain.AnalysisStint) []storage.SessionAnalysisStint {
+func ToStorageStints(season, round, meetingKey, sessionKey int, sessionType string, stints []domain.AnalysisStint) []storage.SessionAnalysisStint {
 	docs := make([]storage.SessionAnalysisStint, 0, len(stints))
 	for _, s := range stints {
 		docs = append(docs, storage.SessionAnalysisStint{
@@ -669,6 +673,8 @@ func ToStorageStints(season, round int, sessionType string, stints []domain.Anal
 			Type:           "analysis_stint",
 			Season:         season,
 			Round:          round,
+			MeetingKey:     meetingKey,
+			SessionKey:     sessionKey,
 			SessionType:    sessionType,
 			DriverNumber:   s.DriverNumber,
 			DriverAcronym:  s.DriverAcronym,
@@ -684,7 +690,7 @@ func ToStorageStints(season, round int, sessionType string, stints []domain.Anal
 }
 
 // ToStoragePits converts domain pits to storage documents.
-func ToStoragePits(season, round int, sessionType string, pits []domain.AnalysisPit) []storage.SessionAnalysisPit {
+func ToStoragePits(season, round, meetingKey, sessionKey int, sessionType string, pits []domain.AnalysisPit) []storage.SessionAnalysisPit {
 	docs := make([]storage.SessionAnalysisPit, 0, len(pits))
 	for _, p := range pits {
 		docs = append(docs, storage.SessionAnalysisPit{
@@ -692,6 +698,8 @@ func ToStoragePits(season, round int, sessionType string, pits []domain.Analysis
 			Type:          "analysis_pit",
 			Season:        season,
 			Round:         round,
+			MeetingKey:    meetingKey,
+			SessionKey:    sessionKey,
 			SessionType:   sessionType,
 			DriverNumber:  p.DriverNumber,
 			DriverAcronym: p.DriverAcronym,
@@ -705,7 +713,7 @@ func ToStoragePits(season, round int, sessionType string, pits []domain.Analysis
 }
 
 // ToStorageOvertakes converts domain overtakes to storage documents.
-func ToStorageOvertakes(season, round int, sessionType string, overtakes []domain.AnalysisOvertake) []storage.SessionAnalysisOvertake {
+func ToStorageOvertakes(season, round, meetingKey, sessionKey int, sessionType string, overtakes []domain.AnalysisOvertake) []storage.SessionAnalysisOvertake {
 	docs := make([]storage.SessionAnalysisOvertake, 0, len(overtakes))
 	for i, o := range overtakes {
 		docs = append(docs, storage.SessionAnalysisOvertake{
@@ -713,6 +721,8 @@ func ToStorageOvertakes(season, round int, sessionType string, overtakes []domai
 			Type:                   "analysis_overtake",
 			Season:                 season,
 			Round:                  round,
+			MeetingKey:             meetingKey,
+			SessionKey:             sessionKey,
 			SessionType:            sessionType,
 			OvertakingDriverNumber: o.OvertakingDriverNumber,
 			OvertakingDriverName:   o.OvertakingDriverName,

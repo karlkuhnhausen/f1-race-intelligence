@@ -179,26 +179,26 @@ func (s *AnalysisScheduler) fetchAndStore(ctx context.Context, sess storage.Sess
 	}
 
 	// Persist each data type.
-	if err := s.analysisRepo.UpsertSessionPositions(ctx, ToStoragePositions(sess.Season, sess.Round, sess.SessionType, fetchResult.Positions)); err != nil {
+	if err := s.analysisRepo.UpsertSessionPositions(ctx, ToStoragePositions(sess.Season, sess.Round, sess.MeetingKey, sess.SessionKey, sess.SessionType, fetchResult.Positions)); err != nil {
 		return fmt.Errorf("upsert positions: %w", err)
 	}
 	if len(fetchResult.Intervals) > 0 {
-		if err := s.analysisRepo.UpsertSessionIntervals(ctx, ToStorageIntervals(sess.Season, sess.Round, sess.SessionType, fetchResult.Intervals)); err != nil {
+		if err := s.analysisRepo.UpsertSessionIntervals(ctx, ToStorageIntervals(sess.Season, sess.Round, sess.MeetingKey, sess.SessionKey, sess.SessionType, fetchResult.Intervals)); err != nil {
 			s.logger.Warn("analysis scheduler: upsert intervals failed", "error", err)
 		}
 	}
 	if len(fetchResult.Stints) > 0 {
-		if err := s.analysisRepo.UpsertSessionStints(ctx, ToStorageStints(sess.Season, sess.Round, sess.SessionType, fetchResult.Stints)); err != nil {
+		if err := s.analysisRepo.UpsertSessionStints(ctx, ToStorageStints(sess.Season, sess.Round, sess.MeetingKey, sess.SessionKey, sess.SessionType, fetchResult.Stints)); err != nil {
 			s.logger.Warn("analysis scheduler: upsert stints failed", "error", err)
 		}
 	}
 	if len(fetchResult.Pits) > 0 {
-		if err := s.analysisRepo.UpsertSessionPits(ctx, ToStoragePits(sess.Season, sess.Round, sess.SessionType, fetchResult.Pits)); err != nil {
+		if err := s.analysisRepo.UpsertSessionPits(ctx, ToStoragePits(sess.Season, sess.Round, sess.MeetingKey, sess.SessionKey, sess.SessionType, fetchResult.Pits)); err != nil {
 			s.logger.Warn("analysis scheduler: upsert pits failed", "error", err)
 		}
 	}
 	if len(fetchResult.Overtakes) > 0 {
-		if err := s.analysisRepo.UpsertSessionOvertakes(ctx, ToStorageOvertakes(sess.Season, sess.Round, sess.SessionType, fetchResult.Overtakes)); err != nil {
+		if err := s.analysisRepo.UpsertSessionOvertakes(ctx, ToStorageOvertakes(sess.Season, sess.Round, sess.MeetingKey, sess.SessionKey, sess.SessionType, fetchResult.Overtakes)); err != nil {
 			s.logger.Warn("analysis scheduler: upsert overtakes failed", "error", err)
 		}
 	}

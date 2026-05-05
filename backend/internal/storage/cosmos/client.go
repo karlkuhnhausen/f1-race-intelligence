@@ -131,6 +131,33 @@ func (c *Client) GetMeetingByID(ctx context.Context, season int, id string) (*st
 	return &m, nil
 }
 
+func (c *Client) GetMeetingByMeetingKey(ctx context.Context, season, meetingKey int) (*storage.RaceMeeting, error) {
+	pk := azcosmos.NewPartitionKeyNumber(float64(season))
+	query := "SELECT * FROM c WHERE c.season = @season AND c.meeting_key = @meetingKey"
+	queryOpts := &azcosmos.QueryOptions{
+		QueryParameters: []azcosmos.QueryParameter{
+			{Name: "@season", Value: season},
+			{Name: "@meetingKey", Value: meetingKey},
+		},
+	}
+
+	pager := c.meetings.NewQueryItemsPager(query, pk, queryOpts)
+	for pager.More() {
+		resp, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("cosmos: query meeting by meeting_key %d: %w", meetingKey, err)
+		}
+		for _, item := range resp.Items {
+			var m storage.RaceMeeting
+			if err := json.Unmarshal(item, &m); err != nil {
+				return nil, fmt.Errorf("cosmos: unmarshal meeting: %w", err)
+			}
+			return &m, nil
+		}
+	}
+	return nil, nil
+}
+
 func (c *Client) DeleteMeeting(ctx context.Context, season int, id string) error {
 	pk := azcosmos.NewPartitionKeyNumber(float64(season))
 	_, err := c.meetings.DeleteItem(ctx, pk, id, nil)

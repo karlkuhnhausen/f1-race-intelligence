@@ -47,6 +47,15 @@ func (r *inMemoryRepo) GetMeetingByID(_ context.Context, _ int, id string) (*sto
 	return &m, nil
 }
 
+func (r *inMemoryRepo) GetMeetingByMeetingKey(_ context.Context, _ int, meetingKey int) (*storage.RaceMeeting, error) {
+	for _, m := range r.meetings {
+		if m.MeetingKey == meetingKey {
+			return &m, nil
+		}
+	}
+	return nil, nil
+}
+
 func (r *inMemoryRepo) DeleteMeeting(_ context.Context, _ int, id string) error {
 	delete(r.meetings, id)
 	return nil

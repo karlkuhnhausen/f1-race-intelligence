@@ -1,7 +1,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/007-standings-overhaul/plan.md
+at specs/008-stable-identity-migration/plan.md
 <!-- SPECKIT END -->
 
 # F1 Race Intelligence Dashboard — Copilot Instructions

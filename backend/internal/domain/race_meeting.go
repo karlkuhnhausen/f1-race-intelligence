@@ -16,6 +16,7 @@ const (
 // RaceMeeting is the domain representation of one F1 season round.
 type RaceMeeting struct {
 	Round            int
+	MeetingKey       int
 	RaceName         string
 	CircuitName      string
 	CountryName      string
