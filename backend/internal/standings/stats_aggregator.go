@@ -51,11 +51,14 @@ func (sa *StatsAggregator) GetDriverStats(ctx context.Context, season int) (map[
 	for _, r := range results {
 		s := stats[r.DriverNumber]
 		s.DriverNumber = r.DriverNumber
-		if r.Position == 1 && !r.DNF && !r.DSQ {
-			s.Wins++
-		}
-		if r.Position <= 3 && !r.DNF && !r.DSQ {
-			s.Podiums++
+		// Wins and podiums count only main race results (not sprint).
+		if r.SessionType == "race" {
+			if r.Position == 1 && !r.DNF && !r.DSQ {
+				s.Wins++
+			}
+			if r.Position <= 3 && !r.DNF && !r.DSQ {
+				s.Podiums++
+			}
 		}
 		if r.DNF {
 			s.DNFs++
@@ -92,11 +95,14 @@ func (sa *StatsAggregator) GetTeamStats(ctx context.Context, season int, driverT
 		}
 		s := stats[teamName]
 		s.TeamName = teamName
-		if r.Position == 1 && !r.DNF && !r.DSQ {
-			s.Wins++
-		}
-		if r.Position <= 3 && !r.DNF && !r.DSQ {
-			s.Podiums++
+		// Wins and podiums count only main race results (not sprint).
+		if r.SessionType == "race" {
+			if r.Position == 1 && !r.DNF && !r.DSQ {
+				s.Wins++
+			}
+			if r.Position <= 3 && !r.DNF && !r.DSQ {
+				s.Podiums++
+			}
 		}
 		if r.DNF {
 			s.DNFs++

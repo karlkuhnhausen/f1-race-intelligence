@@ -36,7 +36,8 @@ func NewChampionshipIngester(repo storage.ChampionshipRepository, logger *slog.L
 }
 
 // IngestSession fetches and stores championship data for a single race/sprint session.
-func (ci *ChampionshipIngester) IngestSession(ctx context.Context, season, sessionKey, meetingKey int) error {
+// sessionType must be "race" or "sprint" to correctly tag results.
+func (ci *ChampionshipIngester) IngestSession(ctx context.Context, season, sessionKey, meetingKey int, sessionType string) error {
 	start := time.Now()
 	ci.logger.Info("championship ingestion starting",
 		"season", season,
@@ -69,7 +70,7 @@ func (ci *ChampionshipIngester) IngestSession(ctx context.Context, season, sessi
 	}
 
 	// Fetch session results
-	results, err := ci.fetchSessionResults(ctx, season, sessionKey, meetingKey)
+	results, err := ci.fetchSessionResults(ctx, season, sessionKey, meetingKey, sessionType)
 	if err != nil {
 		ci.logger.Error("session results fetch failed", "session_key", sessionKey, "error", err)
 		return fmt.Errorf("session results: %w", err)
@@ -260,7 +261,7 @@ func (ci *ChampionshipIngester) fetchTeamChampionship(ctx context.Context, seaso
 	return snapshots, nil
 }
 
-func (ci *ChampionshipIngester) fetchSessionResults(ctx context.Context, season, sessionKey, meetingKey int) ([]storage.ChampionshipSessionResult, error) {
+func (ci *ChampionshipIngester) fetchSessionResults(ctx context.Context, season, sessionKey, meetingKey int, sessionType string) ([]storage.ChampionshipSessionResult, error) {
 	url := fmt.Sprintf("%s/session_result?session_key=%d", openF1BaseURL, sessionKey)
 	var raw []map[string]any
 	if err := ci.fetchJSON(ctx, url, &raw); err != nil {
@@ -277,6 +278,7 @@ func (ci *ChampionshipIngester) fetchSessionResults(ctx context.Context, season,
 			Season:       season,
 			SessionKey:   sessionKey,
 			MeetingKey:   meetingKey,
+			SessionType:  sessionType,
 			DriverNumber: driverNum,
 			Position:     getInt(r, "position"),
 			Points:       getFloat(r, "points"),
