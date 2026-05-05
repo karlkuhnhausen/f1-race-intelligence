@@ -74,7 +74,7 @@ export default function StandingsTable({
         <tbody>
           {rows.map((row, idx) => {
             const teamColor = row.teamColor
-              ? `#${row.teamColor}`
+              ? row.teamColor
               : getTeamColor(row.constructorId);
             return (
               <tr

@@ -10,9 +10,9 @@ const mockDrivers: DriversStandingsResponse = {
   year: 2026,
   data_as_of_utc: '2026-04-19T12:00:00Z',
   rows: [
-    { position: 1, driver_number: 1, driver_name: 'Max Verstappen', team_name: 'Red Bull Racing', team_color: '3671C6', points: 119, wins: 4, podiums: 5, dnfs: 0, poles: 3 },
-    { position: 2, driver_number: 4, driver_name: 'Lando Norris', team_name: 'McLaren', team_color: 'FF8000', points: 98, wins: 2, podiums: 4, dnfs: 1, poles: 1 },
-    { position: 3, driver_number: 16, driver_name: 'Charles Leclerc', team_name: 'Ferrari', team_color: 'E8002D', points: 87, wins: 1, podiums: 3, dnfs: 0, poles: 2 },
+    { position: 1, driver_number: 1, driver_name: 'Max Verstappen', team_name: 'Red Bull Racing', team_color: '#3671C6', points: 119, wins: 4, podiums: 5, dnfs: 0, poles: 3 },
+    { position: 2, driver_number: 4, driver_name: 'Lando Norris', team_name: 'McLaren', team_color: '#FF8000', points: 98, wins: 2, podiums: 4, dnfs: 1, poles: 1 },
+    { position: 3, driver_number: 16, driver_name: 'Charles Leclerc', team_name: 'Ferrari', team_color: '#E8002D', points: 87, wins: 1, podiums: 3, dnfs: 0, poles: 2 },
   ],
 };
 
@@ -20,9 +20,9 @@ const mockConstructors: ConstructorsStandingsResponse = {
   year: 2026,
   data_as_of_utc: '2026-04-19T12:00:00Z',
   rows: [
-    { position: 1, team_name: 'Red Bull Racing', team_color: '3671C6', points: 198, wins: 4, podiums: 8, dnfs: 0 },
-    { position: 2, team_name: 'McLaren', team_color: 'FF8000', points: 165, wins: 2, podiums: 6, dnfs: 1 },
-    { position: 3, team_name: 'Ferrari', team_color: 'E8002D', points: 150, wins: 1, podiums: 5, dnfs: 0 },
+    { position: 1, team_name: 'Red Bull Racing', team_color: '#3671C6', points: 198, wins: 4, podiums: 8, dnfs: 0 },
+    { position: 2, team_name: 'McLaren', team_color: '#FF8000', points: 165, wins: 2, podiums: 6, dnfs: 1 },
+    { position: 3, team_name: 'Ferrari', team_color: '#E8002D', points: 150, wins: 1, podiums: 5, dnfs: 0 },
   ],
 };
 

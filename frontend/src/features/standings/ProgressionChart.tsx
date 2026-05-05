@@ -87,7 +87,7 @@ export default function ProgressionChart({ rounds, entries }: ProgressionChartPr
               key={entry.name}
               type="monotone"
               dataKey={entry.name}
-              stroke={entry.color ? `#${entry.color}` : '#888'}
+              stroke={entry.color || '#888'}
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 4 }}
