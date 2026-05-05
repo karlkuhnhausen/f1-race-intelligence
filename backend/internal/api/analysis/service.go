@@ -61,8 +61,14 @@ func (s *Service) GetSessionAnalysis(ctx context.Context, season, round int, ses
 		SessionType: sessionType,
 	}
 
-	// Map positions
+	// Map positions (deduplicate by driver_number — Cosmos may contain
+	// duplicate analysis_position documents from the 008 migration).
+	seenPositions := make(map[int]struct{})
 	for _, p := range data.Positions {
+		if _, exists := seenPositions[p.DriverNumber]; exists {
+			continue
+		}
+		seenPositions[p.DriverNumber] = struct{}{}
 		laps := make([]PositionLapDTO, len(p.Laps))
 		for i, l := range p.Laps {
 			laps[i] = PositionLapDTO{Lap: l.LapNumber, Position: l.Position}
@@ -83,10 +89,13 @@ func (s *Service) GetSessionAnalysis(ctx context.Context, season, round int, ses
 		}
 	}
 
-	// Map intervals
-	// NOTE: Intervals are NOT included in total_laps computation because OpenF1
-	// sometimes reports interval data beyond actual race distance.
+	// Map intervals (deduplicate by driver_number).
+	seenIntervals := make(map[int]struct{})
 	for _, iv := range data.Intervals {
+		if _, exists := seenIntervals[iv.DriverNumber]; exists {
+			continue
+		}
+		seenIntervals[iv.DriverNumber] = struct{}{}
 		laps := make([]IntervalLapDTO, len(iv.Laps))
 		for i, l := range iv.Laps {
 			laps[i] = IntervalLapDTO{Lap: l.LapNumber, GapToLeader: l.GapToLeader, Interval: l.Interval}

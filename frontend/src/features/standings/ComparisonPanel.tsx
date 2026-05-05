@@ -100,14 +100,14 @@ export default function ComparisonPanel({ data, loading }: ComparisonPanelProps)
               <Line
                 type="monotone"
                 dataKey={name1}
-                stroke={color1 ? `#${color1}` : '#3b82f6'}
+                stroke={color1 || '#3b82f6'}
                 strokeWidth={2}
                 dot={false}
               />
               <Line
                 type="monotone"
                 dataKey={name2}
-                stroke={color2 ? `#${color2}` : '#ef4444'}
+                stroke={color2 || '#ef4444'}
                 strokeWidth={2}
                 dot={false}
               />
