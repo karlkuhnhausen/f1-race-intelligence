@@ -148,6 +148,71 @@ func (c *Client) GetSessionAnalysis(ctx context.Context, season, round int, sess
 	return result, nil
 }
 
+func (c *Client) GetSessionAnalysisByMeetingKey(ctx context.Context, season, meetingKey int, sessionType string) (*storage.SessionAnalysisData, error) {
+	pk := azcosmos.NewPartitionKeyNumber(float64(season))
+	query := `SELECT * FROM c WHERE c.season = @season AND c.meeting_key = @meetingKey AND c.session_type = @sessionType AND STARTSWITH(c.type, 'analysis_')`
+	queryOpts := &azcosmos.QueryOptions{
+		QueryParameters: []azcosmos.QueryParameter{
+			{Name: "@season", Value: season},
+			{Name: "@meetingKey", Value: meetingKey},
+			{Name: "@sessionType", Value: sessionType},
+		},
+	}
+
+	pager := c.sessions.NewQueryItemsPager(query, pk, queryOpts)
+
+	result := &storage.SessionAnalysisData{}
+	found := false
+
+	for pager.More() {
+		resp, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("cosmos: query analysis data by meeting_key: %w", err)
+		}
+		for _, item := range resp.Items {
+			found = true
+			var peek struct {
+				Type string `json:"type"`
+			}
+			if err := json.Unmarshal(item, &peek); err != nil {
+				continue
+			}
+			switch peek.Type {
+			case "analysis_position":
+				var doc storage.SessionAnalysisPosition
+				if err := json.Unmarshal(item, &doc); err == nil {
+					result.Positions = append(result.Positions, doc)
+				}
+			case "analysis_interval":
+				var doc storage.SessionAnalysisInterval
+				if err := json.Unmarshal(item, &doc); err == nil {
+					result.Intervals = append(result.Intervals, doc)
+				}
+			case "analysis_stint":
+				var doc storage.SessionAnalysisStint
+				if err := json.Unmarshal(item, &doc); err == nil {
+					result.Stints = append(result.Stints, doc)
+				}
+			case "analysis_pit":
+				var doc storage.SessionAnalysisPit
+				if err := json.Unmarshal(item, &doc); err == nil {
+					result.Pits = append(result.Pits, doc)
+				}
+			case "analysis_overtake":
+				var doc storage.SessionAnalysisOvertake
+				if err := json.Unmarshal(item, &doc); err == nil {
+					result.Overtakes = append(result.Overtakes, doc)
+				}
+			}
+		}
+	}
+
+	if !found {
+		return nil, nil
+	}
+	return result, nil
+}
+
 func (c *Client) HasAnalysisData(ctx context.Context, season, round int, sessionType string) (bool, error) {
 	pk := azcosmos.NewPartitionKeyNumber(float64(season))
 	query := `SELECT VALUE COUNT(1) FROM c WHERE c.season = @season AND c.round = @round AND c.session_type = @sessionType AND c.type = 'analysis_position'`

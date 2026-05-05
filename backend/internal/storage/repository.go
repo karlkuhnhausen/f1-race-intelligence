@@ -164,6 +164,11 @@ type SessionRepository interface {
 	UpsertSessionResult(ctx context.Context, r SessionResult) error
 	GetSessionsByRound(ctx context.Context, season, round int) ([]Session, error)
 	GetSessionResultsByRound(ctx context.Context, season, round int) ([]SessionResult, error)
+	// GetSessionsByMeetingKey returns all sessions for the given meeting_key.
+	// Used by the API layer after resolving round → meeting_key via MeetingIndex.
+	GetSessionsByMeetingKey(ctx context.Context, season, meetingKey int) ([]Session, error)
+	// GetSessionResultsByMeetingKey returns all session results for the given meeting_key.
+	GetSessionResultsByMeetingKey(ctx context.Context, season, meetingKey int) ([]SessionResult, error)
 	// GetSessionResultsBySeason returns every cached SessionResult for the
 	// given season across all rounds. Used to compute running championship
 	// totals from OpenF1 race + sprint points without depending on a
@@ -303,6 +308,8 @@ type AnalysisRepository interface {
 	UpsertSessionPits(ctx context.Context, pits []SessionAnalysisPit) error
 	UpsertSessionOvertakes(ctx context.Context, overtakes []SessionAnalysisOvertake) error
 	GetSessionAnalysis(ctx context.Context, season, round int, sessionType string) (*SessionAnalysisData, error)
+	// GetSessionAnalysisByMeetingKey queries analysis data using meeting_key instead of round.
+	GetSessionAnalysisByMeetingKey(ctx context.Context, season, meetingKey int, sessionType string) (*SessionAnalysisData, error)
 	HasAnalysisData(ctx context.Context, season, round int, sessionType string) (bool, error)
 }
 

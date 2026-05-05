@@ -105,6 +105,12 @@ func (r *inMemorySessionRepo) DeleteSessionResultsBySessionType(_ context.Contex
 	r.results = kept
 	return nil
 }
+func (r *inMemorySessionRepo) GetSessionsByMeetingKey(_ context.Context, _, _ int) ([]storage.Session, error) {
+	return nil, nil
+}
+func (r *inMemorySessionRepo) GetSessionResultsByMeetingKey(_ context.Context, _, _ int) ([]storage.SessionResult, error) {
+	return nil, nil
+}
 func (r *inMemorySessionRepo) GetFinalizedSessions(_ context.Context, _ int) ([]storage.Session, error) {
 	return nil, nil
 }

@@ -61,7 +61,7 @@ func NewRouter(calendarRepo storage.CalendarRepository, standingsRepo storage.St
 	roundsHandler := rounds.NewHandler(roundsSvc, logger)
 
 	// Analysis API
-	analysisSvc := analysis.NewService(analysisRepo, logger)
+	analysisSvc := analysis.NewServiceWithCalendar(analysisRepo, calendarRepo, logger)
 	analysisHandler := analysis.NewHandler(analysisSvc, logger)
 
 	r.Route("/api/v1", func(r chi.Router) {
