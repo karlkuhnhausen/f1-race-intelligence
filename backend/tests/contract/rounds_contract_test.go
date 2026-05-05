@@ -70,6 +70,15 @@ func (m *mockSessionRepo) GetFinalizedSessionKeys(_ context.Context, season int)
 	}
 	return out, nil
 }
+func (m *mockSessionRepo) GetCompletedRaceSessionKeys(_ context.Context, season int, now time.Time) (map[int]struct{}, error) {
+	out := make(map[int]struct{})
+	for _, s := range m.sessions {
+		if s.Season == season && (s.SessionType == "race" || s.SessionType == "sprint") && !s.DateEndUTC.IsZero() && s.DateEndUTC.Before(now) {
+			out[s.SessionKey] = struct{}{}
+		}
+	}
+	return out, nil
+}
 func (m *mockSessionRepo) DeleteSession(_ context.Context, _ int, _ string) error {
 	return nil
 }

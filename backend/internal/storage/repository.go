@@ -179,6 +179,11 @@ type SessionRepository interface {
 	// as a skip-list so it does not re-fetch results/drivers/laps for sessions
 	// that already finished and were fully cached.
 	GetFinalizedSessionKeys(ctx context.Context, season int) (map[int]int, error)
+	// GetCompletedRaceSessionKeys returns session_key values for race and
+	// sprint sessions whose date_end_utc is in the past. Used by the
+	// standings progression filter as a time-based alternative to finalized
+	// keys (which depend on schema_version alignment).
+	GetCompletedRaceSessionKeys(ctx context.Context, season int, now time.Time) (map[int]struct{}, error)
 	// GetFinalizedSessions returns all session documents for the season where
 	// finalized=true. Used by the backfill CLI to identify sessions that need
 	// race-control summary population.

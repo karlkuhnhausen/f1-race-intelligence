@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos"
 
@@ -236,6 +237,41 @@ func (c *Client) GetFinalizedSessionKeys(ctx context.Context, season int) (map[i
 				return nil, fmt.Errorf("cosmos: unmarshal finalized session row: %w", err)
 			}
 			out[row.SessionKey] = row.SchemaVersion
+		}
+	}
+	return out, nil
+}
+
+// GetCompletedRaceSessionKeys returns session_key values for race and sprint
+// sessions whose date_end_utc is before the given time. This provides a
+// time-based filter for the progression chart that doesn't depend on the
+// finalized flag (which requires schema_version alignment).
+func (c *Client) GetCompletedRaceSessionKeys(ctx context.Context, season int, now time.Time) (map[int]struct{}, error) {
+	pk := azcosmos.NewPartitionKeyNumber(float64(season))
+	query := "SELECT c.session_key FROM c WHERE c.season = @season AND c.type = 'session' AND c.session_type IN ('race', 'sprint') AND c.date_end_utc < @now"
+	queryOpts := &azcosmos.QueryOptions{
+		QueryParameters: []azcosmos.QueryParameter{
+			{Name: "@season", Value: season},
+			{Name: "@now", Value: now.Format(time.RFC3339)},
+		},
+	}
+
+	pager := c.sessions.NewQueryItemsPager(query, pk, queryOpts)
+	out := make(map[int]struct{})
+
+	for pager.More() {
+		resp, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("cosmos: query completed race session keys: %w", err)
+		}
+		for _, item := range resp.Items {
+			var row struct {
+				SessionKey int `json:"session_key"`
+			}
+			if err := json.Unmarshal(item, &row); err != nil {
+				return nil, fmt.Errorf("cosmos: unmarshal completed race session key: %w", err)
+			}
+			out[row.SessionKey] = struct{}{}
 		}
 	}
 	return out, nil

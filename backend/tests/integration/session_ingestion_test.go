@@ -85,6 +85,15 @@ func (r *inMemorySessionRepo) GetFinalizedSessionKeys(_ context.Context, season 
 	}
 	return out, nil
 }
+func (r *inMemorySessionRepo) GetCompletedRaceSessionKeys(_ context.Context, season int, now time.Time) (map[int]struct{}, error) {
+	out := make(map[int]struct{})
+	for _, s := range r.sessions {
+		if s.Season == season && (s.SessionType == "race" || s.SessionType == "sprint") && !s.DateEndUTC.IsZero() && s.DateEndUTC.Before(now) {
+			out[s.SessionKey] = struct{}{}
+		}
+	}
+	return out, nil
+}
 func (r *inMemorySessionRepo) DeleteSession(_ context.Context, _ int, id string) error {
 	for i, s := range r.sessions {
 		if s.ID == id {
