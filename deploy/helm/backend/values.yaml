@@ -35,3 +35,12 @@ networkPolicy:
   enabled: true
   dnsNamespace: kube-system
   allowedCIDRs: []
+
+backfill:
+  enabled: false
+  season: 2026
+  mode: championship   # used in job name only — for human readability
+  championship: false
+  analysis: false
+  dryRun: false
+  rateLimitMs: 1000

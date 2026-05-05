@@ -1,0 +1,44 @@
+{{- if .Values.backfill.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: backfill-{{ .Values.backfill.season }}-{{ .Values.backfill.mode }}
+  labels:
+    app.kubernetes.io/name: f1-backfill
+spec:
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: f1-backfill
+        azure.workload.identity/use: "true"
+      annotations:
+        azure.workload.identity/client-id: "{{ .Values.workloadIdentity.clientId }}"
+    spec:
+      serviceAccountName: f1-backend
+      restartPolicy: Never
+      containers:
+        - name: backfill
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command: ["/backfill"]
+          args:
+            - "--season={{ .Values.backfill.season }}"
+            - "--rate-limit-ms={{ .Values.backfill.rateLimitMs }}"
+            - {{ if .Values.backfill.championship }}"--championship"{{ end }}
+            - {{ if .Values.backfill.analysis }}"--analysis"{{ end }}
+            - {{ if .Values.backfill.dryRun }}"--dry-run"{{ end }}
+          env:
+            - name: COSMOS_ACCOUNT_ENDPOINT
+              value: "{{ .Values.env.COSMOS_ACCOUNT_ENDPOINT }}"
+            - name: COSMOS_DATABASE_NAME
+              value: "{{ .Values.env.COSMOS_DATABASE_NAME }}"
+            - name: KEYVAULT_URI
+              value: "{{ .Values.env.KEYVAULT_URI }}"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+{{- end }}
