@@ -127,15 +127,15 @@ type openF1ChampionshipTeam struct {
 }
 
 type openF1SessionResult struct {
-	Position     int      `json:"position"`
-	DriverNumber int      `json:"driver_number"`
-	DNF          bool     `json:"dnf"`
-	DNS          bool     `json:"dns"`
-	DSQ          bool     `json:"dsq"`
-	Points       *float64 `json:"points"`
-	NumberOfLaps int      `json:"number_of_laps"`
-	GapToLeader  *string  `json:"gap_to_leader"`
-	Duration     *float64 `json:"duration"`
+	Position     int          `json:"position"`
+	DriverNumber int          `json:"driver_number"`
+	DNF          bool         `json:"dnf"`
+	DNS          bool         `json:"dns"`
+	DSQ          bool         `json:"dsq"`
+	Points       *float64     `json:"points"`
+	NumberOfLaps int          `json:"number_of_laps"`
+	GapToLeader  *json.Number `json:"gap_to_leader"`
+	Duration     *float64     `json:"duration"`
 }
 
 type openF1StartingGrid struct {
@@ -223,7 +223,7 @@ func (ci *ChampionshipIngester) fetchSessionResults(ctx context.Context, season,
 		}
 		gap := ""
 		if r.GapToLeader != nil {
-			gap = *r.GapToLeader
+			gap = r.GapToLeader.String()
 		}
 		duration := 0.0
 		if r.Duration != nil {
