@@ -53,6 +53,16 @@ func (r *inMemoryCalendarRepo) GetMeetingByID(_ context.Context, _ int, id strin
 	return nil, nil
 }
 
+func (r *inMemoryCalendarRepo) DeleteMeeting(_ context.Context, _ int, id string) error {
+	for i, m := range r.meetings {
+		if m.ID == id {
+			r.meetings = append(r.meetings[:i], r.meetings[i+1:]...)
+			return nil
+		}
+	}
+	return nil
+}
+
 func seedThreeRounds() *inMemoryCalendarRepo {
 	now := time.Now().UTC()
 	repo := &inMemoryCalendarRepo{}

@@ -26,6 +26,10 @@ func (f *fakeCalendarRepo) GetMeetingByID(_ context.Context, _ int, _ string) (*
 	return nil, nil
 }
 
+func (f *fakeCalendarRepo) DeleteMeeting(_ context.Context, _ int, _ string) error {
+	return nil
+}
+
 // TestGetCalendar_DerivesStatusAtReadTime verifies that meeting status is
 // computed from start/end dates relative to the current time, regardless of
 // the value persisted in storage. Mirrors the day-12 session-level pattern.

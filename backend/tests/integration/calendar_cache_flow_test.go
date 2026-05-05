@@ -47,6 +47,11 @@ func (r *inMemoryRepo) GetMeetingByID(_ context.Context, _ int, id string) (*sto
 	return &m, nil
 }
 
+func (r *inMemoryRepo) DeleteMeeting(_ context.Context, _ int, id string) error {
+	delete(r.meetings, id)
+	return nil
+}
+
 func TestPollCacheAPIFlow(t *testing.T) {
 	repo := newInMemoryRepo()
 	now := time.Now().UTC()

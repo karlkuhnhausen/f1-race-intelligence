@@ -98,12 +98,43 @@ func (p *OpenF1Poller) poll(ctx context.Context, season int) {
 		}
 	}
 
+	// Reconcile: delete orphaned meetings that no longer appear in the
+	// normalized set (e.g., cancelled races whose documents linger).
+	p.reconcileStaleMeetings(ctx, season, meetings)
+
 	p.mu.Lock()
 	p.lastPoll = now
 	p.lastErr = nil
 	p.mu.Unlock()
 
 	p.logger.Info("openf1 poll complete", "season", season, "meetings", len(meetings))
+}
+
+// reconcileStaleMeetings queries stored meetings for the season and deletes
+// any whose ID does not match the current normalized set. This removes
+// orphaned documents from previously-included meetings that are now filtered
+// out (e.g., cancelled races added to the override list).
+func (p *OpenF1Poller) reconcileStaleMeetings(ctx context.Context, season int, current []storage.RaceMeeting) {
+	stored, err := p.repo.GetMeetingsBySeason(ctx, season)
+	if err != nil {
+		p.logger.Warn("openf1 reconcile: failed to query stored meetings", "error", err)
+		return
+	}
+
+	validIDs := make(map[string]bool, len(current))
+	for _, m := range current {
+		validIDs[m.ID] = true
+	}
+
+	for _, m := range stored {
+		if !validIDs[m.ID] {
+			if err := p.repo.DeleteMeeting(ctx, season, m.ID); err != nil {
+				p.logger.Error("openf1 reconcile: delete meeting failed", "meeting_id", m.ID, "error", err)
+			} else {
+				p.logger.Info("openf1 reconcile: removed stale meeting", "meeting_id", m.ID, "race_name", m.RaceName)
+			}
+		}
+	}
 }
 
 // fetchMeetings calls the OpenF1 meetings endpoint for a season.
