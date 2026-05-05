@@ -25,6 +25,18 @@ export const TEAM_COLORS: Record<string, string> = {
   // Alpine
   alpine: "#ff87bc",
   alpine_renault: "#ff87bc",
+  // Haas
+  haas: "#b6babd",
+  haas_f1_team: "#b6babd",
+  // Williams
+  williams: "#64c4ff",
+  // Racing Bulls (née AlphaTauri / Toro Rosso)
+  racing_bulls: "#6692ff",
+  // Cadillac (née Andretti)
+  cadillac: "#1e5bc6",
+  // Audi (née Sauber / Alfa Romeo)
+  audi: "#00e701",
+  sauber: "#00e701",
 };
 
 export const FALLBACK_TEAM_COLOR = "#8888aa";

@@ -85,12 +85,12 @@
 
 ### Implementation for User Story 4
 
-- [ ] T027 [US4] Run backfill --stamp-meeting-keys --dry-run against live Cosmos DB and verify all rounds resolve to expected meeting_keys in backend/cmd/backfill/main.go
-- [ ] T028 [US4] Run backfill --stamp-meeting-keys (actual) against live Cosmos DB and verify completion log shows 0 failures
-- [ ] T029 [US4] Query rounds API for multiple rounds and verify session data is returned via meeting_key path (check structured logs for query method used)
-- [ ] T030 [US4] Verify analysis API returns correct data for stamped sessions (positions, intervals, stints, pits, overtakes present)
-- [ ] T031 [US4] Verify idempotency: re-run backfill --stamp-meeting-keys and confirm 0 documents updated (all skipped)
-- [ ] T032 [US4] Run full backend test suite: `cd backend && go test ./...` passes with no regressions
+- [x] T027 [US4] Run backfill --stamp-meeting-keys --dry-run against live Cosmos DB and verify all rounds resolve to expected meeting_keys in backend/cmd/backfill/main.go
+- [x] T028 [US4] Run backfill --stamp-meeting-keys (actual) against live Cosmos DB and verify completion log shows 0 failures
+- [x] T029 [US4] Query rounds API for multiple rounds and verify session data is returned via meeting_key path (check structured logs for query method used)
+- [x] T030 [US4] Verify analysis API returns correct data for stamped sessions (positions, intervals, stints, pits, overtakes present)
+- [x] T031 [US4] Verify idempotency: re-run backfill --stamp-meeting-keys and confirm 0 documents updated (all skipped)
+- [x] T032 [US4] Run full backend test suite: `cd backend && go test ./...` passes with no regressions
 
 ---
 

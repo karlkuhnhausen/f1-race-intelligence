@@ -367,6 +367,22 @@ func (s *Service) GetRoundDetail(ctx context.Context, season, round int) (*Round
 		}
 	}
 
+	// Deduplicate results: if the same (session_type, driver_number) appears
+	// more than once, keep only the first occurrence. This guards against
+	// duplicate documents in Cosmos caused by the 008 migration re-ingesting
+	// data with shifted round numbers while meeting_key stayed constant.
+	seen := make(map[string]struct{}, len(results))
+	deduped := make([]storage.SessionResult, 0, len(results))
+	for _, r := range results {
+		key := fmt.Sprintf("%s:%d", r.SessionType, r.DriverNumber)
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		seen[key] = struct{}{}
+		deduped = append(deduped, r)
+	}
+	results = deduped
+
 	// Group results by session_type
 	resultsByType := make(map[string][]storage.SessionResult)
 	for _, r := range results {
@@ -382,44 +398,50 @@ func (s *Service) GetRoundDetail(ctx context.Context, season, round int) (*Round
 			latestDataAsOf = sess.DataAsOfUTC
 		}
 
-		sessResults := resultsByType[sess.SessionType]
-		// Sort ascending by position. OpenF1 occasionally uses position 0
-		// as a placeholder for unclassified entries (DNF/DNS/DSQ); push
-		// those to the bottom so the classified field starts at P1. The
-		// frontend further splits classified vs non-classified using
-		// finishing_status.
-		sort.SliceStable(sessResults, func(i, j int) bool {
-			pi, pj := sessResults[i].Position, sessResults[j].Position
-			zi := pi <= 0
-			zj := pj <= 0
-			if zi != zj {
-				return !zi // non-zero positions first
-			}
-			return pi < pj
-		})
-		resultDTOs := make([]SessionResultDTO, 0, len(sessResults))
-		for _, r := range sessResults {
-			resultDTOs = append(resultDTOs, SessionResultDTO{
-				Position:        r.Position,
-				DriverNumber:    r.DriverNumber,
-				DriverName:      r.DriverName,
-				DriverAcronym:   r.DriverAcronym,
-				TeamName:        r.TeamName,
-				NumberOfLaps:    r.NumberOfLaps,
-				FinishingStatus: r.FinishingStatus,
-				RaceTime:        r.RaceTime,
-				GapToLeader:     r.GapToLeader,
-				Points:          r.Points,
-				FastestLap:      r.FastestLap,
-				Q1Time:          r.Q1Time,
-				Q2Time:          r.Q2Time,
-				Q3Time:          r.Q3Time,
-				BestLapTime:     r.BestLapTime,
-				GapToFastest:    r.GapToFastest,
-			})
-		}
-
 		status := deriveSessionStatus(now, sess.DateStartUTC, sess.DateEndUTC)
+
+		// Only include results for sessions that have started. Upcoming
+		// sessions may have misattributed data in Cosmos (post-008 migration
+		// artifact) which should not be surfaced.
+		var resultDTOs []SessionResultDTO
+		if status != statusUpcoming {
+			sessResults := resultsByType[sess.SessionType]
+			// Sort ascending by position. OpenF1 occasionally uses position 0
+			// as a placeholder for unclassified entries (DNF/DNS/DSQ); push
+			// those to the bottom so the classified field starts at P1. The
+			// frontend further splits classified vs non-classified using
+			// finishing_status.
+			sort.SliceStable(sessResults, func(i, j int) bool {
+				pi, pj := sessResults[i].Position, sessResults[j].Position
+				zi := pi <= 0
+				zj := pj <= 0
+				if zi != zj {
+					return !zi // non-zero positions first
+				}
+				return pi < pj
+			})
+			resultDTOs = make([]SessionResultDTO, 0, len(sessResults))
+			for _, r := range sessResults {
+				resultDTOs = append(resultDTOs, SessionResultDTO{
+					Position:        r.Position,
+					DriverNumber:    r.DriverNumber,
+					DriverName:      r.DriverName,
+					DriverAcronym:   r.DriverAcronym,
+					TeamName:        r.TeamName,
+					NumberOfLaps:    r.NumberOfLaps,
+					FinishingStatus: r.FinishingStatus,
+					RaceTime:        r.RaceTime,
+					GapToLeader:     r.GapToLeader,
+					Points:          r.Points,
+					FastestLap:      r.FastestLap,
+					Q1Time:          r.Q1Time,
+					Q2Time:          r.Q2Time,
+					Q3Time:          r.Q3Time,
+					BestLapTime:     r.BestLapTime,
+					GapToFastest:    r.GapToFastest,
+				})
+			}
+		}
 
 		// T026: lazy fill — if completed, RaceControlSummary missing, and hydrator available,
 		// fetch race control data and persist it before building the recap.

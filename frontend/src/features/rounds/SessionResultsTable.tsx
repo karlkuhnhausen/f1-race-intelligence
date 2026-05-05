@@ -157,7 +157,7 @@ function ResultRow({
           </td>
           <td className={cellMonoRight}>
             {r.gap_to_fastest != null ? (
-              <LapTimeDisplay delta={-r.gap_to_fastest} deltaOnly />
+              <LapTimeDisplay delta={r.gap_to_fastest} deltaOnly />
             ) : (
               <span className="font-mono text-muted-foreground">—</span>
             )}

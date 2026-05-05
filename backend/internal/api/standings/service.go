@@ -183,6 +183,22 @@ func (s *Service) GetDriverProgression(ctx context.Context, season int) (*Driver
 		return nil, err
 	}
 
+	// Only include snapshots for sessions that are finalized (i.e., the race
+	// actually completed). This prevents phantom rounds from appearing in the
+	// progression chart when Cosmos contains pre-populated or misattributed
+	// championship data for future rounds.
+	finalizedKeys, err := s.sessionRepo.GetFinalizedSessionKeys(ctx, season)
+	if err != nil {
+		return nil, err
+	}
+	filtered := make([]storage.DriverChampionshipSnapshot, 0, len(snapshots))
+	for _, snap := range snapshots {
+		if _, ok := finalizedKeys[snap.SessionKey]; ok {
+			filtered = append(filtered, snap)
+		}
+	}
+	snapshots = filtered
+
 	// Collect unique session keys (each represents a round) and sort them.
 	sessionKeySet := make(map[int]struct{})
 	for _, snap := range snapshots {
@@ -253,6 +269,19 @@ func (s *Service) GetConstructorProgression(ctx context.Context, season int) (*C
 	if err != nil {
 		return nil, err
 	}
+
+	// Only include snapshots for finalized sessions (same logic as driver progression).
+	finalizedKeys, err := s.sessionRepo.GetFinalizedSessionKeys(ctx, season)
+	if err != nil {
+		return nil, err
+	}
+	filtered := make([]storage.TeamChampionshipSnapshot, 0, len(snapshots))
+	for _, snap := range snapshots {
+		if _, ok := finalizedKeys[snap.SessionKey]; ok {
+			filtered = append(filtered, snap)
+		}
+	}
+	snapshots = filtered
 
 	sessionKeySet := make(map[int]struct{})
 	for _, snap := range snapshots {
