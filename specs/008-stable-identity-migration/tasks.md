@@ -63,17 +63,17 @@
 
 ### Implementation for User Story 3
 
-- [ ] T016 [US3] Add `--stamp-meeting-keys` flag to CLI flag parsing in backend/cmd/backfill/main.go
-- [ ] T017 [US3] Implement stampMeetingKeys function: fetch all RaceMeetings via GetMeetingsBySeason, build MeetingIndex in backend/cmd/backfill/main.go
-- [ ] T018 [US3] Query all Session documents with meeting_key=0 for the season and stamp each with resolved meeting_key via MeetingIndex in backend/cmd/backfill/main.go
-- [ ] T019 [US3] Query all SessionResult documents with meeting_key=0 for the season and stamp each with resolved meeting_key via MeetingIndex in backend/cmd/backfill/main.go
-- [ ] T020 [US3] Query all analysis documents (positions, intervals, stints, pits, overtakes) with meeting_key=0 for the season in backend/cmd/backfill/main.go
-- [ ] T021 [US3] For each unstamped analysis document, resolve session_key by querying sessions container for matching session (season+round+session_type) in backend/cmd/backfill/main.go
-- [ ] T022 [US3] Upsert stamped documents back to Cosmos DB (skip if meeting_key already > 0 for idempotency) in backend/cmd/backfill/main.go
-- [ ] T023 [US3] Support --dry-run: log what would be stamped without writing, including resolved meeting_key and session_key values in backend/cmd/backfill/main.go
-- [ ] T024 [US3] Add structured slog warnings for documents where meeting_key cannot be resolved (round not in MeetingIndex) in backend/cmd/backfill/main.go
-- [ ] T025 [US3] Add completion summary log (stamped count, skipped count, failed count, dry_run flag) in backend/cmd/backfill/main.go
-- [ ] T026 [US3] Verify `go build ./...` and `go test ./...` pass with the new CLI mode in backend/
+- [x] T016 [US3] Add `--stamp-meeting-keys` flag to CLI flag parsing in backend/cmd/backfill/main.go
+- [x] T017 [US3] Implement stampMeetingKeys function: fetch all RaceMeetings via GetMeetingsBySeason, build MeetingIndex in backend/cmd/backfill/main.go
+- [x] T018 [US3] Query all Session documents with meeting_key=0 for the season and stamp each with resolved meeting_key via MeetingIndex in backend/cmd/backfill/main.go
+- [x] T019 [US3] Query all SessionResult documents with meeting_key=0 for the season and stamp each with resolved meeting_key via MeetingIndex in backend/cmd/backfill/main.go
+- [x] T020 [US3] Query all analysis documents (positions, intervals, stints, pits, overtakes) with meeting_key=0 for the season in backend/cmd/backfill/main.go
+- [x] T021 [US3] For each unstamped analysis document, resolve session_key by querying sessions container for matching session (season+round+session_type) in backend/cmd/backfill/main.go
+- [x] T022 [US3] Upsert stamped documents back to Cosmos DB (skip if meeting_key already > 0 for idempotency) in backend/cmd/backfill/main.go
+- [x] T023 [US3] Support --dry-run: log what would be stamped without writing, including resolved meeting_key and session_key values in backend/cmd/backfill/main.go
+- [x] T024 [US3] Add structured slog warnings for documents where meeting_key cannot be resolved (round not in MeetingIndex) in backend/cmd/backfill/main.go
+- [x] T025 [US3] Add completion summary log (stamped count, skipped count, failed count, dry_run flag) in backend/cmd/backfill/main.go
+- [x] T026 [US3] Verify `go build ./...` and `go test ./...` pass with the new CLI mode in backend/
 
 ---
 
