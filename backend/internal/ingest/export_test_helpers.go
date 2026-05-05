@@ -2,6 +2,8 @@ package ingest
 
 import (
 	"encoding/json"
+	"log/slog"
+	"net/http"
 
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/domain"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/storage"
@@ -103,4 +105,30 @@ func buildTestDriver(driverNumber int, fullName, acronym, team string) *openF1Dr
 		NameAcronym:  acronym,
 		TeamName:     team,
 	}
+}
+
+// OpenF1SessionForTest mirrors the unexported openF1Session for external tests.
+type OpenF1SessionForTest struct {
+	SessionKey  int
+	SessionName string
+	MeetingKey  int
+	DateStart   string
+}
+
+// BuildMeetingRoundMapForTest wraps buildMeetingRoundMap for external test access.
+func BuildMeetingRoundMapForTest(sessions []OpenF1SessionForTest, cancelledKeys map[int]bool) map[int]int {
+	internal := make([]openF1Session, len(sessions))
+	for i, s := range sessions {
+		internal[i] = openF1Session{
+			SessionKey:  s.SessionKey,
+			SessionName: s.SessionName,
+			MeetingKey:  s.MeetingKey,
+			DateStart:   s.DateStart,
+		}
+	}
+	p := &SessionPoller{
+		logger: slog.Default(),
+		client: &http.Client{},
+	}
+	return p.buildMeetingRoundMap(internal, cancelledKeys)
 }

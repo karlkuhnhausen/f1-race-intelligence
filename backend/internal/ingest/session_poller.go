@@ -42,7 +42,9 @@ var errNoDriverData = errors.New("openf1: driver data unavailable, results skipp
 //	    are re-polled to acquire results.
 //	4 — championship ingestion hook added; re-poll to trigger championship
 //	    data ingestion for all Race/Sprint sessions.
-const SessionSchemaVersion = 4
+//	5 — round numbers recalculated after cancelled-meeting exclusion in
+//	    buildMeetingRoundMap. Aligns session round numbers with meeting poller.
+const SessionSchemaVersion = 5
 
 // finalizationBuffer is how long after a session's DateEndUTC we wait
 // before marking it finalized in the cache. This gives OpenF1 time to
@@ -145,7 +147,8 @@ func (p *SessionPoller) poll(ctx context.Context, season int) {
 		}
 	}
 
-	meetingRounds := p.buildMeetingRoundMap(sessions)
+	cancelledKeys := p.buildCancelledMeetingKeys(ctx, season)
+	meetingRounds := p.buildMeetingRoundMap(sessions, cancelledKeys)
 
 	skipped := 0
 	skippedCancelled := 0
@@ -291,7 +294,7 @@ func (p *SessionPoller) poll(ctx context.Context, season int) {
 	)
 }
 
-func (p *SessionPoller) buildMeetingRoundMap(sessions []openF1Session) map[int]int {
+func (p *SessionPoller) buildMeetingRoundMap(sessions []openF1Session, cancelledKeys map[int]bool) map[int]int {
 	type meetingInfo struct {
 		key       int
 		dateStart string
@@ -310,6 +313,9 @@ func (p *SessionPoller) buildMeetingRoundMap(sessions []openF1Session) map[int]i
 	var meetings []meetingInfo
 	for _, s := range sessions {
 		if testingMeetings[s.MeetingKey] {
+			continue
+		}
+		if cancelledKeys[s.MeetingKey] {
 			continue
 		}
 		if !seen[s.MeetingKey] {
@@ -473,6 +479,44 @@ func (p *SessionPoller) fetchSessions(ctx context.Context, season int) ([]openF1
 		return nil, fmt.Errorf("openf1 sessions: %w", err)
 	}
 	return raw, nil
+}
+
+// fetchMeetingsRaw fetches raw meeting metadata from OpenF1 for cancelled-meeting detection.
+func (p *SessionPoller) fetchMeetingsRaw(ctx context.Context, season int) ([]openF1Meeting, error) {
+	url := fmt.Sprintf("%s/meetings?year=%d", openF1BaseURL, season)
+	var raw []openF1Meeting
+	if err := p.fetchJSON(ctx, url, &raw); err != nil {
+		return nil, fmt.Errorf("openf1 meetings: %w", err)
+	}
+	return raw, nil
+}
+
+// buildCancelledMeetingKeys fetches meeting metadata from OpenF1 and returns
+// a set of meeting keys that are cancelled (either via the IsCancelled field
+// from the API or via the domain cancellation overrides). This ensures the
+// session poller's round numbering matches the meeting poller's.
+func (p *SessionPoller) buildCancelledMeetingKeys(ctx context.Context, season int) map[int]bool {
+	meetings, err := p.fetchMeetingsRaw(ctx, season)
+	if err != nil {
+		p.logger.Warn("session poll: fetch meetings for cancelled detection failed; proceeding without cancellation filter", "error", err)
+		return nil
+	}
+
+	cancelled := make(map[int]bool)
+	for _, m := range meetings {
+		if m.IsCancelled {
+			cancelled[m.MeetingKey] = true
+			continue
+		}
+		if _, ok := domain.IsCancelled(season, m.MeetingName); ok {
+			cancelled[m.MeetingKey] = true
+			continue
+		}
+		if IsPreSeasonTesting(m.MeetingName) {
+			cancelled[m.MeetingKey] = true
+		}
+	}
+	return cancelled
 }
 
 func (p *SessionPoller) fetchSessionResults(ctx context.Context, sessionKey int) ([]openF1SessionResult, error) {

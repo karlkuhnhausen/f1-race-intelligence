@@ -54,6 +54,7 @@ type CalendarRepository interface {
 	UpsertMeeting(ctx context.Context, m RaceMeeting) error
 	GetMeetingsBySeason(ctx context.Context, season int) ([]RaceMeeting, error)
 	GetMeetingByID(ctx context.Context, season int, id string) (*RaceMeeting, error)
+	DeleteMeeting(ctx context.Context, season int, id string) error
 }
 
 // StandingsRepository defines read/write operations for championship standings.

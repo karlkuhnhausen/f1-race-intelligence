@@ -111,6 +111,10 @@ func (f *fakeCalendarRepo) GetMeetingByID(_ context.Context, _ int, _ string) (*
 	return nil, nil
 }
 
+func (f *fakeCalendarRepo) DeleteMeeting(_ context.Context, _ int, _ string) error {
+	return nil
+}
+
 func TestGetRoundDetail_StatusOverridesStoredValue(t *testing.T) {
 	now := time.Date(2026, 4, 27, 12, 0, 0, 0, time.UTC)
 

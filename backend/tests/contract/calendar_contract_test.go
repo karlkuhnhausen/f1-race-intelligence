@@ -44,6 +44,16 @@ func (m *mockCalendarRepo) GetMeetingByID(_ context.Context, _ int, id string) (
 	return nil, nil
 }
 
+func (m *mockCalendarRepo) DeleteMeeting(_ context.Context, _ int, id string) error {
+	for i, mtg := range m.meetings {
+		if mtg.ID == id {
+			m.meetings = append(m.meetings[:i], m.meetings[i+1:]...)
+			return nil
+		}
+	}
+	return nil
+}
+
 func seedMeetings() []storage.RaceMeeting {
 	now := time.Now().UTC()
 	meetings := make([]storage.RaceMeeting, 0, 22)

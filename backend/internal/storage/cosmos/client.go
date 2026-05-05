@@ -131,6 +131,18 @@ func (c *Client) GetMeetingByID(ctx context.Context, season int, id string) (*st
 	return &m, nil
 }
 
+func (c *Client) DeleteMeeting(ctx context.Context, season int, id string) error {
+	pk := azcosmos.NewPartitionKeyNumber(float64(season))
+	_, err := c.meetings.DeleteItem(ctx, pk, id, nil)
+	if err != nil {
+		if isNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("cosmos: delete meeting %s: %w", id, err)
+	}
+	return nil
+}
+
 // --- StandingsRepository ---
 
 func (c *Client) UpsertDriverStandings(ctx context.Context, rows []storage.DriverStandingRow) error {
