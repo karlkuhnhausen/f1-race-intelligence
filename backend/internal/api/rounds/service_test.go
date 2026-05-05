@@ -85,6 +85,9 @@ func (f *fakeSessionRepo) GetSessionResultsBySeason(_ context.Context, _ int) ([
 func (f *fakeSessionRepo) GetFinalizedSessionKeys(_ context.Context, _ int) (map[int]int, error) {
 	return map[int]int{}, nil
 }
+func (f *fakeSessionRepo) GetCompletedRaceSessionKeys(_ context.Context, _ int, _ time.Time) (map[int]struct{}, error) {
+	return map[int]struct{}{}, nil
+}
 func (f *fakeSessionRepo) DeleteSession(_ context.Context, _ int, _ string) error {
 	return nil
 }

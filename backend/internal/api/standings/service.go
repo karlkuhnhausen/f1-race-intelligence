@@ -6,6 +6,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/domain"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/standings"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/storage"
 )
@@ -48,7 +49,7 @@ func (s *Service) resolveDriverIdentities(ctx context.Context, season int) (map[
 		identities[r.DriverNumber] = driverIdentity{
 			DriverName: r.DriverName,
 			TeamName:   r.TeamName,
-			TeamColor:  "", // team_color not in SessionResult; will resolve from analysis data
+			TeamColor:  domain.GetTeamColor(r.TeamName),
 		}
 	}
 	return identities, nil
@@ -158,7 +159,7 @@ func (s *Service) GetConstructors(ctx context.Context, season int) (*Constructor
 		dtos = append(dtos, ConstructorStandingDTO{
 			Position:  snap.PositionCurrent,
 			TeamName:  snap.TeamName,
-			TeamColor: "", // Will resolve when we have team color data
+			TeamColor: domain.GetTeamColor(snap.TeamName),
 			Points:    snap.PointsCurrent,
 			Wins:      stats.Wins,
 			Podiums:   stats.Podiums,
@@ -183,17 +184,17 @@ func (s *Service) GetDriverProgression(ctx context.Context, season int) (*Driver
 		return nil, err
 	}
 
-	// Only include snapshots for sessions that are finalized (i.e., the race
-	// actually completed). This prevents phantom rounds from appearing in the
-	// progression chart when Cosmos contains pre-populated or misattributed
-	// championship data for future rounds.
-	finalizedKeys, err := s.sessionRepo.GetFinalizedSessionKeys(ctx, season)
+	// Only include snapshots for sessions that have actually ended (time-based).
+	// This prevents phantom rounds from appearing in the progression chart
+	// without depending on the finalized flag (which requires schema_version
+	// alignment that may not hold for older sessions).
+	completedKeys, err := s.sessionRepo.GetCompletedRaceSessionKeys(ctx, season, time.Now().UTC())
 	if err != nil {
 		return nil, err
 	}
 	filtered := make([]storage.DriverChampionshipSnapshot, 0, len(snapshots))
 	for _, snap := range snapshots {
-		if _, ok := finalizedKeys[snap.SessionKey]; ok {
+		if _, ok := completedKeys[snap.SessionKey]; ok {
 			filtered = append(filtered, snap)
 		}
 	}
@@ -270,14 +271,14 @@ func (s *Service) GetConstructorProgression(ctx context.Context, season int) (*C
 		return nil, err
 	}
 
-	// Only include snapshots for finalized sessions (same logic as driver progression).
-	finalizedKeys, err := s.sessionRepo.GetFinalizedSessionKeys(ctx, season)
+	// Only include snapshots for sessions that have actually ended (time-based).
+	completedKeys, err := s.sessionRepo.GetCompletedRaceSessionKeys(ctx, season, time.Now().UTC())
 	if err != nil {
 		return nil, err
 	}
 	filtered := make([]storage.TeamChampionshipSnapshot, 0, len(snapshots))
 	for _, snap := range snapshots {
-		if _, ok := finalizedKeys[snap.SessionKey]; ok {
+		if _, ok := completedKeys[snap.SessionKey]; ok {
 			filtered = append(filtered, snap)
 		}
 	}
@@ -321,7 +322,7 @@ func (s *Service) GetConstructorProgression(ctx context.Context, season int) (*C
 	for _, td := range byTeam {
 		entries = append(entries, TeamProgressionEntry{
 			TeamName:      td.teamName,
-			TeamColor:     "",
+			TeamColor:     domain.GetTeamColor(td.teamName),
 			PointsByRound: td.points,
 		})
 	}
@@ -473,11 +474,11 @@ func (s *Service) GetConstructorComparison(ctx context.Context, season int, team
 	return &ConstructorComparisonResponse{
 		Year: season,
 		Team1: ComparisonTeamStats{
-			TeamName: team1, TeamColor: "", Points: latestPoints[0],
+			TeamName: team1, TeamColor: domain.GetTeamColor(team1), Points: latestPoints[0],
 			Wins: ts1.Wins, Podiums: ts1.Podiums, DNFs: ts1.DNFs,
 		},
 		Team2: ComparisonTeamStats{
-			TeamName: team2, TeamColor: "", Points: latestPoints[1],
+			TeamName: team2, TeamColor: domain.GetTeamColor(team2), Points: latestPoints[1],
 			Wins: ts2.Wins, Podiums: ts2.Podiums, DNFs: ts2.DNFs,
 		},
 		Deltas: ComparisonDeltas{

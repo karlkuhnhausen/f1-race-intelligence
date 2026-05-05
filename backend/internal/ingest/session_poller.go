@@ -44,7 +44,9 @@ var errNoDriverData = errors.New("openf1: driver data unavailable, results skipp
 //	    data ingestion for all Race/Sprint sessions.
 //	5 — round numbers recalculated after cancelled-meeting exclusion in
 //	    buildMeetingRoundMap. Aligns session round numbers with meeting poller.
-const SessionSchemaVersion = 5
+//	6 — force re-poll to ingest missing sprint/sprint_qualifying results
+//	    and trigger championship hook for rounds 2-4.
+const SessionSchemaVersion = 6
 
 // finalizationBuffer is how long after a session's DateEndUTC we wait
 // before marking it finalized in the cache. This gives OpenF1 time to

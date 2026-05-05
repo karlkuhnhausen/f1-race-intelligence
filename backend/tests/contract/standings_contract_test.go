@@ -92,6 +92,9 @@ func (m *mockSessionRepoForStandings) GetSessionResultsBySeason(_ context.Contex
 func (m *mockSessionRepoForStandings) GetFinalizedSessionKeys(_ context.Context, _ int) (map[int]int, error) {
 	return nil, nil
 }
+func (m *mockSessionRepoForStandings) GetCompletedRaceSessionKeys(_ context.Context, _ int, _ time.Time) (map[int]struct{}, error) {
+	return nil, nil
+}
 func (m *mockSessionRepoForStandings) GetFinalizedSessions(_ context.Context, _ int) ([]storage.Session, error) {
 	return nil, nil
 }
