@@ -18,6 +18,9 @@ const FORBIDDEN_PATTERNS = [
   /hyprace\.com/i,
 ];
 
+// Lines containing attribution links (href=) are allowed — not API calls
+const isAllowedLine = (line: string) => /href\s*=/.test(line);
+
 function collectSourceFiles(dir: string): string[] {
   const results: string[] = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -47,6 +50,7 @@ describe("Network boundary: no direct external API calls", () => {
       const lines = content.split("\n");
 
       for (let i = 0; i < lines.length; i++) {
+        if (isAllowedLine(lines[i])) continue;
         for (const pattern of FORBIDDEN_PATTERNS) {
           if (pattern.test(lines[i])) {
             const rel = path.relative(srcDir, filePath);
@@ -84,6 +88,7 @@ describe("Network boundary: no direct external API calls", () => {
       const lines = content.split("\n");
 
       for (let i = 0; i < lines.length; i++) {
+        if (isAllowedLine(lines[i])) continue;
         for (const pattern of FORBIDDEN_PATTERNS) {
           if (pattern.test(lines[i])) {
             const rel = path.relative(srcDir, filePath);
