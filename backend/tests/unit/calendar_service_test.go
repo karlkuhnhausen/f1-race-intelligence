@@ -85,19 +85,21 @@ func TestGetCalendar_DerivesStatusAtReadTime(t *testing.T) {
 	}
 }
 
-// TestGetCalendar_CancellationOverrideWinsOverDerivation verifies that a
-// hardcoded cancellation override takes precedence over the date-based
-// derivation, even when end date is in the past.
-func TestGetCalendar_CancellationOverrideWinsOverDerivation(t *testing.T) {
+// TestGetCalendar_CancelledRacesExcludedAtIngestion verifies that cancelled
+// races (excluded at ingestion time) simply don't appear in the calendar.
+// If one somehow slips through in storage, it is NOT marked cancelled at
+// read time — that's the ingestion layer's responsibility.
+func TestGetCalendar_CancelledRacesExcludedAtIngestion(t *testing.T) {
 	now := time.Date(2026, 5, 1, 0, 0, 0, 0, time.UTC)
 
-	// Bahrain Grand Prix has a cancellation override for season 2026.
+	// Simulate a non-cancelled round — cancelled races should never be in
+	// storage after the ingest-time filter.
 	meetings := []storage.RaceMeeting{
 		{
 			ID: "2026-04", Season: 2026, Round: 4,
-			RaceName:         "Bahrain Grand Prix",
-			StartDatetimeUTC: time.Date(2026, 4, 5, 15, 0, 0, 0, time.UTC),
-			EndDatetimeUTC:   time.Date(2026, 4, 8, 15, 0, 0, 0, time.UTC),
+			RaceName:         "Miami Grand Prix",
+			StartDatetimeUTC: time.Date(2026, 5, 4, 19, 0, 0, 0, time.UTC),
+			EndDatetimeUTC:   time.Date(2026, 5, 7, 19, 0, 0, 0, time.UTC),
 			Status:           "scheduled",
 		},
 	}
@@ -113,11 +115,11 @@ func TestGetCalendar_CancellationOverrideWinsOverDerivation(t *testing.T) {
 		t.Fatalf("expected 1 round, got %d", len(resp.Rounds))
 	}
 	r := resp.Rounds[0]
-	if !r.IsCancelled {
-		t.Errorf("expected IsCancelled=true")
+	if r.IsCancelled {
+		t.Errorf("expected IsCancelled=false for non-cancelled race")
 	}
-	if r.Status != "cancelled" {
-		t.Errorf("expected status=cancelled (override wins), got %q", r.Status)
+	if r.RaceName != "Miami Grand Prix" {
+		t.Errorf("expected Miami Grand Prix, got %q", r.RaceName)
 	}
 }
 

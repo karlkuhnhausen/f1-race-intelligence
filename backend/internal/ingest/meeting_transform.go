@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/domain"
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/storage"
 )
 
@@ -22,7 +23,8 @@ func IsPreSeasonTesting(raceName string) bool {
 
 // NormalizeMeetings transforms raw OpenF1 meeting data into storage-ready RaceMeeting structs.
 // It applies deterministic round numbering and timestamps. Pre-season testing
-// meetings are filtered out so the first race of the season is Round 1.
+// meetings and cancelled races are filtered out so round numbers align with
+// FIA official numbering.
 func NormalizeMeetings(raw []openF1Meeting, season int) []storage.RaceMeeting {
 	now := time.Now().UTC()
 	meetings := make([]storage.RaceMeeting, 0, len(raw))
@@ -30,6 +32,9 @@ func NormalizeMeetings(raw []openF1Meeting, season int) []storage.RaceMeeting {
 	round := 0
 	for _, r := range raw {
 		if IsPreSeasonTesting(r.MeetingName) {
+			continue
+		}
+		if _, cancelled := domain.IsCancelled(season, r.MeetingName); cancelled {
 			continue
 		}
 		round++
