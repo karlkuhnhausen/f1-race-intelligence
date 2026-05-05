@@ -37,8 +37,15 @@ func NormalizeMeetings(raw []openF1Meeting, season int) []storage.RaceMeeting {
 		if _, cancelled := domain.IsCancelled(season, r.MeetingName); cancelled {
 			continue
 		}
+		if r.IsCancelled {
+			continue
+		}
 		round++
 		startUTC, _ := time.Parse(time.RFC3339, r.DateStart)
+		endUTC, err := time.Parse(time.RFC3339, r.DateEnd)
+		if err != nil || endUTC.IsZero() {
+			endUTC = startUTC.Add(3 * 24 * time.Hour)
+		}
 
 		m := storage.RaceMeeting{
 			ID:               fmt.Sprintf("%d-%02d", season, round),
@@ -48,7 +55,7 @@ func NormalizeMeetings(raw []openF1Meeting, season int) []storage.RaceMeeting {
 			CircuitName:      r.CircuitName,
 			CountryName:      r.CountryName,
 			StartDatetimeUTC: startUTC,
-			EndDatetimeUTC:   startUTC.Add(3 * 24 * time.Hour),
+			EndDatetimeUTC:   endUTC,
 			Status:           "scheduled",
 			IsCancelled:      false,
 			Source:           "openf1",

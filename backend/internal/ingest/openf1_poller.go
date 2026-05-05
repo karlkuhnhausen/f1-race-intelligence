@@ -29,6 +29,8 @@ type openF1Meeting struct {
 	CircuitName string `json:"circuit_short_name"`
 	CountryName string `json:"country_name"`
 	DateStart   string `json:"date_start"`
+	DateEnd     string `json:"date_end"`
+	IsCancelled bool   `json:"is_cancelled"`
 	Year        int    `json:"year"`
 }
 

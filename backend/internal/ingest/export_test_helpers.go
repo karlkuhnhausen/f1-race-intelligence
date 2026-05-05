@@ -13,6 +13,8 @@ import (
 type OpenF1MeetingForTest struct {
 	MeetingName string
 	DateStart   string
+	DateEnd     string
+	IsCancelled bool
 	MeetingKey  int
 }
 
@@ -23,6 +25,8 @@ func NormalizeMeetingsForTest(raw []OpenF1MeetingForTest, season int) []storage.
 		internal[i] = openF1Meeting{
 			MeetingName: r.MeetingName,
 			DateStart:   r.DateStart,
+			DateEnd:     r.DateEnd,
+			IsCancelled: r.IsCancelled,
 			MeetingKey:  r.MeetingKey,
 		}
 	}

@@ -172,6 +172,70 @@ func TestNormalizeMeetings_SkipsCancelledRaces(t *testing.T) {
 	}
 }
 
+// TestNormalizeMeetings_UsesDateEndFromAPI verifies that the actual date_end
+// from the OpenF1 API is used instead of hardcoding start + 3 days.
+func TestNormalizeMeetings_UsesDateEndFromAPI(t *testing.T) {
+	raw := []ingest.OpenF1MeetingForTest{
+		{
+			MeetingName: "Singapore Grand Prix",
+			DateStart:   "2026-10-09T08:30:00+00:00",
+			DateEnd:     "2026-10-11T14:00:00+00:00",
+			MeetingKey:  1296,
+		},
+	}
+	meetings := ingest.NormalizeMeetingsForTest(raw, 2026)
+	if len(meetings) != 1 {
+		t.Fatalf("expected 1 meeting, got %d", len(meetings))
+	}
+	expected := time.Date(2026, 10, 11, 14, 0, 0, 0, time.UTC)
+	if !meetings[0].EndDatetimeUTC.Equal(expected) {
+		t.Errorf("EndDatetimeUTC = %v, want %v", meetings[0].EndDatetimeUTC, expected)
+	}
+}
+
+// TestNormalizeMeetings_FallbackDateEndWhenMissing verifies fallback to
+// start + 3 days when date_end is empty (e.g. future meetings not yet populated).
+func TestNormalizeMeetings_FallbackDateEndWhenMissing(t *testing.T) {
+	raw := []ingest.OpenF1MeetingForTest{
+		{
+			MeetingName: "Australian Grand Prix",
+			DateStart:   "2026-03-13T05:00:00+00:00",
+			DateEnd:     "", // not provided
+			MeetingKey:  1279,
+		},
+	}
+	meetings := ingest.NormalizeMeetingsForTest(raw, 2026)
+	if len(meetings) != 1 {
+		t.Fatalf("expected 1 meeting, got %d", len(meetings))
+	}
+	start := time.Date(2026, 3, 13, 5, 0, 0, 0, time.UTC)
+	expected := start.Add(3 * 24 * time.Hour)
+	if !meetings[0].EndDatetimeUTC.Equal(expected) {
+		t.Errorf("EndDatetimeUTC = %v, want fallback %v", meetings[0].EndDatetimeUTC, expected)
+	}
+}
+
+// TestNormalizeMeetings_SkipsIsCancelledFromAPI verifies that meetings with
+// is_cancelled=true from the OpenF1 API are filtered out even if not in
+// our hardcoded cancellation overrides.
+func TestNormalizeMeetings_SkipsIsCancelledFromAPI(t *testing.T) {
+	raw := []ingest.OpenF1MeetingForTest{
+		{MeetingName: "Australian Grand Prix", DateStart: "2026-03-08T05:00:00Z", MeetingKey: 1279},
+		{MeetingName: "Hypothetical Cancelled GP", DateStart: "2026-04-01T10:00:00Z", MeetingKey: 9999, IsCancelled: true},
+		{MeetingName: "Chinese Grand Prix", DateStart: "2026-03-15T05:00:00Z", MeetingKey: 1280},
+	}
+	meetings := ingest.NormalizeMeetingsForTest(raw, 2026)
+	if len(meetings) != 2 {
+		t.Fatalf("expected 2 meetings (cancelled filtered), got %d", len(meetings))
+	}
+	if meetings[0].RaceName != "Australian Grand Prix" || meetings[0].Round != 1 {
+		t.Errorf("Round 1 should be AUS, got %q round %d", meetings[0].RaceName, meetings[0].Round)
+	}
+	if meetings[1].RaceName != "Chinese Grand Prix" || meetings[1].Round != 2 {
+		t.Errorf("Round 2 should be CHN, got %q round %d", meetings[1].RaceName, meetings[1].Round)
+	}
+}
+
 // TestGetCalendar_PodiumEnrichment verifies that completed races are
 // enriched with top-3 race finishers + cumulative season points (summed
 // from race + sprint session results), while upcoming races are not.
