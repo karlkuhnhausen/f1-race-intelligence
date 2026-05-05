@@ -264,6 +264,13 @@ func (s *Service) enrichPodiums(ctx context.Context, season int, rounds []RoundD
 			continue
 		}
 
+		// Only attach podium data to rounds whose weekend has actually started.
+		// Scheduled/upcoming rounds (start in the future) may have
+		// misattributed results in Cosmos (post-008 migration artifact).
+		if r.StartDatetimeUTC.After(s.now()) {
+			continue
+		}
+
 		results := resultsByRound[r.Round]
 		// Filter to race-type results (race only — sprint has its own
 		// sessionType but the calendar podium reflects the GP winner).

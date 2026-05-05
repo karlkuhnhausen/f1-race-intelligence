@@ -166,14 +166,18 @@ export default function AnalysisPage() {
           )}
 
           {/* Gap to Leader Progression */}
-          {data.intervals && data.intervals.length > 0 && (
-            <section>
-              <h3 className="font-display text-lg font-semibold mb-3">
-                Gap to Leader
-              </h3>
+          <section>
+            <h3 className="font-display text-lg font-semibold mb-3">
+              Gap to Leader
+            </h3>
+            {data.intervals && data.intervals.length > 0 ? (
               <GapChart intervals={data.intervals} totalLaps={totalLaps} />
-            </section>
-          )}
+            ) : (
+              <p className="text-muted-foreground text-sm py-4">
+                Interval data not available for this session.
+              </p>
+            )}
+          </section>
 
           {/* Tire Strategy Swimlane */}
           {data.stints && data.stints.length > 0 && (

@@ -77,7 +77,7 @@ export default function RoundDetailPage() {
         <p className="text-muted-foreground">
           {data.circuit_name} — {data.country_name}
         </p>
-        {data.data_as_of_utc && (
+        {data.data_as_of_utc && new Date(data.data_as_of_utc).getFullYear() > 1970 && (
           <p className="mt-1 text-sm text-muted-foreground font-mono">
             Data as of: {new Date(data.data_as_of_utc).toLocaleString()}
           </p>
