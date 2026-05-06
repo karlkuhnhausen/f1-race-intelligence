@@ -49,7 +49,7 @@ func NewRouter(calendarRepo storage.CalendarRepository, standingsRepo storage.St
 	calendarHandler := calendar.NewHandler(calendarSvc, logger)
 
 	// Standings API
-	standingsSvc := standings.NewService(standingsRepo, championshipRepo, sessionRepo)
+	standingsSvc := standings.NewService(standingsRepo, championshipRepo, sessionRepo, calendarRepo)
 	standingsHandler := standings.NewHandler(standingsSvc, logger)
 
 	// Rounds API — wire a real RaceControlHydrator for lazy-on-read gap fill.

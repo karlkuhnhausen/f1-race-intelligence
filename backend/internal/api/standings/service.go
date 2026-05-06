@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/karlkuhnhausen/f1-race-intelligence/backend/internal/domain"
@@ -16,15 +17,17 @@ type Service struct {
 	standingsRepo    storage.StandingsRepository
 	championshipRepo storage.ChampionshipRepository
 	sessionRepo      storage.SessionRepository
+	calendarRepo     storage.CalendarRepository
 	statsAggregator  *standings.StatsAggregator
 }
 
 // NewService creates a standings service.
-func NewService(standingsRepo storage.StandingsRepository, championshipRepo storage.ChampionshipRepository, sessionRepo storage.SessionRepository) *Service {
+func NewService(standingsRepo storage.StandingsRepository, championshipRepo storage.ChampionshipRepository, sessionRepo storage.SessionRepository, calendarRepo storage.CalendarRepository) *Service {
 	return &Service{
 		standingsRepo:    standingsRepo,
 		championshipRepo: championshipRepo,
 		sessionRepo:      sessionRepo,
+		calendarRepo:     calendarRepo,
 		statsAggregator:  standings.NewStatsAggregator(championshipRepo),
 	}
 }
@@ -177,6 +180,101 @@ func (s *Service) GetConstructors(ctx context.Context, season int) (*Constructor
 	}, nil
 }
 
+// buildRoundLabels creates human-readable X-axis labels for progression charts.
+// For meetings with only a race session: just the circuit name (e.g., "Melbourne").
+// For sprint weekends (both race + sprint): "Circuit Race" / "Circuit Sprint".
+func (s *Service) buildRoundLabels(ctx context.Context, season int, sessionKeys []int, now time.Time) []string {
+	labels := make([]string, len(sessionKeys))
+
+	// Default labels in case lookup fails.
+	for i := range sessionKeys {
+		labels[i] = fmt.Sprintf("Round %d", i+1)
+	}
+
+	if s.calendarRepo == nil {
+		return labels
+	}
+
+	// Fetch completed sessions to map session_key → (meeting_key, session_type).
+	sessions, err := s.sessionRepo.GetCompletedRaceSessions(ctx, season, now)
+	if err != nil {
+		return labels
+	}
+
+	type sessionInfo struct {
+		meetingKey  int
+		sessionType string
+	}
+	sessionMap := make(map[int]sessionInfo, len(sessions))
+	// Track which meetings have multiple scoring sessions (sprint weekends).
+	meetingSessions := make(map[int]int) // meeting_key → count of scoring sessions
+	for _, sess := range sessions {
+		sessionMap[sess.SessionKey] = sessionInfo{
+			meetingKey:  sess.MeetingKey,
+			sessionType: sess.SessionType,
+		}
+		meetingSessions[sess.MeetingKey]++
+	}
+
+	// Fetch meetings to get circuit names.
+	meetings, err := s.calendarRepo.GetMeetingsBySeason(ctx, season)
+	if err != nil {
+		return labels
+	}
+	circuitByMeeting := make(map[int]string, len(meetings))
+	for _, m := range meetings {
+		// Use country name as the short label (e.g., "Australia", "China", "USA").
+		// Fall back to circuit name if country is empty.
+		name := m.CountryName
+		if name == "" {
+			name = m.CircuitName
+		}
+		// Shorten common long names.
+		name = shortenCircuitLabel(name)
+		circuitByMeeting[m.MeetingKey] = name
+	}
+
+	// Build labels.
+	for i, sk := range sessionKeys {
+		info, ok := sessionMap[sk]
+		if !ok {
+			continue
+		}
+		circuit, ok := circuitByMeeting[info.meetingKey]
+		if !ok {
+			continue
+		}
+		if meetingSessions[info.meetingKey] > 1 {
+			// Sprint weekend — disambiguate.
+			switch strings.ToLower(info.sessionType) {
+			case "sprint":
+				labels[i] = circuit + " Sprint"
+			default:
+				labels[i] = circuit + " Race"
+			}
+		} else {
+			// Non-sprint weekend — just the circuit name.
+			labels[i] = circuit
+		}
+	}
+
+	return labels
+}
+
+// shortenCircuitLabel trims common verbose location names to short forms.
+func shortenCircuitLabel(name string) string {
+	replacements := map[string]string{
+		"United Arab Emirates": "Abu Dhabi",
+		"United States":        "USA",
+		"United Kingdom":       "Great Britain",
+		"Saudi Arabia":         "Saudi Arabia",
+	}
+	if short, ok := replacements[name]; ok {
+		return short
+	}
+	return name
+}
+
 // GetDriverProgression returns per-round cumulative points for each driver.
 func (s *Service) GetDriverProgression(ctx context.Context, season int) (*DriversProgressionResponse, error) {
 	snapshots, err := s.championshipRepo.GetDriverChampionshipSnapshots(ctx, season)
@@ -184,11 +282,13 @@ func (s *Service) GetDriverProgression(ctx context.Context, season int) (*Driver
 		return nil, err
 	}
 
+	now := time.Now().UTC()
+
 	// Only include snapshots for sessions that have actually ended (time-based).
 	// This prevents phantom rounds from appearing in the progression chart
 	// without depending on the finalized flag (which requires schema_version
 	// alignment that may not hold for older sessions).
-	completedKeys, err := s.sessionRepo.GetCompletedRaceSessionKeys(ctx, season, time.Now().UTC())
+	completedKeys, err := s.sessionRepo.GetCompletedRaceSessionKeys(ctx, season, now)
 	if err != nil {
 		return nil, err
 	}
@@ -211,10 +311,9 @@ func (s *Service) GetDriverProgression(ctx context.Context, season int) (*Driver
 	}
 	sort.Ints(sessionKeys)
 
-	rounds := make([]string, len(sessionKeys))
-	skIndex := make(map[int]int)
+	rounds := s.buildRoundLabels(ctx, season, sessionKeys, now)
+	skIndex := make(map[int]int, len(sessionKeys))
 	for i, sk := range sessionKeys {
-		rounds[i] = fmt.Sprintf("Round %d", i+1)
 		skIndex[sk] = i
 	}
 
@@ -271,8 +370,10 @@ func (s *Service) GetConstructorProgression(ctx context.Context, season int) (*C
 		return nil, err
 	}
 
+	now := time.Now().UTC()
+
 	// Only include snapshots for sessions that have actually ended (time-based).
-	completedKeys, err := s.sessionRepo.GetCompletedRaceSessionKeys(ctx, season, time.Now().UTC())
+	completedKeys, err := s.sessionRepo.GetCompletedRaceSessionKeys(ctx, season, now)
 	if err != nil {
 		return nil, err
 	}
@@ -294,10 +395,9 @@ func (s *Service) GetConstructorProgression(ctx context.Context, season int) (*C
 	}
 	sort.Ints(sessionKeys)
 
-	rounds := make([]string, len(sessionKeys))
-	skIndex := make(map[int]int)
+	rounds := s.buildRoundLabels(ctx, season, sessionKeys, now)
+	skIndex := make(map[int]int, len(sessionKeys))
 	for i, sk := range sessionKeys {
-		rounds[i] = fmt.Sprintf("Round %d", i+1)
 		skIndex[sk] = i
 	}
 

@@ -41,6 +41,9 @@ func (f *fakeSessionRepoWithResults) GetFinalizedSessionKeys(_ context.Context, 
 func (f *fakeSessionRepoWithResults) GetCompletedRaceSessionKeys(_ context.Context, _ int, _ time.Time) (map[int]struct{}, error) {
 	return nil, nil
 }
+func (f *fakeSessionRepoWithResults) GetCompletedRaceSessions(_ context.Context, _ int, _ time.Time) ([]storage.Session, error) {
+	return nil, nil
+}
 func (f *fakeSessionRepoWithResults) DeleteSession(_ context.Context, _ int, _ string) error {
 	return nil
 }

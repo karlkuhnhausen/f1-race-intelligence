@@ -79,6 +79,9 @@ func (m *mockSessionRepo) GetCompletedRaceSessionKeys(_ context.Context, season 
 	}
 	return out, nil
 }
+func (m *mockSessionRepo) GetCompletedRaceSessions(_ context.Context, _ int, _ time.Time) ([]storage.Session, error) {
+	return nil, nil
+}
 func (m *mockSessionRepo) DeleteSession(_ context.Context, _ int, _ string) error {
 	return nil
 }

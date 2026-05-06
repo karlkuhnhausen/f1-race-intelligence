@@ -94,6 +94,9 @@ func (r *inMemorySessionRepo) GetCompletedRaceSessionKeys(_ context.Context, sea
 	}
 	return out, nil
 }
+func (r *inMemorySessionRepo) GetCompletedRaceSessions(_ context.Context, _ int, _ time.Time) ([]storage.Session, error) {
+	return nil, nil
+}
 func (r *inMemorySessionRepo) DeleteSession(_ context.Context, _ int, id string) error {
 	for i, s := range r.sessions {
 		if s.ID == id {
