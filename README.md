@@ -73,6 +73,11 @@ This project is being built in public, with architecture decisions and progress 
 - [Day 22: The Standings Overhaul — Real Data, Real Bugs, and a Credit Long Overdue](docs/blog/day-22-standings-overhaul.md)
 - [Day 23: The Round Numbers Were Lying — A Cancelled-Race Desync](docs/blog/day-23-cancelled-round-desync.md)
 
+### Bug Fixes & Data Quality
+
+- [Day 24: "USA Race" Is Not a Circuit — Fixing the Progression Chart Labels](docs/blog/day-24-circuit-name-labels.md)
+- [Day 25: The Sprint Sessions That Showed Nothing — A Three-Bug Cascade](docs/blog/day-25-sprint-session-saga.md)
+
 ## Architecture Direction
 
 - Go backend with Chi router
@@ -108,6 +113,10 @@ This project is being built in public, with architecture decisions and progress 
 **Feature 7 — Standings Overhaul (May 4, 2026):** Complete (with known follow-up items). Removed the fictional Hyprace standings integration and replaced it with real OpenF1 championship data (`/v1/championship_drivers`, `/v1/championship_teams`). New `ChampionshipIngester` fetches standings snapshots, session results, and starting grids at each race/sprint finalization. New API endpoints serve progression data, head-to-head comparisons, and constructor driver breakdowns. Frontend gains year picker (2023–current), recharts-based progression charts, comparison panel, and expandable constructor rows. 68 tasks across 9 phases. PRs [#57](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/57), [#58](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/58), [#59](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/59), [#60](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/60).
 
 **Known Issues (May 5, 2026):** (1) Podium data leaking into future rounds (5 and 6) — the calendar's podium enrichment query doesn't filter by round status, so championship snapshots from the latest completed session get attributed to future rounds. Separate fix needed. (2) OpenF1 API attribution is missing from the application UI — a footer credit linking to openf1.org needs to be added.
+
+**Sprint Session Fixes (May 5, 2026):** Miami sprint weekend now shows all five sessions with results. Three cascading bugs: (1) stale session documents with wrong `session_type` survived dedup — fixed with schema v7 bump (PR [#77](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/77)); (2) results grouped by `session_type` instead of `session_key`, causing cross-contamination between sprint and race results — fixed in PR [#78](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/78); (3) poller metadata upsert clobbered `Finalized` flag before the skip check, causing every session to be re-processed every cycle and exhausting OpenF1 rate limits before reaching Miami — fixed by reordering the check-then-upsert in PR [#79](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/79). Schema bumped to v8.
+
+**Progression Chart Labels (May 5, 2026):** X-axis labels on the standings progression chart now show circuit short names (Melbourne, Suzuka, Miami) instead of country names (Australia, Japan, USA). PR [#80](https://github.com/karlkuhnhausen/f1-race-intelligence/pull/80).
 
 - **Frontend**: http://f1raceintel.westus3.cloudapp.azure.com/
 - **API**: http://f1raceintel.westus3.cloudapp.azure.com/api/v1/calendar?year=2026
