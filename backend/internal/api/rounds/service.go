@@ -386,14 +386,14 @@ func (s *Service) GetRoundDetail(ctx context.Context, season, round int) (*Round
 		})
 	}
 
-	// Deduplicate results: if the same (session_type, driver_number) appears
-	// more than once, keep only the first occurrence. This guards against
-	// duplicate documents in Cosmos caused by the 008 migration re-ingesting
-	// data with shifted round numbers while meeting_key stayed constant.
+	// Deduplicate results: if the same (session_key, driver_number) appears
+	// more than once, keep only the first occurrence. Using session_key (not
+	// session_type) ensures results from different sessions with the same type
+	// (e.g., mis-typed sprint stored as "race") don't interfere.
 	seen := make(map[string]struct{}, len(results))
 	deduped := make([]storage.SessionResult, 0, len(results))
 	for _, r := range results {
-		key := fmt.Sprintf("%s:%d", r.SessionType, r.DriverNumber)
+		key := fmt.Sprintf("%d:%d", r.SessionKey, r.DriverNumber)
 		if _, exists := seen[key]; exists {
 			continue
 		}
@@ -402,10 +402,12 @@ func (s *Service) GetRoundDetail(ctx context.Context, season, round int) (*Round
 	}
 	results = deduped
 
-	// Group results by session_type
-	resultsByType := make(map[string][]storage.SessionResult)
+	// Group results by session_key for reliable matching to sessions.
+	// Using session_key avoids cross-contamination when stale documents
+	// have incorrect session_type values.
+	resultsByKey := make(map[int][]storage.SessionResult)
 	for _, r := range results {
-		resultsByType[r.SessionType] = append(resultsByType[r.SessionType], r)
+		resultsByKey[r.SessionKey] = append(resultsByKey[r.SessionKey], r)
 	}
 
 	var latestDataAsOf time.Time
@@ -424,7 +426,7 @@ func (s *Service) GetRoundDetail(ctx context.Context, season, round int) (*Round
 		// artifact) which should not be surfaced.
 		var resultDTOs []SessionResultDTO
 		if status != statusUpcoming {
-			sessResults := resultsByType[sess.SessionType]
+			sessResults := resultsByKey[sess.SessionKey]
 			// Sort ascending by position. OpenF1 occasionally uses position 0
 			// as a placeholder for unclassified entries (DNF/DNS/DSQ); push
 			// those to the bottom so the classified field starts at P1. The
