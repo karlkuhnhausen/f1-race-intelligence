@@ -75,7 +75,7 @@ func (s *Service) GetSessionAnalysis(ctx context.Context, season, round int, ses
 		}
 		teamColor := p.TeamColor
 		if teamColor == "" {
-			// Fallback to domain lookup when Cosmos doc has empty team_colour.
+			// Fallback to domain lookup when Cosmos doc has empty team color.
 			// domain.GetTeamColor returns "#hex", but analysis API uses raw hex.
 			if c := domain.GetTeamColor(p.TeamName); c != "" {
 				teamColor = c[1:] // strip leading '#'
