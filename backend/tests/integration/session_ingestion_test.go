@@ -156,6 +156,7 @@ func TestSessionIngestionRoundTrip(t *testing.T) {
 	sessions := []storage.Session{
 		{
 			ID: "2026-01-fp1", Type: "session", Season: 2026, Round: 1,
+			SessionKey:  9001,
 			SessionName: "Practice 1", SessionType: "practice1", Status: "completed",
 			DateStartUTC: time.Date(2026, 3, 14, 1, 0, 0, 0, time.UTC),
 			DateEndUTC:   time.Date(2026, 3, 14, 2, 0, 0, 0, time.UTC),
@@ -163,6 +164,7 @@ func TestSessionIngestionRoundTrip(t *testing.T) {
 		},
 		{
 			ID: "2026-01-qualifying", Type: "session", Season: 2026, Round: 1,
+			SessionKey:  9002,
 			SessionName: "Qualifying", SessionType: "qualifying", Status: "completed",
 			DateStartUTC: time.Date(2026, 3, 14, 6, 0, 0, 0, time.UTC),
 			DateEndUTC:   time.Date(2026, 3, 14, 7, 0, 0, 0, time.UTC),
@@ -170,6 +172,7 @@ func TestSessionIngestionRoundTrip(t *testing.T) {
 		},
 		{
 			ID: "2026-01-race", Type: "session", Season: 2026, Round: 1,
+			SessionKey:  9003,
 			SessionName: "Race", SessionType: "race", Status: "completed",
 			DateStartUTC: time.Date(2026, 3, 15, 5, 0, 0, 0, time.UTC),
 			DateEndUTC:   time.Date(2026, 3, 15, 7, 0, 0, 0, time.UTC),
@@ -197,35 +200,35 @@ func TestSessionIngestionRoundTrip(t *testing.T) {
 	results := []storage.SessionResult{
 		{
 			ID: "2026-01-race-1", Type: "session_result", Season: 2026, Round: 1,
-			SessionType: "race", Position: 1, DriverNumber: 1,
+			SessionKey: 9003, SessionType: "race", Position: 1, DriverNumber: 1,
 			DriverName: "Max VERSTAPPEN", DriverAcronym: "VER", TeamName: "Red Bull Racing",
 			NumberOfLaps: 58, FinishingStatus: &finished, Points: &points25, FastestLap: &fastLapTrue,
 			DataAsOfUTC: now, Source: "openf1",
 		},
 		{
 			ID: "2026-01-race-44", Type: "session_result", Season: 2026, Round: 1,
-			SessionType: "race", Position: 2, DriverNumber: 44,
+			SessionKey: 9003, SessionType: "race", Position: 2, DriverNumber: 44,
 			DriverName: "Lewis HAMILTON", DriverAcronym: "HAM", TeamName: "Ferrari",
 			NumberOfLaps: 58, FinishingStatus: &finished, Points: &points18,
 			DataAsOfUTC: now, Source: "openf1",
 		},
 		{
 			ID: "2026-01-qualifying-1", Type: "session_result", Season: 2026, Round: 1,
-			SessionType: "qualifying", Position: 1, DriverNumber: 1,
+			SessionKey: 9002, SessionType: "qualifying", Position: 1, DriverNumber: 1,
 			DriverName: "Max VERSTAPPEN", DriverAcronym: "VER", TeamName: "Red Bull Racing",
 			Q1Time: &q1, Q2Time: &q2, Q3Time: &q3,
 			DataAsOfUTC: now, Source: "openf1",
 		},
 		{
 			ID: "2026-01-fp1-1", Type: "session_result", Season: 2026, Round: 1,
-			SessionType: "practice1", Position: 1, DriverNumber: 1,
+			SessionKey: 9001, SessionType: "practice1", Position: 1, DriverNumber: 1,
 			DriverName: "Max VERSTAPPEN", DriverAcronym: "VER", TeamName: "Red Bull Racing",
 			BestLapTime: &bestLap, GapToFastest: &gapToFastest, NumberOfLaps: 25,
 			DataAsOfUTC: now, Source: "openf1",
 		},
 		{
 			ID: "2026-01-fp1-44", Type: "session_result", Season: 2026, Round: 1,
-			SessionType: "practice1", Position: 2, DriverNumber: 44,
+			SessionKey: 9001, SessionType: "practice1", Position: 2, DriverNumber: 44,
 			DriverName: "Lewis HAMILTON", DriverAcronym: "HAM", TeamName: "Ferrari",
 			BestLapTime: &bestLap, GapToFastest: &gap2, NumberOfLaps: 22,
 			DataAsOfUTC: now, Source: "openf1",
