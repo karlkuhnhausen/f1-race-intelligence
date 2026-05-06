@@ -73,12 +73,20 @@ func (s *Service) GetSessionAnalysis(ctx context.Context, season, round int, ses
 		for i, l := range p.Laps {
 			laps[i] = PositionLapDTO{Lap: l.LapNumber, Position: l.Position}
 		}
+		teamColor := p.TeamColor
+		if teamColor == "" {
+			// Fallback to domain lookup when Cosmos doc has empty team_colour.
+			// domain.GetTeamColor returns "#hex", but analysis API uses raw hex.
+			if c := domain.GetTeamColor(p.TeamName); c != "" {
+				teamColor = c[1:] // strip leading '#'
+			}
+		}
 		dto.Positions = append(dto.Positions, PositionDriverDTO{
 			DriverNumber:  p.DriverNumber,
 			DriverName:    p.DriverName,
 			DriverAcronym: p.DriverAcronym,
 			TeamName:      p.TeamName,
-			TeamColor:     p.TeamColor,
+			TeamColor:     teamColor,
 			Laps:          laps,
 		})
 		// Track max laps for total_laps field
@@ -100,11 +108,17 @@ func (s *Service) GetSessionAnalysis(ctx context.Context, season, round int, ses
 		for i, l := range iv.Laps {
 			laps[i] = IntervalLapDTO{Lap: l.LapNumber, GapToLeader: l.GapToLeader, Interval: l.Interval}
 		}
+		ivColor := iv.TeamColor
+		if ivColor == "" {
+			if c := domain.GetTeamColor(iv.TeamName); c != "" {
+				ivColor = c[1:]
+			}
+		}
 		dto.Intervals = append(dto.Intervals, IntervalDriverDTO{
 			DriverNumber:  iv.DriverNumber,
 			DriverAcronym: iv.DriverAcronym,
 			TeamName:      iv.TeamName,
-			TeamColor:     iv.TeamColor,
+			TeamColor:     ivColor,
 			Laps:          laps,
 		})
 	}
