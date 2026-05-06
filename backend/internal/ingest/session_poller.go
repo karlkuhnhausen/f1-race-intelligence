@@ -48,7 +48,10 @@ var errNoDriverData = errors.New("openf1: driver data unavailable, results skipp
 //	    and trigger championship hook for rounds 2-4.
 //	7 — force re-poll to fix Miami sprint sessions stored with wrong
 //	    session_type due to stale documents from pre-008 round mapping.
-const SessionSchemaVersion = 7
+//	8 — fix: move finalized-skip check before metadata upsert to prevent
+//	    TransformSession (Finalized=false) from clobbering finalized docs.
+//	    Re-poll all sessions so they finalize with the correct ordering.
+const SessionSchemaVersion = 8
 
 // finalizationBuffer is how long after a session's DateEndUTC we wait
 // before marking it finalized in the cache. This gives OpenF1 time to
@@ -173,6 +176,14 @@ func (p *SessionPoller) poll(ctx context.Context, season int) {
 			continue
 		}
 
+		// Skip sessions already fully cached at the current schema version.
+		// Must be checked BEFORE metadata upsert to avoid clobbering the
+		// finalized flag in Cosmos (TransformSession creates Finalized=false).
+		if cachedVer, isFinalized := finalizedKeys[raw.SessionKey]; isFinalized && cachedVer >= SessionSchemaVersion {
+			skipped++
+			continue
+		}
+
 		future := isFutureSession(raw, now, p.logger)
 
 		// Always upsert session metadata so that upcoming/in-progress
@@ -189,12 +200,6 @@ func (p *SessionPoller) poll(ctx context.Context, season int) {
 		// just earns 404s and rate-limit pressure.
 		if future {
 			skippedFuture++
-			continue
-		}
-
-		// Skip sessions already fully cached at the current schema version.
-		if cachedVer, isFinalized := finalizedKeys[raw.SessionKey]; isFinalized && cachedVer >= SessionSchemaVersion {
-			skipped++
 			continue
 		}
 
