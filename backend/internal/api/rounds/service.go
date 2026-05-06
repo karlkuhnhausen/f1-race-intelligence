@@ -367,6 +367,25 @@ func (s *Service) GetRoundDetail(ctx context.Context, season, round int) (*Round
 		}
 	}
 
+	// Deduplicate sessions: the 008 migration can leave old documents with
+	// shifted round numbers alongside freshly-polled documents for the same
+	// session_type. Keep only the newest document per session_type.
+	{
+		bestByType := make(map[string]storage.Session, len(sessions))
+		for _, sess := range sessions {
+			if existing, ok := bestByType[sess.SessionType]; !ok || sess.DataAsOfUTC.After(existing.DataAsOfUTC) {
+				bestByType[sess.SessionType] = sess
+			}
+		}
+		sessions = make([]storage.Session, 0, len(bestByType))
+		for _, sess := range bestByType {
+			sessions = append(sessions, sess)
+		}
+		sort.Slice(sessions, func(i, j int) bool {
+			return sessions[i].DateStartUTC.Before(sessions[j].DateStartUTC)
+		})
+	}
+
 	// Deduplicate results: if the same (session_type, driver_number) appears
 	// more than once, keep only the first occurrence. This guards against
 	// duplicate documents in Cosmos caused by the 008 migration re-ingesting
