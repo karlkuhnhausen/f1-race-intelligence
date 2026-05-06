@@ -223,14 +223,12 @@ func (s *Service) buildRoundLabels(ctx context.Context, season int, sessionKeys 
 	}
 	circuitByMeeting := make(map[int]string, len(meetings))
 	for _, m := range meetings {
-		// Use country name as the short label (e.g., "Australia", "China", "USA").
-		// Fall back to circuit name if country is empty.
-		name := m.CountryName
+		// Use circuit short name as the label (e.g., "Melbourne", "Suzuka", "Miami").
+		// Fall back to country name if circuit is empty.
+		name := m.CircuitName
 		if name == "" {
-			name = m.CircuitName
+			name = m.CountryName
 		}
-		// Shorten common long names.
-		name = shortenCircuitLabel(name)
 		circuitByMeeting[m.MeetingKey] = name
 	}
 
@@ -259,20 +257,6 @@ func (s *Service) buildRoundLabels(ctx context.Context, season int, sessionKeys 
 	}
 
 	return labels
-}
-
-// shortenCircuitLabel trims common verbose location names to short forms.
-func shortenCircuitLabel(name string) string {
-	replacements := map[string]string{
-		"United Arab Emirates": "Abu Dhabi",
-		"United States":        "USA",
-		"United Kingdom":       "Great Britain",
-		"Saudi Arabia":         "Saudi Arabia",
-	}
-	if short, ok := replacements[name]; ok {
-		return short
-	}
-	return name
 }
 
 // GetDriverProgression returns per-round cumulative points for each driver.
