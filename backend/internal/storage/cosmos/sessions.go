@@ -277,6 +277,38 @@ func (c *Client) GetCompletedRaceSessionKeys(ctx context.Context, season int, no
 	return out, nil
 }
 
+// GetCompletedRaceSessions returns full session documents for race and sprint
+// sessions whose date_end_utc is before the given time. Used by the standings
+// progression to build descriptive round labels from session metadata.
+func (c *Client) GetCompletedRaceSessions(ctx context.Context, season int, now time.Time) ([]storage.Session, error) {
+	pk := azcosmos.NewPartitionKeyNumber(float64(season))
+	query := "SELECT * FROM c WHERE c.season = @season AND c.type = 'session' AND c.session_type IN ('race', 'sprint') AND c.date_end_utc < @now"
+	queryOpts := &azcosmos.QueryOptions{
+		QueryParameters: []azcosmos.QueryParameter{
+			{Name: "@season", Value: season},
+			{Name: "@now", Value: now.Format(time.RFC3339)},
+		},
+	}
+
+	pager := c.sessions.NewQueryItemsPager(query, pk, queryOpts)
+	var sessions []storage.Session
+
+	for pager.More() {
+		resp, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("cosmos: query completed race sessions: %w", err)
+		}
+		for _, item := range resp.Items {
+			var s storage.Session
+			if err := json.Unmarshal(item, &s); err != nil {
+				return nil, fmt.Errorf("cosmos: unmarshal completed race session: %w", err)
+			}
+			sessions = append(sessions, s)
+		}
+	}
+	return sessions, nil
+}
+
 // GetFinalizedSessions returns all session documents for the season where
 // finalized=true. Used by the backfill CLI.
 func (c *Client) GetFinalizedSessions(ctx context.Context, season int) ([]storage.Session, error) {

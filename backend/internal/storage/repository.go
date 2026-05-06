@@ -184,6 +184,10 @@ type SessionRepository interface {
 	// standings progression filter as a time-based alternative to finalized
 	// keys (which depend on schema_version alignment).
 	GetCompletedRaceSessionKeys(ctx context.Context, season int, now time.Time) (map[int]struct{}, error)
+	// GetCompletedRaceSessions returns full session documents for race and
+	// sprint sessions whose date_end_utc is in the past. Used by the standings
+	// progression to build descriptive round labels.
+	GetCompletedRaceSessions(ctx context.Context, season int, now time.Time) ([]Session, error)
 	// GetFinalizedSessions returns all session documents for the season where
 	// finalized=true. Used by the backfill CLI to identify sessions that need
 	// race-control summary population.

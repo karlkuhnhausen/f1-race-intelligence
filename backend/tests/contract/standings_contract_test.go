@@ -95,6 +95,9 @@ func (m *mockSessionRepoForStandings) GetFinalizedSessionKeys(_ context.Context,
 func (m *mockSessionRepoForStandings) GetCompletedRaceSessionKeys(_ context.Context, _ int, _ time.Time) (map[int]struct{}, error) {
 	return nil, nil
 }
+func (m *mockSessionRepoForStandings) GetCompletedRaceSessions(_ context.Context, _ int, _ time.Time) ([]storage.Session, error) {
+	return nil, nil
+}
 func (m *mockSessionRepoForStandings) GetFinalizedSessions(_ context.Context, _ int) ([]storage.Session, error) {
 	return nil, nil
 }
@@ -135,7 +138,7 @@ func newTestService() (*standings.Service, *mockChampionshipRepo, *mockSessionRe
 		},
 	}
 	standingsRepo := &mockStandingsRepo{}
-	svc := standings.NewService(standingsRepo, champRepo, sessionRepo)
+	svc := standings.NewService(standingsRepo, champRepo, sessionRepo, nil)
 	return svc, champRepo, sessionRepo
 }
 
