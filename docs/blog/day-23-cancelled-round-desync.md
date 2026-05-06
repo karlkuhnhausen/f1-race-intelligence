@@ -86,4 +86,4 @@ The fix was 236 lines of code across 11 files, a new unit test, and one addition
 
 ---
 
-[← Day 22: The Standings Overhaul — Real Data, Real Bugs, and a Credit Long Overdue](day-22-standings-overhaul.md)
+[← Day 22: The Standings Overhaul — Real Data, Real Bugs, and a Credit Long Overdue](day-22-standings-overhaul.md) | [Day 24: "USA Race" Is Not a Circuit — Fixing the Progression Chart Labels →](day-24-circuit-name-labels.md)
