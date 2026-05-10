@@ -20,8 +20,8 @@ Thumbs.db
 .env
 .env.local
 
-# Deployment outputs
-/tmp/f1-deploy-output.json
+# Local scratch / deployment outputs (never committed)
+/tmp/
 
 # TypeScript incremental build info
 *.tsbuildinfo
