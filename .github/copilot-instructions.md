@@ -128,12 +128,13 @@ When writing a blog post:
 Blog posts are public. Before writing or committing a post, redact:
 
 - **Public IP addresses** (home IP, runner IPs, any `a.b.c.d` literal). Replace with `<REDACTED>` or a phrase like "my home IP". This applies to prose, code blocks, and command output transcripts.
-- **CIDR ranges** that identify a person or office (e.g. `23.93.233.7/32`). Same treatment.
-- **Cluster/tenant/subscription GUIDs**, Key Vault names that aren't already public, storage account keys, connection strings, SAS tokens, bearer tokens, OAuth codes.
+- **CIDR ranges** that identify a person or office. Same treatment.
+- **Azure resource group names, AKS cluster names, ACR names, Key Vault names.** Even though they're discoverable to anyone with access to the subscription, they leak the account topology and turn the post into a recon aid. Replace with generic labels — "the resource group", "the cluster", `<RG>`, `<ACR>`. This applies to prose, code blocks, terminal transcripts, **and diagram labels** (don't name a boundary after the resource group).
+- **Cluster/tenant/subscription GUIDs**, storage account keys, connection strings, SAS tokens, bearer tokens, OAuth codes.
 - **Personal email addresses, phone numbers, physical addresses.**
 - **Internal hostnames or private DNS names** that aren't already public on the deployed site.
 
-Generic public infrastructure that's already discoverable (the deployed site URL, the ACR name `acrf1raceintel.azurecr.io`, the resource group name `rg-f1raceintel`, public GitHub repo URLs, PR numbers) is fine.
+Generic public infrastructure that's already discoverable AND not account-scoped (the deployed site URL, public GitHub repo URLs, PR numbers) is fine.
 
 When pasting terminal output into a post, scan it line-by-line for the items above and redact before committing. If unsure, redact.
 

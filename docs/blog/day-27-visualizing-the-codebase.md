@@ -32,29 +32,34 @@ The C4 model has four levels: Context, Container, Component, Code. For a side pr
 Here's what the system actually looks like today:
 
 ```mermaid
-C4Container
-    title F1 Race Intelligence — Container Diagram
+flowchart LR
+    classDef person fill:#08427b,stroke:#052e56,color:#ffffff
+    classDef internal fill:#1168bd,stroke:#0b4884,color:#ffffff
+    classDef external fill:#999999,stroke:#6b6b6b,color:#ffffff
+    classDef datastore fill:#1168bd,stroke:#0b4884,color:#ffffff
+    classDef boundary fill:transparent,stroke:#888888,color:#cccccc,stroke-dasharray:5 5
 
-    Person(fan, "F1 Fan", "Views calendar, standings, race results, and session analysis")
+    fan(["<b>F1 Fan</b><br/><i>[Person]</i><br/>Views calendar, standings,<br/>race results, session analysis"]):::person
 
-    System_Ext(openf1, "OpenF1 API", "api.openf1.org/v1 — free, rate-limited public F1 data")
-    System_Ext(kv, "Azure Key Vault", "Stores Cosmos endpoint and other secrets")
+    subgraph aks["Cluster boundary"]
+        frontend["<b>Frontend SPA</b><br/><i>[Container]</i><br/>Renders dashboard.<br/>Talks only to backend API."]:::internal
+        backend["<b>Backend API</b><br/><i>[Container]</i><br/>Serves REST API.<br/>Polls upstream + caches.<br/>Owns all external integration."]:::internal
+        backfill["<b>Backfill Job</b><br/><i>[Container]</i><br/>One-shot historical hydration."]:::internal
+    end
 
-    System_Boundary(aks, "AKS Cluster (rg-f1raceintel)") {
-        Container(frontend, "Frontend SPA", "React 18 + Vite + TypeScript", "Served by nginx. Calls /api/v1/* only — never talks to OpenF1 directly")
-        Container(backend, "Backend API", "Go 1.26 + Chi v5", "REST API on :8080. Handlers, services, ingest pollers, analysis scheduler")
-        Container(backfill, "Backfill Job", "Go CLI (same image)", "One-shot Kubernetes Job for historical data hydration")
-    }
+    cosmos[("<b>Cached F1 data store</b><br/><i>[Database]</i><br/>Meetings, sessions,<br/>standings, analysis.")]:::datastore
+    openf1["<b>OpenF1 API</b><br/><i>[External system]</i><br/>Public F1 data source."]:::external
+    secrets["<b>Secrets store</b><br/><i>[External system]</i><br/>Endpoints + credentials,<br/>resolved via Managed Identity."]:::external
 
-    ContainerDb_Ext(cosmos, "Cosmos DB (serverless)", "NoSQL", "Containers: meetings, sessions, standings, analysis_*. Accessed via private endpoint")
+    fan -->|"HTTPS"| frontend
+    frontend -->|"REST / JSON"| backend
+    backend -->|"Reads cached data"| cosmos
+    backend -->|"Polls + caches"| openf1
+    backend -->|"Resolves config"| secrets
+    backfill -->|"Bulk upserts"| cosmos
+    backfill -->|"Historical pull"| openf1
 
-    Rel(fan, frontend, "HTTPS")
-    Rel(frontend, backend, "GET /api/v1/*", "JSON over HTTPS (ingress)")
-    Rel(backend, cosmos, "Reads cached F1 data", "Cosmos SDK / Managed Identity")
-    Rel(backend, openf1, "Polls meetings, sessions, race control, analysis", "HTTP, ~1 req/s")
-    Rel(backend, kv, "Resolves COSMOS_ENDPOINT etc.", "DefaultAzureCredential")
-    Rel(backfill, cosmos, "Bulk upserts", "Cosmos SDK")
-    Rel(backfill, openf1, "Historical pull")
+    class aks boundary
 ```
 
 A few things this diagram makes obvious that prose has been hiding:
