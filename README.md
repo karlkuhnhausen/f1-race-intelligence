@@ -78,6 +78,10 @@ This project is being built in public, with architecture decisions and progress 
 - [Day 24: "USA Race" Is Not a Circuit — Fixing the Progression Chart Labels](docs/blog/day-24-circuit-name-labels.md)
 - [Day 25: The Sprint Sessions That Showed Nothing — A Three-Bug Cascade](docs/blog/day-25-sprint-session-saga.md)
 
+### Meta & Documentation
+
+- [Day 27: Visualizing the Codebase — C4 and a Sequence Diagram for One Endpoint](docs/blog/day-27-visualizing-the-codebase.md)
+
 ## Architecture Direction
 
 - Go backend with Chi router

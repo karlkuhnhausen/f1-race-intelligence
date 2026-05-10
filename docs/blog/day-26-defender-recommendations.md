@@ -105,4 +105,4 @@ The image rebuild and K8s upgrade were the high-leverage moves. They address rea
 
 ---
 
-[← Day 25: The Sprint Sessions That Showed Nothing — A Three-Bug Cascade](day-25-sprint-session-saga.md)
+[← Day 25: The Sprint Sessions That Showed Nothing — A Three-Bug Cascade](day-25-sprint-session-saga.md) · [Day 27: Visualizing the Codebase — C4 and a Sequence Diagram for One Endpoint →](day-27-visualizing-the-codebase.md)
